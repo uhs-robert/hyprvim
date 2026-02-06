@@ -52,6 +52,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 
 ### Additional Operations
 
+- **Numeric Repeats**: `2dw`, `3j`, `5w` - Repeat motions/operators (supports up to 999)
 - **Undo/Redo**: `u` for undo, `Ctrl+r` for redo
 - **Find**: `/`, `f`, `F`, `t`, `T` open find dialog; `n`/`N` for next/previous
 - **Insert**: `i`, `a`, `I`, `A`, `o`, `O` - Enter insert mode at various positions
@@ -117,11 +118,14 @@ Press `SUPER + ESCAPE` (or your configured leader key + ESCAPE) to enter NORMAL 
 ### Example Operations
 
 - `dw` - Delete word
+- `3dw` - Delete 3 words
+- `5j` - Move down 5 lines
+- `10w` - Move forward 10 words
 - `ciw` - Change inner word (deletes word and enters insert mode)
 - `Vjjd` - Select 3 lines and delete them
 - `yy` - Yank (copy) current line
 - `gg` - Go to document start
-- `ma` - Set mark 'a', then `` `a `` to jump back
+- `ma` - Set mark 'a', then `` `a `` to jump back (see [using marks](#using-marks))
 
 ### Using Marks
 
@@ -131,6 +135,9 @@ Marks in HyprVim remember monitor, window, and workspace locations:
 - `` `a `` - Jump to mark 'a'
 - `dma` - Delete mark 'a'
 - Supports: a-z, A-Z, 0-9
+
+> [!NOTE]
+> Works on multi-monitor setups.
 
 ## ⚙️ Configuration
 
@@ -166,7 +173,6 @@ You can customize the icon, colors, and formatting to match your Waybar theme.
 
 ## ⚠️ Known Limitations
 
-- No numeric repeats (e.g., `2dw`, `3j`)
 - No macros or registers (uses system clipboard)
 - No visual block mode (`Ctrl+v`)
 - Limited text object support (primarily word objects)
