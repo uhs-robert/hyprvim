@@ -21,3 +21,202 @@
 # bindd = $LEADER, I, Activate Screenshot Submap, submap, Screenshot
 #
 # submap = reset
+#
+#
+
+################################################################################
+# EXAMPLE SETUP (My Personal Config)
+################################################################################
+#
+# Feel free to use or delete this section entirely.
+#
+# This is just my personal setup (vim-style), for what it's worth.
+#
+################################################################################
+#
+# ----------------------------------------------------------------------------- #
+# !-- Submap: Resize
+# ----------------------------------------------------------------------------- #
+# submap = Resize
+#
+# ## Resizing the active window
+# bindde = , H, Resize Left, resizeactive, -10 0
+# bindde = , J, Resize Down, resizeactive, 0 10
+# bindde = , K, Resize Up, resizeactive, 0 -10
+# bindde = , L, Resize Right, resizeactive, 10 0
+# bindde = , $equal, Reset Size, exec, hyprctl --batch "dispatch togglefloating; dispatch togglefloating"
+# bindde = SHIFT, H, Fast Resize Left, resizeactive, -40 0
+# bindde = SHIFT, J, Fast Resize Down, resizeactive, 0 40
+# bindde = SHIFT, K, Fast Resize Up, resizeactive, 0 -40
+# bindde = SHIFT, L, Fast Resize Right, resizeactive, 40 0
+# bindde = CTRL, H, Precise Resize Left, resizeactive, -1 0
+# bindde = CTRL, J, Precise Resize Down, resizeactive, 0 1
+# bindde = CTRL, K, Precise Resize Up, resizeactive, 0 -1
+# bindde = CTRL, L, Precise Resize Right, resizeactive, 1 0
+#
+# ## Modes
+# bindd = , F, Toggle floating mode, togglefloating,
+# bindd = , P, Toggle pseudo mode (dwindle layout), pseudo,
+# bindd = , S, Toggle split mode (dwindle layout), togglesplit,
+#
+# ## Switch to other submaps
+# bindd = , M, Activate Movement Submap, submap, Move
+# bindd = , W, Active Windows Submap, submap, Windows
+#
+# ## Exit
+# bind = , ESCAPE, submap, reset
+# bind = $LEADER, R, submap, reset
+# bind = , catchall, submap, Resize
+# submap = reset
+#
+# # ----------------------------------------------------------------------------- #
+# # !-- Submap: Move
+# # ----------------------------------------------------------------------------- #
+# submap = Move
+#
+# ## Move active floating window
+# bindde = , H, Move Active Window Left, moveactive, -10 0
+# bindde = , J, Move Active Window Down, moveactive, 0 10
+# bindde = , K, Move Active Window Up, moveactive, 0 -10
+# bindde = , L, Move Active Window Right, moveactive, 10 0
+# bindde = SHIFT, H, Fast Move Active Window Left, moveactive, -40 0
+# bindde = SHIFT, J, Fast Move Active Window Down, moveactive, 0 40
+# bindde = SHIFT, K, Fast Move Active Window Up, moveactive, 0 -40
+# bindde = SHIFT, L, Fast Move Active Window Right, moveactive, 40 0
+# bindde = CTRL, H, Precise Move Active Window Left, moveactive, -1 0
+# bindde = CTRL, J, Precise Move Active Window Down, moveactive, 0 1
+# bindde = CTRL, K, Precise Move Active Window Up, moveactive, 0 -1
+# bindde = CTRL, L, Precise Move Active Window Right, moveactive, 1 0
+# bindd = , $equal, Reset Size, exec, hyprctl --batch "dispatch togglefloating; dispatch togglefloating"
+#
+# ## Switch to other submaps
+# bindd = , R, Activate Resize Submap, submap, Resize
+# bindd = , W, Active Windows Submap, submap, Windows
+#
+# ## Exit
+# bind = , ESCAPE, submap, reset
+# bind = $LEADER, M, submap, reset
+# bind = , catchall, submap, Move
+# submap = reset
+#
+# # ----------------------------------------------------------------------------- #
+# # !-- Submap: Windows
+# # ----------------------------------------------------------------------------- #
+# submap = Windows
+#
+# ## Switch to other submaps
+# bindd = $LEADER, G, Activate Cursor Submap, exec, hyprctl keyword cursor:inactive_timeout 0; hyprctl keyword cursor:hide_on_key_press false; hyprctl dispatch submap Cursor
+# bindd = $LEADER, R, Activate Resize Submap, submap, Resize
+# bindd = $LEADER, M, Activate Movement Submap, submap, Move
+# bindd = $LEADER, ESCAPE, Activate VIM Submap, submap, NORMAL
+#
+# ## Shortcuts
+# bindd = , SPACE, Open window selector, exec, hyprctl dispatch submap reset; $menu -i -show window
+#
+# ## Focus Movement
+# bindd = , Left, Move focus left, movefocus, l
+# bindd = , Right, Move focus right, movefocus, r
+# bindd = , Up, Move focus up, movefocus, u
+# bindd = , Down, Move focus down, movefocus, d
+# bindd = , H, Move focus left (vim-style), movefocus, l
+# bindd = , L, Move focus right (vim-style), movefocus, r
+# bindd = , K, Move focus up (vim-style), movefocus, u
+# bindd = , J, Move focus down (vim-style), movefocus, d
+# bindd = , TAB, Go to last active workspace, workspace, previous
+#
+# ## Monitor Navigation
+# bindd = , 1, Move to monitor 1, focusmonitor, 0
+# bindd = , 2, Move to monitor 2, focusmonitor, 1
+# bindd = , 3, Move to monitor 3, focusmonitor, 2
+# bindd = , 4, Move to monitor 4, focusmonitor, 3
+#
+# ## Move Windows
+# bindd = SHIFT, H, Move window left (vim-style), movewindow, l
+# bindd = SHIFT, L, Move window right (vim-style), movewindow, r
+# bindd = SHIFT, K, Move window up (vim-style), movewindow, u
+# bindd = SHIFT, J, Move window down (vim-style), movewindow, d
+#
+# ## Monitor Workspace Navigation
+# bindd = CTRL, H, Switch to previous WS, split-cycleworkspaces, prev
+# bindd = CTRL, L, Switch to next WS, split-cycleworkspaces, next
+# bindd = CTRL, K, Move WS up one, split-movetoworkspace, 1
+# bindd = CTRL, J, Move WS down one, split-movetoworkspace, -1
+#
+# ## Move active window to a workspace with LEADER  SHIFT  [0-5]
+# # NOTE: Requires the split-monitor-workspaces plugin: https://github.com/Duckonaut/split-monitor-workspaces/commits/main/
+# # bind =  SHIFT, 1, split-movetoworkspace, 1
+# # bind =  SHIFT, 2, split-movetoworkspace, 2
+# # bind =  SHIFT, 3, split-movetoworkspace, 3
+# # bind =  SHIFT, 4, split-movetoworkspace, 4
+# # bind =  SHIFT, 5, split-movetoworkspace, 5
+#
+# ## Modes
+# bindd = , F, Toggle floating mode, togglefloating,
+# bindd = , P, Toggle pseudo mode (dwindle layout), pseudo,
+# bindd = , S, Toggle split mode (dwindle layout), togglesplit,
+# bindd = , $minus, Toggle split mode (dwindle layout), togglesplit,
+#
+# ## Switch to other submaps
+# bindd = , R, Activate Resize Submap, submap, Resize
+# bindd = , M, Activate Move Submap, submap, Move
+#
+# ## Actions
+# bindd = , C, Close active window, killactive,
+#
+# ## Exit
+# bind = , ESCAPE, submap, reset
+# bind = $LEADER, W, submap, reset
+# bind = , catchall, submap, Windows
+# submap = reset
+#
+# # ----------------------------------------------------------------------------- #
+# # !-- Submap: Cursor
+# # ----------------------------------------------------------------------------- #
+# submap = Cursor
+#
+# ## Switch to other submaps
+# bindd = $LEADER, W, Active Windows Submap, submap, Windows
+# bindd = $LEADER, R, Activate Resize Submap, submap, Resize
+# bindd = $LEADER, M, Activate Movement Submap, submap, Move
+# bindd = $LEADER, ESCAPE, Active VIM Submap, submap, NORMAL
+#
+# ## Jump cursor to a position
+# bindd= , A, Floating Cursor Click, exec, hyprctl dispatch submap reset && wl-kbptr -o modes=floating,click -o mode_floating.source=detect && hyprctl dispatch submap Cursor
+# bindd= SHIFT, A, Tiling Cursor Click, exec, hyprctl dispatch submap reset && wl-kbptr -o modes=tile,click && hyprctl dispatch submap Cursor
+# bindd= CTRL, A, Tiling Cursor Click, exec, hyprctl dispatch submap reset && wl-kbptr -o modes=tile,click && hyprctl keyword cursor:inactive_timeout 3 && hyprctl keyword cursor:hide_on_key_press true
+# bindd= , Q, Floating Cursor Move, exec, hyprctl dispatch submap reset && wl-kbptr -o modes=floating -o mode_floating.source=detect && hyprctl dispatch submap Cursor
+# bindd= SHIFT, Q, Tiling Cursor Move, exec, hyprctl dispatch submap reset && wl-kbptr -o modes=tile && hyprctl dispatch submap Cursor
+# bindd= CTRL, Q, Tiling Cursor Move, exec, hyprctl dispatch submap reset && wl-kbptr -o modes=tile,click && hyprctl keyword cursor:inactive_timeout 3 && hyprctl keyword cursor:hide_on_key_press true
+#
+# ## Cursor movement
+# bindde = , H, Cursor Left, exec, wlrctl pointer move -10 0
+# bindde = , J, Cusor Down, exec, wlrctl pointer move 0 10
+# bindde = , K, Cusor Up, exec, wlrctl pointer move 0 -10
+# bindde = , L, Cusor Right, exec, wlrctl pointer move 10 0
+# bindde = SHIFT, H, Fast Cursor Left, exec, wlrctl pointer move -100 0
+# bindde = SHIFT, J, Fast Cursor Left, exec, wlrctl pointer move 0 100
+# bindde = SHIFT, K, Fast Cursor Left, exec, wlrctl pointer move 0 -100
+# bindde = SHIFT, L, Fast Cursor Left, exec, wlrctl pointer move 100 0
+# bindde = CTRL, H, Precise Cursor Left, exec, wlrctl pointer move -1 0
+# bindde = CTRL, J, Precise Cursor Left, exec, wlrctl pointer move 0 1
+# bindde = CTRL, K, Precise Cursor Left, exec, wlrctl pointer move 0 -1
+# bindde = CTRL, L, Precise Cursor Left, exec, wlrctl pointer move 1 0
+#
+# ## Mouse clicks
+# bindd = , S, Left Click, exec, wlrctl pointer click left
+# bindd = , SPACE, Left Click, exec, wlrctl pointer click left
+# bindd = SHIFT, SPACE, Hold Left Click, exec, wlrctl pointer press button1
+# bindd = CTRL+SHIFT, SPACE, Hold Left Click, exec, wlrctl pointer release button1
+# bindd = CTRL, SPACE, Left Click, exec, wlrctl pointer click left; hyprctl keyword cursor:inactive_timeout 3; hyprctl keyword cursor:hide_on_key_press true; hyprctl dispatch submap reset
+# bindd = , D, Middle Click, exec, wlrctl pointer click middle
+# bindd = , F, Right Click, exec, wlrctl pointer click right
+#
+# ## Optional: PageUp/PageDown (often more “scroll-like” than arrows)
+# bindd = CTRL, U, Page Up,   sendshortcut, , prior
+# bindd = CTRL, D, Page Down, sendshortcut, , next
+#
+# ## Exit
+# bind = $LEADER, G, exec, hyprctl keyword cursor:inactive_timeout 3; hyprctl keyword cursor:hide_on_key_press true; hyprctl dispatch submap reset
+# bind = , ESCAPE, exec, hyprctl keyword cursor:inactive_timeout 3; hyprctl keyword cursor:hide_on_key_press true; hyprctl dispatch submap reset
+# bind = , catchall, submap, Cursor
+# submap = reset
