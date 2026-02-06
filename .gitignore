@@ -139,3 +139,6 @@ QWEN.md
 .claude
 .gemini
 .qwen
+
+# User customizations (personal submap integrations)
+vim-user.conf
