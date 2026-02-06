@@ -15,7 +15,7 @@
 
 **HyprVim** brings the power of Vim keybindings to your entire Hyprland desktop environment.
 
-Using Hyprland's submap system, HyprVim uses Hyprland's submap system to provide a vim-style navigation layer that works across all applications in your Wayland session.
+Uses Hyprland's submap system to provide vim-style navigation and basic text editing that works across all applications in your Wayland session.
 
 Navigate text, manage selections, and perform text operations using familiar Vim motions without leaving your current application. Think of it as a lightweight, system-wide vim mode for your desktop.
 
@@ -144,6 +144,25 @@ $LEADER = ALT
 ```
 
 If you already define `$LEADER` elsewhere in your Hyprland config, comment out the line in `init.conf` to use your existing definition.
+
+### Visual Mode Indicator (Waybar)
+
+To see which vim mode you're currently in, add the [Hyprland submap module](https://github.com/Alexays/Waybar/wiki/Module:-Hyprland#submap) to your [Waybar](https://github.com/Alexays/Waybar) configuration. This displays the active mode in your status bar.
+
+Add this to your `~/.config/waybar/config` in the modules section:
+
+```json
+"hyprland/submap": {
+  "format": "<span size='11000' foreground='#F8B471'> </span>{}",
+  "max-length": 20,
+  "tooltip": false,
+  "on-click": "hyprctl dispatch submap reset"
+}
+```
+
+Then add `"hyprland/submap"` to your `modules-left`, `modules-center`, or `modules-right` array.
+
+You can customize the icon, colors, and formatting to match your Waybar theme.
 
 ## ⚠️ Known Limitations
 
