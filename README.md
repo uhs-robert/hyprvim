@@ -72,6 +72,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 
 - **Hyprland** (Wayland compositor)
 - **Bash** (for vim-marks.sh script)
+- **A terminal emulator** for the `?` help viewer (see `$HELP_TERMINAL` below)
 
 ### Quick Install
 
@@ -100,6 +101,21 @@ bind = SUPER, ESCAPE, submap, NORMAL
 ```bash
 hyprctl reload
 ```
+
+### Help Viewer Terminal
+
+HyprVim uses `$HELP_TERMINAL` to launch the keybindings help (press `?` in NORMAL).
+Set it in `vim-user.conf` or your `hyprland.conf` **after** sourcing `init` if you don’t use kitty:
+
+```ini
+$HELP_TERMINAL = kitty --class floating-help -e
+# $HELP_TERMINAL = ghostty --class floating-help -e
+# $HELP_TERMINAL = wezterm start --class floating-help --
+# $HELP_TERMINAL = alacritty --class floating-help -e
+# $HELP_TERMINAL = foot --app-id floating-help -e
+```
+
+The window rule in `init.conf` matches the class/app-id `floating-help`.
 
 ## 🚀 Usage
 
@@ -159,15 +175,17 @@ If you already define `$LEADER` elsewhere in your Hyprland config, comment out t
 To integrate your own Hyprland submaps with HyprVim:
 
 1. Copy the example config:
+
 ```bash
 cd ~/.config/hypr/HyprVim
 cp vim-user.conf.example vim-user.conf
 ```
 
-2. Edit `vim-user.conf` to add your custom submap bindings in NORMAL mode
-3. Your personal config won't be tracked by git
+1. Edit `vim-user.conf` to add your custom submap bindings in NORMAL mode
+2. Your personal config won't be tracked by git
 
 **Example:**
+
 ```bash
 submap = NORMAL
 bindd = $LEADER, X, My Custom Submap, submap, MySubmap
