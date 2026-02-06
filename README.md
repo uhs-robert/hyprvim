@@ -52,6 +52,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 
 ### Additional Operations
 
+- **Help**: `?` - Show all keybindings in a searchable viewer
 - **Numeric Repeats**: `2dw`, `3j`, `5w` - Repeat motions/operators (supports up to 999)
 - **Undo/Redo**: `u` for undo, `Ctrl+r` for redo
 - **Find**: `/`, `f`, `F`, `t`, `T` open find dialog; `n`/`N` for next/previous
@@ -109,11 +110,12 @@ Press `SUPER + ESCAPE` (or your configured leader key + ESCAPE) to enter NORMAL 
 ### Basic Workflow
 
 1. **Enter NORMAL mode**: `SUPER + ESC`
-2. **Navigate**: Use `hjkl`, `w`, `b`, `e` to move around
-3. **Select text**: Press `v` for visual mode, then navigate to select
-4. **Edit**: Use operators like `d`, `c`, `y` with motions or in visual mode
-5. **Return to insert**: Press `i`, `a`, or other insert commands
-6. **Exit vim mode**: Press `SUPER + ESC` again
+2. **See all keybindings**: Press `?` to show help
+3. **Navigate**: Use `hjkl`, `w`, `b`, `e` to move around
+4. **Select text**: Press `v` for visual mode, then navigate to select
+5. **Edit**: Use operators like `d`, `c`, `y` with motions or in visual mode
+6. **Return to insert**: Press `i`, `a`, or other insert commands
+7. **Exit vim mode**: Press `SUPER + ESC` again
 
 ### Example Operations
 
