@@ -152,6 +152,26 @@ $LEADER = ALT
 
 If you already define `$LEADER` elsewhere in your Hyprland config, comment out the line in `init.conf` to use your existing definition.
 
+### Adding Personal Submaps
+
+To integrate your own Hyprland submaps with HyprVim:
+
+1. Copy the example config:
+```bash
+cd ~/.config/hypr/HyprVim
+cp vim-user.conf.example vim-user.conf
+```
+
+2. Edit `vim-user.conf` to add your custom submap bindings in NORMAL mode
+3. Your personal config won't be tracked by git
+
+**Example:**
+```bash
+submap = NORMAL
+bindd = $LEADER, X, My Custom Submap, submap, MySubmap
+submap = reset
+```
+
 ### Visual Mode Indicator (Waybar)
 
 To see which vim mode you're currently in, add the [Hyprland submap module](https://github.com/Alexays/Waybar/wiki/Module:-Hyprland#submap) to your [Waybar](https://github.com/Alexays/Waybar) configuration. This displays the active mode in your status bar.
