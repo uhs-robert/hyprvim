@@ -62,6 +62,7 @@ https://github.com/user-attachments/assets/7da76f26-a5a6-49ff-ab5b-f0929d9cff30
 - **Insert**: `i`, `a`, `I`, `A`, `o`, `O` - Enter insert mode at various positions
 - **Paste**: `p`, `P` - Paste from clipboard
 - **Delete Char**: `x`, `X` - Delete character under/before cursor
+- **Indent**: `>` - Indent line, `<` - Unindent line
 
 ### Exit Strategy
 

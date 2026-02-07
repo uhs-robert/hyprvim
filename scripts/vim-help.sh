@@ -106,6 +106,15 @@ EOF
 
 ---
 
+## ↹ Indent
+
+EOF
+  parse_section "vim-modes.conf" "## Indent"
+
+  cat <<'EOF'
+
+---
+
 ## 👁️ Visual Mode
 
 EOF
