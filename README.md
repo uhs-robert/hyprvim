@@ -45,7 +45,7 @@ https://github.com/user-attachments/assets/7da76f26-a5a6-49ff-ab5b-f0929d9cff30
 - **Delete**: `d{motion}`, `dd`, `dw`, `diw`, `daw`, `dip`, `dap`
 - **Change**: `c{motion}`, `cc`, `cw`, `ciw`, `caw`, `cip`, `cap` (enters insert mode)
 - **Yank**: `y{motion}`, `yy`, `yw`, `yiw`, `yaw`, `yip`, `yap`
-- **Inner/Around**: `iw`/`aw` for word text objects, `ip`/`ap` for paragraph text objects
+- **Inner/A**: `iw`/`aw` for word text objects, `ip`/`ap` for paragraph text objects
 
 ### Mark System
 
