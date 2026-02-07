@@ -32,9 +32,10 @@ EOF
 
   cat <<'EOF'
 
-### Word Movement
+### Text Movement
 EOF
   parse_section "vim-modes.conf" "## Word"
+  parse_section "vim-modes.conf" "## Paragraph"
 
   cat <<'EOF'
 

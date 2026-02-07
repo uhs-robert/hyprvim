@@ -35,16 +35,17 @@ https://github.com/user-attachments/assets/7da76f26-a5a6-49ff-ab5b-f0929d9cff30
 - **Character**: `hjkl` for basic movement
 - **Word**: `w`, `b`, `e`, `W`, `B`, `E` for word-based navigation
 - **Line**: `0`, `^`, `$` for line start/end navigation
+- **Paragraph**: `{`, `}` for paragraph start/end navigation
 - **Page**: `Ctrl+d`, `Ctrl+u`, `Ctrl+f`, `Ctrl+b` for page scrolling
 - **Document**: `gg`, `G` for document start/end
 - **Extended Motions**: `g` prefix for additional movements (`ge`, `gt`, `gT`)
 
 ### Text Objects & Operators
 
-- **Delete**: `d{motion}`, `dd`, `dw`, `diw`, `daw`
-- **Change**: `c{motion}`, `cc`, `cw`, `ciw`, `caw` (enters insert mode)
-- **Yank**: `y{motion}`, `yy`, `yw`, `yiw`, `yaw`
-- **Inner/Around**: `iw`/`aw` for word text objects
+- **Delete**: `d{motion}`, `dd`, `dw`, `diw`, `daw`, `dip`, `dap`
+- **Change**: `c{motion}`, `cc`, `cw`, `ciw`, `caw`, `cip`, `cap` (enters insert mode)
+- **Yank**: `y{motion}`, `yy`, `yw`, `yiw`, `yaw`, `yip`, `yap`
+- **Inner/Around**: `iw`/`aw` for word text objects, `ip`/`ap` for paragraph text objects
 
 ### Mark System
 
@@ -217,7 +218,7 @@ You can customize the icon, colors, and formatting to match your Waybar theme.
 
 - No macros or registers (uses system clipboard)
 - No visual block mode (`Ctrl+v`)
-- Limited text object support (primarily word objects)
+- Limited text object support (word and paragraph objects)
 - Character find (`f/F/t/T`) mapped to application find dialog
 - Effectiveness depends on application supporting standard shortcuts
 
