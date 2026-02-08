@@ -151,9 +151,23 @@ EOF
 ## 🔍 Find
 
 EOF
-  parse_section "vim-modes.conf" "## Find (f/F/t/T map to find dialog)"
+  parse_section "vim-modes.conf" "## Find (f/F/t/T/// ? all use enhanced find)"
 
   cat <<'EOF'
+
+**Interactive Find:**
+- `/`, `f`, `t` - Opens input dialog, searches forward
+- `?`, `F`, `T` - Opens input dialog, searches backward
+- `*` - Search forward for word under cursor
+- `#` - Search backward for word under cursor
+- `n` - Next match (in search direction)
+- `N` - Previous match (opposite direction)
+
+**Configuration:**
+Set `HYPRVIM_FINDER` environment variable to choose input tool.
+Auto-detects: wofi, rofi, tofi, fuzzel, dmenu, zenity, kdialog.
+
+EOF
 
 ---
 
