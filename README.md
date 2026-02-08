@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/f120a37a-d65b-4022-bd45-a0f405c9aa42
 - **Help**: `gh` - Show all keybindings in a searchable viewer
 - **Numeric Repeats**: `2dw`, `3j`, `5w` - Repeat motions/operators (supports up to 999)
 - **Undo/Redo**: `u` for undo, `Ctrl+r` for redo
-- **Find**: `/`, `?`, `f`, `F`, `t`, `T` prompt for search term then find; `n`/`N` for next/previous
+- **Find**: `/`, `?`, `f`, `F`, `t`, `T` prompt for search term; `*`, `#` search word under cursor; `n`/`N` for next/previous
 - **Insert**: `i`, `a`, `I`, `A`, `o`, `O` - Enter insert mode at various positions
 - **Paste**: `p`, `P` - Paste from clipboard
 - **Delete Char**: `x`, `X` - Delete character under/before cursor
@@ -66,7 +66,7 @@ https://github.com/user-attachments/assets/f120a37a-d65b-4022-bd45-a0f405c9aa42
 
 ### Exit Strategy
 
-- **Return to Parent**: `ESC` - Move up one mode level (e.g., VISUAL → NORMAL)
+- **Return to Parent**: `ESC` - Move up one mode level (e.g., VISUAL → NORMAL), passes ESC to application
 - **Toggle Vim Mode**: `$LEADER + ESC` - Toggle vim mode on/off from anywhere
 - **Emergency Exit**: `ALT + ESC` - Immediate return to normal Hyprland bindings
 
@@ -123,7 +123,8 @@ The window rule in `init.conf` matches the class/app-id `floating-help`.
 
 ### Finder Tool
 
-HyprVim's interactive find feature (`/`, `?`, `f`, `F`, `t`, `T`) prompts for search terms using a configurable input tool.
+HyprVim's interactive find feature (`/`, `?`, `f`, `F`, `t`, `T`, `*`, `#`) uses a configurable input tool for search terms.
+The `*` and `#` commands automatically search for the word under cursor (forward/backward respectively).
 Auto-detects available tools in this order: **wofi**, **rofi**, **tofi**, **fuzzel**, **dmenu**, **zenity**, **kdialog**.
 
 To override auto-detection, set `$FINDER_TOOL` in `vim-user.conf` or your `hyprland.conf` **after** sourcing `init`:
@@ -237,7 +238,7 @@ You can customize the icon, colors, and formatting to match your Waybar theme.
 - No macros or registers (uses system clipboard)
 - No visual block mode (`Ctrl+v`)
 - Limited text object support (word and paragraph objects)
-- Find operations (`/`, `?`, `f`, `F`, `t`, `T`) use interactive prompts with application find dialog
+- Find operations (`/`, `?`, `f`, `F`, `t`, `T`, `*`, `#`) use interactive prompts and application find dialog
 - Effectiveness depends on application supporting standard shortcuts
 
 ### Extending HyprVim
