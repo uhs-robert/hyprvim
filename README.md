@@ -55,10 +55,10 @@ https://github.com/user-attachments/assets/f120a37a-d65b-4022-bd45-a0f405c9aa42
 
 ### Additional Operations
 
-- **Help**: `?` - Show all keybindings in a searchable viewer
+- **Help**: `gh` - Show all keybindings in a searchable viewer
 - **Numeric Repeats**: `2dw`, `3j`, `5w` - Repeat motions/operators (supports up to 999)
 - **Undo/Redo**: `u` for undo, `Ctrl+r` for redo
-- **Find**: `/`, `f`, `F`, `t`, `T` open find dialog; `n`/`N` for next/previous
+- **Find**: `/`, `?`, `f`, `F`, `t`, `T` prompt for search term then find; `n`/`N` for next/previous
 - **Insert**: `i`, `a`, `I`, `A`, `o`, `O` - Enter insert mode at various positions
 - **Paste**: `p`, `P` - Paste from clipboard
 - **Delete Char**: `x`, `X` - Delete character under/before cursor
@@ -108,8 +108,8 @@ hyprctl reload
 
 ### Help Viewer Terminal
 
-HyprVim uses `$HELP_TERMINAL` to launch the keybindings help (press `?` in NORMAL).
-Set it in `vim-user.conf` or your `hyprland.conf` **after** sourcing `init` if you don’t use kitty:
+HyprVim uses `$HELP_TERMINAL` to launch the keybindings help (press `gh` in NORMAL mode).
+Set it in `vim-user.conf` or your `hyprland.conf` **after** sourcing `init` if you don't use kitty:
 
 ```ini
 $HELP_TERMINAL = kitty --class floating-help -e
@@ -121,6 +121,23 @@ $HELP_TERMINAL = kitty --class floating-help -e
 
 The window rule in `init.conf` matches the class/app-id `floating-help`.
 
+### Finder Tool
+
+HyprVim's interactive find feature (`/`, `?`, `f`, `F`, `t`, `T`) prompts for search terms using a configurable input tool.
+Auto-detects available tools in this order: **wofi**, **rofi**, **tofi**, **fuzzel**, **dmenu**, **zenity**, **kdialog**.
+
+To override auto-detection, set `$FINDER_TOOL` in `vim-user.conf` or your `hyprland.conf` **after** sourcing `init`:
+
+```ini
+$FINDER_TOOL = rofi
+# $FINDER_TOOL = wofi
+# $FINDER_TOOL = tofi
+# $FINDER_TOOL = fuzzel
+# $FINDER_TOOL =     # Empty for auto-detection (default)
+```
+
+Alternatively, set the `HYPRVIM_FINDER` environment variable to override the configured tool.
+
 ## 🚀 Usage
 
 ### Activation
@@ -130,7 +147,7 @@ Press `SUPER + ESCAPE` (or your configured leader key + ESCAPE) to enter NORMAL 
 ### Basic Workflow
 
 1. **Enter NORMAL mode**: `SUPER + ESC`
-2. **See all keybindings**: Press `?` to show help
+2. **See all keybindings**: Press `gh` to show help
 3. **Navigate**: Use `hjkl`, `w`, `b`, `e` to move around
 4. **Select text**: Press `v` for visual mode, then navigate to select
 5. **Edit**: Use operators like `d`, `c`, `y` with motions or in visual mode
@@ -220,7 +237,7 @@ You can customize the icon, colors, and formatting to match your Waybar theme.
 - No macros or registers (uses system clipboard)
 - No visual block mode (`Ctrl+v`)
 - Limited text object support (word and paragraph objects)
-- Character find (`f/F/t/T`) mapped to application find dialog
+- Find operations (`/`, `?`, `f`, `F`, `t`, `T`) use interactive prompts with application find dialog
 - Effectiveness depends on application supporting standard shortcuts
 
 ### Extending HyprVim
