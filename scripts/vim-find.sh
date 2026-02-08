@@ -5,10 +5,12 @@
 ################################################################################
 #
 # Usage:
-#   vim-find.sh forward   - f: prompt for search, open find, n=forward, N=backward
-#   vim-find.sh backward  - F: prompt for search, open find, n=backward, N=forward
-#   vim-find.sh next      - n: go in stored direction
-#   vim-find.sh prev      - N: go opposite of stored direction
+#   vim-find.sh forward        - f: prompt for search, open find, n=forward, N=backward
+#   vim-find.sh backward       - F: prompt for search, open find, n=backward, N=forward
+#   vim-find.sh forward-word   - *: search forward for word under cursor
+#   vim-find.sh backward-word  - #: search backward for word under cursor
+#   vim-find.sh next           - n: go in stored direction
+#   vim-find.sh prev           - N: go opposite of stored direction
 #
 # Configuration:
 #   - Set HYPRVIM_FINDER environment variable to override tool detection
@@ -80,6 +82,44 @@ get_search_input() {
 }
 
 ################################################################################
+# Execute find with the given search term and direction
+################################################################################
+
+execute_find() {
+  local search_term="$1"
+  local direction="$2"
+
+  # Check for wl-copy
+  if ! command -v wl-copy &>/dev/null; then
+    notify-send "HyprVim Find" "wl-clipboard not found. Install wl-clipboard for find functionality." 2>/dev/null || true
+    hyprctl dispatch submap NORMAL
+    exit 1
+  fi
+
+  # Store direction and search term
+  echo "$direction" >"$STATE_FILE"
+  echo "$search_term" >"$SEARCH_FILE"
+
+  # Copy search term to clipboard
+  echo -n "$search_term" | wl-copy
+
+  # Open find dialog
+  hyprctl dispatch sendshortcut CTRL, F, activewindow
+  sleep 0.15
+
+  # Paste search term
+  hyprctl dispatch sendshortcut CTRL, V, activewindow
+  sleep 0.05
+
+  # Execute search
+  hyprctl dispatch sendshortcut , Return, activewindow
+  sleep 0.05
+
+  # Return to NORMAL mode
+  hyprctl dispatch submap NORMAL
+}
+
+################################################################################
 # Main logic
 ################################################################################
 
@@ -100,30 +140,48 @@ if [ "$ACTION" = "forward" ] || [ "$ACTION" = "backward" ]; then
     exit 0
   fi
 
-  # Store direction and search term
-  echo "$ACTION" >"$STATE_FILE"
-  echo "$SEARCH_TERM" >"$SEARCH_FILE"
+  # Execute find with the search term and direction
+  execute_find "$SEARCH_TERM" "$ACTION"
 
-  # Copy search term to clipboard
-  if command -v wl-copy &>/dev/null; then
-    echo -n "$SEARCH_TERM" | wl-copy
-  else
-    notify-send "HyprVim Find" "wl-clipboard not found. Install wl-clipboard for find functionality." 2>/dev/null || true
+elif [ "$ACTION" = "forward-word" ] || [ "$ACTION" = "backward-word" ]; then
+  # Check for wl-clipboard tools
+  if ! command -v wl-paste &>/dev/null; then
+    notify-send "HyprVim Find" "wl-clipboard not found. Install wl-clipboard for word search." 2>/dev/null || true
     hyprctl dispatch submap NORMAL
     exit 1
   fi
 
-  # Open find dialog
-  hyprctl dispatch sendshortcut CTRL, F, activewindow
-  sleep 0.15
-
-  # Paste search term
-  hyprctl dispatch sendshortcut CTRL, V, activewindow
+  # Select word under cursor (inner word: CTRL+LEFT, then CTRL+SHIFT+RIGHT)
+  hyprctl dispatch sendshortcut CTRL, LEFT, activewindow
+  sleep 0.05
+  hyprctl dispatch sendshortcut CTRL SHIFT, RIGHT, activewindow
   sleep 0.05
 
-  # Execute search
-  hyprctl dispatch sendshortcut , Return, activewindow
-  sleep 0.05
+  # Copy selected word to clipboard
+  hyprctl dispatch sendshortcut CTRL, C, activewindow
+  sleep 0.1
+
+  # Get the word from clipboard
+  SEARCH_TERM=$(wl-paste 2>/dev/null | tr -d '\n')
+
+  # Deselect (press RIGHT to move cursor to end and deselect)
+  hyprctl dispatch sendshortcut , RIGHT, activewindow
+
+  # If empty, abort
+  if [ -z "$SEARCH_TERM" ]; then
+    hyprctl dispatch submap NORMAL
+    exit 0
+  fi
+
+  # Determine direction (forward-word -> forward, backward-word -> backward)
+  if [ "$ACTION" = "forward-word" ]; then
+    DIRECTION="forward"
+  else
+    DIRECTION="backward"
+  fi
+
+  # Execute find with the search term and direction
+  execute_find "$SEARCH_TERM" "$DIRECTION"
 
 elif [ "$ACTION" = "next" ]; then
   # Read stored direction (default to forward)
