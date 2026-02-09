@@ -298,10 +298,10 @@ elif [ "$ACTION" = "forward-word" ] || [ "$ACTION" = "backward-word" ]; then
   # Clear clipboard to detect if copy actually works
   echo -n "" | wl-copy
 
-  # Select word under cursor (inner word: CTRL+LEFT, then CTRL+SHIFT+RIGHT)
-  hyprctl dispatch sendshortcut CTRL, LEFT, activewindow
+  # Select word under cursor (inner word: CTRL+RIGHT, then CTRL+SHIFT+LEFT)
+  hyprctl dispatch sendshortcut CTRL, RIGHT, activewindow
   sleep 0.1
-  hyprctl dispatch sendshortcut CTRL SHIFT, RIGHT, activewindow
+  hyprctl dispatch sendshortcut CTRL SHIFT, LEFT, activewindow
   sleep 0.15
 
   # Copy selected word to clipboard
@@ -309,7 +309,7 @@ elif [ "$ACTION" = "forward-word" ] || [ "$ACTION" = "backward-word" ]; then
   sleep 0.2
 
   # Get the word from clipboard
-  SEARCH_TERM=$(wl-paste 2>/dev/null | tr -d '\n')
+  SEARCH_TERM=$(wl-paste 2>/dev/null | tr -d '\n' | sed 's/[[:space:]]*$//')
   logger -t hyprvim "forward-word: clipboard contents='$SEARCH_TERM'"
 
   # If clipboard is empty, the selection/copy didn't work
