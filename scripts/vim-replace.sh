@@ -30,7 +30,7 @@ get_input() {
     tool="$HYPRVIM_PROMPT"
   else
     # Fallback to auto-detect available tools
-    for candidate in wofi rofi tofi fuzzel dmenu kdialog zenity; do
+    for candidate in rofi wofi tofi fuzzel dmenu kdialog zenity; do
       if command -v "$candidate" &>/dev/null; then
         tool="$candidate"
         break
@@ -41,12 +41,13 @@ get_input() {
   # Execute the selected tool
   local input=""
   case "$tool" in
-  wofi)
-    input=$(echo "" | wofi --dmenu --prompt "$prompt" --lines 1)
-    ;;
   rofi)
     input=$(echo "" | rofi -dmenu -p "$prompt" -lines 0)
     ;;
+  wofi)
+    input=$(echo "" | wofi --dmenu --prompt "$prompt" --lines 1)
+    ;;
+
   tofi)
     input=$(echo "" | tofi --prompt-text "$prompt")
     ;;

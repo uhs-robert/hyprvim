@@ -39,7 +39,7 @@ get_search_input() {
     tool="$HYPRVIM_PROMPT"
   else
     # Fallback to auto-detect available tools
-    for candidate in wofi rofi tofi fuzzel dmenu kdialog zenity; do
+    for candidate in rofi wofi tofi fuzzel dmenu kdialog zenity; do
       if command -v "$candidate" &>/dev/null; then
         tool="$candidate"
         break
