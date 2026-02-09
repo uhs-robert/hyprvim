@@ -48,6 +48,11 @@ EOF
 ### Page/Document Movement
 EOF
   parse_section "vim-modes.conf" "## Page"
+
+  cat <<'EOF'
+
+### Go Motions (g prefix)
+EOF
   parse_section "vim-modes.conf" "## G-MOTION"
 
   cat <<'EOF'
@@ -188,11 +193,11 @@ EOF
 
 EOF
 
----
+  ---
 
-## ↩️ Undo/Redo
+  ## ↩️ Undo/Redo
 
-EOF
+  EOF
   parse_section "vim-modes.conf" "## Undo"
 
   cat <<'EOF'
