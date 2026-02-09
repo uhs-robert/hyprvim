@@ -42,7 +42,14 @@ get_input() {
   local input=""
   case "$tool" in
   rofi)
-    input=$(echo "" | rofi -dmenu -p "$prompt" -lines 0)
+    input=$(
+      echo "" | rofi -dmenu -p "$prompt" -lines 0 \
+        -theme-str 'window { location: north; anchor: north; y-offset: 10%; x-offset: 0%; width: 600px; height: 40px; border: 1px; }' \
+        -theme-str 'mainbox { children: [inputbar]; padding: 0px; spacing: 0px; border: 0px; }' \
+        -theme-str 'inputbar { padding: 8px 12px; children: [prompt,entry]; border: 0px; orientation: horizontal; }' \
+        -theme-str 'prompt { padding: 0px 0px 0px 0px; vertical-align: 0.5; }' \
+        -theme-str 'entry { vertical-align: 0.5; }'
+    )
     ;;
   wofi)
     input=$(echo "" | wofi --dmenu --prompt "$prompt" --lines 1)
