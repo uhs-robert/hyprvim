@@ -167,6 +167,25 @@ EOF
 Set `HYPRVIM_PROMPT` environment variable to choose input tool.
 Auto-detects: wofi, rofi, tofi, fuzzel, dmenu, zenity, kdialog.
 
+---
+
+## 🔄 Replace
+
+EOF
+  parse_section "vim-modes.conf" "## Mode Switches" | grep -i "Replace"
+
+  cat <<'EOF'
+
+**Replace Operations:**
+- `r<char>` - Instantly replace character under cursor (no prompt)
+- `5r<char>` - Replace 5 characters with same character (prompts for character)
+- `R` - Replace forward with string (prompts for replacement text, replaces N chars where N = string length)
+
+**Examples:**
+- `rx` - Replace current character with 'x'
+- `5ra` - Replace next 5 characters with 'aaaaa'
+- `R` then type "hello" - Replace next 5 characters with "hello"
+
 EOF
 
 ---

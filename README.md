@@ -59,6 +59,7 @@ https://github.com/user-attachments/assets/8823c5fb-293d-4f59-982b-40b2d1180b79
 - **Numeric Repeats**: `2dw`, `3j`, `5w` - Repeat motions/operators (supports up to 999)
 - **Undo/Redo**: `u` for undo, `Ctrl+r` for redo
 - **Find**: `/`, `?`, `f`, `F`, `t`, `T` prompt for search term; `*`, `#` search word under cursor; `n`/`N` for next/previous
+- **Replace**: `r<char>` - Replace character under cursor (instant, no prompt); `5r<char>` - Replace 5 characters (prompts for character); `R` - Replace forward with string (prompts for replacement text)
 - **Insert**: `i`, `a`, `I`, `A`, `o`, `O` - Enter insert mode at various positions
 - **Paste**: `p`, `P` - Paste from clipboard
 - **Delete Char**: `x`, `X` - Delete character under/before cursor
