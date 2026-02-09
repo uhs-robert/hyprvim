@@ -121,23 +121,28 @@ $HELP_TERMINAL = kitty --class floating-help -e
 
 The window rule in `init.conf` matches the class/app-id `floating-help`.
 
-### Finder Tool
+### Prompt Tool
 
-HyprVim's interactive find feature (`/`, `?`, `f`, `F`, `t`, `T`, `*`, `#`) uses a configurable input tool for search terms.
+HyprVim uses a configurable prompt tool to receive user input for various features including:
+- **Find operations** (`/`, `?`, `f`, `F`, `t`, `T`, `*`, `#`) - search terms and patterns
+- **Replace operations** (`r` with count, `R`) - replacement text
+- **Other interactive inputs** - any feature requiring user text input
+
 The `*` and `#` commands automatically search for the word under cursor (forward/backward respectively).
+
 Auto-detects available tools in this order: **wofi**, **rofi**, **tofi**, **fuzzel**, **dmenu**, **zenity**, **kdialog**.
 
-To override auto-detection, set `$FINDER_TOOL` in `vim-user.conf` or your `hyprland.conf` **after** sourcing `init`:
+To override auto-detection, set `$HYPRVIM_PROMPT` in `vim-user.conf` or your `hyprland.conf` **after** sourcing `init`:
 
 ```ini
-$FINDER_TOOL = rofi
-# $FINDER_TOOL = wofi
-# $FINDER_TOOL = tofi
-# $FINDER_TOOL = fuzzel
-# $FINDER_TOOL =     # Empty for auto-detection (default)
+$HYPRVIM_PROMPT = rofi
+# $HYPRVIM_PROMPT = wofi
+# $HYPRVIM_PROMPT = tofi
+# $HYPRVIM_PROMPT = fuzzel
+# $HYPRVIM_PROMPT =     # Empty for auto-detection (default)
 ```
 
-Alternatively, set the `HYPRVIM_FINDER` environment variable to override the configured tool.
+Alternatively, set the `HYPRVIM_PROMPT` environment variable to override the configured tool.
 
 ## 🚀 Usage
 

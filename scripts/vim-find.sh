@@ -13,7 +13,7 @@
 #   vim-find.sh prev           - N: go opposite of stored direction
 #
 # Configuration:
-#   - Set HYPRVIM_FINDER environment variable to override tool detection
+#   - Set HYPRVIM_PROMPT environment variable to override tool detection
 #   - Auto-detects: wofi, rofi, tofi, fuzzel, dmenu, kdialog, zenity (in order)
 #
 ################################################################################
@@ -35,8 +35,8 @@ get_search_input() {
   local prompt="Find: "
 
   # Prefer environment variable override
-  if [ -n "${HYPRVIM_FINDER:-}" ] && command -v "$HYPRVIM_FINDER" &>/dev/null; then
-    tool="$HYPRVIM_FINDER"
+  if [ -n "${HYPRVIM_PROMPT:-}" ] && command -v "$HYPRVIM_PROMPT" &>/dev/null; then
+    tool="$HYPRVIM_PROMPT"
   else
     # Fallback to auto-detect available tools
     for candidate in wofi rofi tofi fuzzel dmenu kdialog zenity; do

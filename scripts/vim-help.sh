@@ -164,7 +164,7 @@ EOF
 - `N` - Previous match (opposite direction)
 
 **Configuration:**
-Set `HYPRVIM_FINDER` environment variable to choose input tool.
+Set `HYPRVIM_PROMPT` environment variable to choose input tool.
 Auto-detects: wofi, rofi, tofi, fuzzel, dmenu, zenity, kdialog.
 
 EOF
