@@ -28,6 +28,7 @@ COUNT=$("$COUNT_SCRIPT" get)
 SELECTION_SHORTCUT="$1"
 ACTION_SHORTCUT="$2"
 SUBMAP="${3:-NORMAL}"
+REGISTERS_SCRIPT="$SCRIPT_DIR/vim-registers.sh"
 
 # Parse shortcuts into arrays
 IFS=' ' read -r -a selection_args <<<"$SELECTION_SHORTCUT"
@@ -40,11 +41,27 @@ if [ "$COUNT" -gt 1 ]; then
   done
 
   # Then perform action once
-  hyprctl dispatch sendshortcut "${action_args[@]}" , activewindow
+  if [ "$ACTION_SHORTCUT" = "CTRL, C" ]; then
+    "$REGISTERS_SCRIPT" handle-yank "CTRL, C" "$SUBMAP"
+    exit 0
+  elif [ "$ACTION_SHORTCUT" = "CTRL, X" ]; then
+    "$REGISTERS_SCRIPT" handle-delete "CTRL, X" "$SUBMAP"
+    exit 0
+  else
+    hyprctl dispatch sendshortcut "${action_args[@]}" , activewindow
+  fi
 else
   # Count = 1: select once, action once
   hyprctl dispatch sendshortcut "${selection_args[@]}" , activewindow
-  hyprctl dispatch sendshortcut "${action_args[@]}" , activewindow
+  if [ "$ACTION_SHORTCUT" = "CTRL, C" ]; then
+    "$REGISTERS_SCRIPT" handle-yank "CTRL, C" "$SUBMAP"
+    exit 0
+  elif [ "$ACTION_SHORTCUT" = "CTRL, X" ]; then
+    "$REGISTERS_SCRIPT" handle-delete "CTRL, X" "$SUBMAP"
+    exit 0
+  else
+    hyprctl dispatch sendshortcut "${action_args[@]}" , activewindow
+  fi
 fi
 
 # Return to specified submap

@@ -56,6 +56,27 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **Jump to Mark**: `` `{mark} `` or `'{mark}` - Jump to marked location
 - **Delete Mark**: `dm{mark}` - Remove a mark
 
+### Register System
+
+HyprVim provides vim-like registers for managing multiple clipboard items:
+
+- **Named Registers**: `"{a-z}` - Store text in 26 named registers (e.g., `"ayy` to yank line to register a, `"ap` to paste from register a)
+- **Unnamed Register**: `""` - Default register, contains last delete or yank, syncs with system clipboard
+- **Yank Register**: `"0` - Always contains last explicit yank, preserved during deletes
+- **Black Hole Register**: `"_` - Delete without affecting clipboard (e.g., `"_dd` deletes line but preserves clipboard)
+- **Search Register**: `"/` - Contains last search term (read-only, linked to find system)
+- **Number Registers**: `"1-9` - Available for storing additional text
+
+Usage examples:
+
+- `"ayy` - Yank current line to register a
+- `"ap` - Paste from register a
+- `"_dd` - Delete line without overwriting clipboard
+- `"0p` - Paste last yanked text (even after deleting)
+
+> [!NOTE]
+> Registers are stored in tmpfs (`$XDG_RUNTIME_DIR`) and are not persistent across reboots.
+
 ### Additional Operations
 
 - **Help**: `gh` - Show all keybindings in a searchable viewer
@@ -196,6 +217,8 @@ Press `SUPER + ESCAPE` (or your configured leader key + ESCAPE) to enter NORMAL 
 - `ciw` - Change inner word (deletes word and enters insert mode)
 - `Vjjd` - Select 3 lines and delete them
 - `yy` - Yank (copy) current line
+- `"ayy` - Yank current line to register a
+- `"_dd` - Delete line without overwriting clipboard
 - `gg` - Go to document start
 - `ma` - Set mark 'a', then `` `a `` to jump back (see [using marks](#using-marks))
 
@@ -210,6 +233,37 @@ Marks in HyprVim remember monitor, window, and workspace locations:
 
 > [!NOTE]
 > Works on multi-monitor setups.
+
+### Using Registers
+
+Registers provide vim-like clipboard management with multiple storage locations:
+
+**Basic Usage:**
+
+- `"ayy` - Yank current line to register a
+- `"add` - Delete word to register a
+- `"ap` - Paste from register a
+
+**Special Registers:**
+
+- `""` (unnamed) - Default register, always syncs with system clipboard
+- `"0` (yank) - Last yanked text, preserved during deletes
+- `"_` (black hole) - Delete without affecting any register or clipboard
+- `"/` (search) - Last search term (read-only)
+
+**Workflow Example:**
+
+```
+1. yy          - Yank line to unnamed register and register 0
+2. dd          - Delete line to unnamed register (register 0 still has yank)
+3. "0p         - Paste the yanked line (not the deleted one)
+4. "ayy        - Yank another line to register a
+5. "_dd        - Delete line without overwriting clipboard
+6. "ap         - Paste from register a
+```
+
+> [!NOTE]
+> Registers are stored in `$XDG_RUNTIME_DIR/hyprvim/registers/` (tmpfs) and are cleared on reboot.
 
 ## ⚙️ Configuration
 
