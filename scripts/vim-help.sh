@@ -143,6 +143,41 @@ EOF
 
 ---
 
+## 📋 Registers
+
+Registers provide vim-like multi-clipboard management for storing and retrieving text.
+
+### Using Registers
+
+Prefix any yank, delete, or paste operation with `"<register>`:
+
+- `"ayy` - Yank current line to register **a**
+- `"add` - Delete line to register **a**
+- `"ap` - Paste from register **a**
+
+### Special Registers
+
+- `""` **(Unnamed)** - Default register, syncs with system clipboard
+- `"0` **(Yank)** - Last yanked text, preserved during deletes
+- `"_` **(Black Hole)** - Delete without affecting clipboard
+- `"/` **(Search)** - Last search term (read-only)
+- `"1-9` **(Numbered)** - Available for additional storage
+
+### Register Workflow Example
+
+```
+1. yy          - Yank line to unnamed ("") and yank (0) registers
+2. dd          - Delete line to unnamed (""), register 0 still has yank
+3. "0p         - Paste the yanked line (not the deleted one)
+4. "ayy        - Yank another line to register a
+5. "_dd        - Delete line without overwriting clipboard
+6. "ap         - Paste from register a
+```
+
+**Note:** Registers are stored in tmpfs and cleared on reboot.
+
+---
+
 ## ✏️ Insert Mode
 
 EOF
