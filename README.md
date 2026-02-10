@@ -71,6 +71,25 @@ https://github.com/user-attachments/assets/8823c5fb-293d-4f59-982b-40b2d1180b79
 - **Toggle Vim Mode**: `$LEADER + ESC` - Toggle vim mode on/off from anywhere
 - **Emergency Exit**: `ALT + ESC` - Immediate return to normal Hyprland bindings
 
+<details>
+<summary>🍭 Extras</summary>
+<br>
+
+[All extra configs](extras/) for a better global vim experience.
+
+To use the extras, refer to their respective documentation.
+
+<!-- extras:start -->
+
+| Tool            | Description                                                               | Extra                                        |
+| --------------- | ------------------------------------------------------------------------- | -------------------------------------------- |
+| Keyd            | System-wide key remaps and tap/hold layers                                | [extras/keyd](extras/keyd)                   |
+
+If you'd like an extra config added, raise a feature request and I'll put it together.
+
+<!-- extras:end -->
+</details>
+
 ## 📦 Installation
 
 ### Prerequisites
