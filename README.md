@@ -109,6 +109,7 @@ To use the extras, refer to their respective documentation.
 | --------------- | ------------------------------------------------------------------------- | ------------------------------------------------ |
 | Hyprland Basics | Hyprland keymap kickstart config for HyprVim (Resize, Move, Windows, etc) | [extras/hyprland-basics](extras/hyprland-basics) |
 | Keyd            | System-wide key remaps and tap/hold layers                                | [extras/keyd](extras/keyd)                       |
+| Thunderbird     | Keybinds for vim driven navigation                                        | [extras/thunderbird](extras/thunderbird)         |
 | Wl-kbptr        | Keyboard-driven mouse cursor control on Wayland                           | [extras/wl-kbptr](extras/wl-kbptr)               |
 | Vimium          | Vim-style navigation for web browsers                                     | [extras/vimium](extras/vimium)                   |
 
