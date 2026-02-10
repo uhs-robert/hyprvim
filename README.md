@@ -85,6 +85,7 @@ To use the extras, refer to their respective documentation.
 | --------------- | ------------------------------------------------------------------------- | ------------------------------------------------ |
 | Hyprland Basics | Hyprland keymap kickstart config for HyprVim (Resize, Move, Windows, etc) | [extras/hyprland-basics](extras/hyprland-basics) |
 | Keyd            | System-wide key remaps and tap/hold layers                                | [extras/keyd](extras/keyd)                       |
+| Wl-kbptr        | Keyboard-driven mouse cursor control on Wayland                           | [extras/wl-kbptr](extras/wl-kbptr)               |
 
 If you'd like an extra config added, raise a feature request and I'll put it together.
 
