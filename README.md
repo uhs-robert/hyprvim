@@ -81,9 +81,10 @@ To use the extras, refer to their respective documentation.
 
 <!-- extras:start -->
 
-| Tool            | Description                                                               | Extra                                        |
-| --------------- | ------------------------------------------------------------------------- | -------------------------------------------- |
-| Keyd            | System-wide key remaps and tap/hold layers                                | [extras/keyd](extras/keyd)                   |
+| Tool            | Description                                                               | Extra                                            |
+| --------------- | ------------------------------------------------------------------------- | ------------------------------------------------ |
+| Hyprland Basics | Hyprland keymap kickstart config for HyprVim (Resize, Move, Windows, etc) | [extras/hyprland-basics](extras/hyprland-basics) |
+| Keyd            | System-wide key remaps and tap/hold layers                                | [extras/keyd](extras/keyd)                       |
 
 If you'd like an extra config added, raise a feature request and I'll put it together.
 
