@@ -16,11 +16,30 @@ Current QoL behaviors include:
 
 - `Caps Lock` tap sends `Esc`.
 - `Caps Lock` hold acts as `Ctrl`.
-- `Tab` hold activates a lightweight "vim lite" layer with:
-  - Motions: `h/j/k/l`, `w/b/e`, `0/$`, `gg/G`
-  - Visual: `v` (character-wise) and `V` (line-wise)
-  - Basic ops: `yy`, `yw`, `yp`, `dd`, `dw`, `dp`
-  - Edit helpers: `a/A` to enter insert positions and exit vim-lite
+- `Tab` hold activates a lightweight "vim lite" layer (or toggle persistent mode - see below).
+- **Persistent vim-lite mode**: While holding `Caps Lock` or `Control`, press `Backspace` to permanently enable vim-lite.
+- **Global escape hatch**: `ALT+ESCAPE` exits vim-lite from any mode when persistent vim-lite is enabled.
+
+When vim-lite is active, you have:
+
+- **Basic motions**: `h/j/k/l`, `H/L` (line start/end), `0/$`
+- **Word motions**: `w/b/e`
+- **Paragraph motions**: `J/K/{/}`
+- **Document motions**: `gg`, `G`
+- **Page/scroll**: `CTRL+d/u` (page down/up), `CTRL+f/b` (scroll down/up)
+- **Visual modes**: `v` (character-wise), `V` (line-wise)
+  - Visual operations: `d` (delete), `y` (yank), `c` (change), `x` (delete)
+- **Text objects**: `iw`, `aw`, `ip`, `ap` (with `c`, `d`, `y` operators in NORMAL mode)
+- **Insert modes**: `i`, `a`, `o`, `O`, `I`, `A`
+  - From INSERT mode: `CTRL+O` for one-shot NORMAL mode command
+- **Basic operations**: `p` (paste), `x/X` (delete char), `u` (undo), `CTRL+r` (redo)
+- **Word operations**: `C/D/Y` (change/delete/yank word)
+- **Line operations**: `cc` (change line), `dd` (delete line), `yy` (yank line)
+- **Operators with text objects** (NORMAL mode):
+  - `c` (change): `ciw`, `caw`, `cip`, `cap`
+  - `d` (delete): `diw`, `daw`, `dip`, `dap`
+  - `y` (yank): `yiw`, `yaw`, `yip`, `yap`
+- **Search**: `/` (find), `n/N` (next/prev), `*/#` (search word under cursor)
 
 This file is intentionally minimal, just keybinds and no scripting.
 
