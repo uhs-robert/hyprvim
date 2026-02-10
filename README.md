@@ -26,12 +26,14 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 ### Core Vim Modes
 
 - **NORMAL Mode**: Primary navigation with `hjkl` movement, word motions (`w`/`b`/`e`), and operators
+- **INSERT Mode**: Text insertion with `ESCAPE` bound to return to normal mode
 - **VISUAL Mode**: Character-wise visual selection
 - **V-LINE Mode**: Line-wise visual selection
 - **DIGITS Support**: Perform operations with `{digit}` modifier prefix to repeat actions (e.g., `6dw` to delete next 6 words)
 - **OPERATOR Modes**: Operators with motions `{operator}` + `{motion}`/`{text-object)` (e.g., `diw` for delete in word)
   - _Operators Supported:_ `d`, `c`, `y`
   - _Motions Supported:_ `i`, `a`
+  - _Text Objects Supported:_ `w`, `p`
 
 ### Navigation & Motion
 
