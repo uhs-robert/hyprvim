@@ -70,9 +70,16 @@ sanitize_term() {
   echo "$term" | tr -d '\n' | sed 's/[[:space:]]*$//'
 }
 
+# Extract the first word from a term (collapses whitespace/newlines)
+first_word() {
+  local term="$1"
+  term=$(echo "$term" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')
+  echo "${term%% *}"
+}
+
 # Send keyboard shortcut to active window
 send_shortcut() {
-  hyprctl dispatch sendshortcut "$@"
+  hyprctl dispatch sendshortcut "$@" >/dev/null
 }
 
 # Send keyboard shortcut and sleep for specified duration
@@ -349,9 +356,6 @@ send_f3() {
 word_under_cursor() {
   require_cmd wl-copy wl-paste
 
-  # Clear clipboard to detect if copy actually works
-  echo -n "" | wl-copy
-
   # Select word under cursor (inner word: CTRL+RIGHT, then CTRL+SHIFT+LEFT)
   send_shortcut_sleep 0.1 CTRL, RIGHT, activewindow
   send_shortcut_sleep 0.15 CTRL SHIFT, LEFT, activewindow
@@ -359,9 +363,11 @@ word_under_cursor() {
   # Copy selected word to clipboard
   send_shortcut_sleep 0.2 CTRL, C, activewindow
 
-  # Get the word from clipboard
+  # Read clipboard after copy
   local search_term
-  search_term=$(sanitize_term "$(wl-paste 2>/dev/null)")
+  search_term=$(wl-paste 2>/dev/null || echo "")
+  search_term=$(sanitize_term "$search_term")
+  search_term=$(first_word "$search_term")
   log_debug "word_under_cursor: clipboard contents='$search_term'"
 
   # Deselect (press RIGHT to move cursor to end and deselect)
@@ -442,6 +448,7 @@ elif [ "$ACTION" = "search-backward" ]; then
 elif [ "$ACTION" = "forward-word" ] || [ "$ACTION" = "backward-word" ]; then
   set_state "till" "false"
   SEARCH_TERM=$(word_under_cursor)
+  SEARCH_TERM=$(first_word "$SEARCH_TERM")
 
   # If clipboard is empty, the selection/copy didn't work
   if [ -z "$SEARCH_TERM" ]; then
