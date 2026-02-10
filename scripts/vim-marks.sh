@@ -18,6 +18,7 @@ set -euo pipefail
 MARKS_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr-vim-marks-$USER.json"
 ACTION="${1:-}"
 MARK="${2:-}"
+NOTIFY_ENABLED="${HYPRVIM_MARK_NOTIFY:-}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -31,18 +32,18 @@ NC='\033[0m' # No Color
 
 error() {
   echo -e "${RED}Error: $1${NC}" >&2
-  notify-send -t 2000 -u critical "Mark Error" "$1"
+  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 2000 -u critical "Mark Error" "$1"
   exit 1
 }
 
 success() {
   echo -e "${GREEN}$1${NC}"
-  notify-send -t 1000 -u low "Mark" "$1"
+  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 1000 -u low "Mark" "$1"
 }
 
 info() {
   echo -e "${YELLOW}$1${NC}"
-  notify-send -t 1500 -u normal "Mark" "$1"
+  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 1500 -u normal "Mark" "$1"
 }
 
 ensure_marks_file() {
@@ -167,7 +168,8 @@ jump_mark() {
 
 list_marks() {
   if [ ! -f "$MARKS_FILE" ]; then
-    notify-send -t 3000 "Marks" "No marks set"
+    [ -n "$NOTIFY_ENABLED" ] && notify-send -t 3000 "Marks" "No marks set"
+    echo "No marks set"
     return
   fi
 
@@ -175,7 +177,8 @@ list_marks() {
   mark_count=$(jq '. | length' "$MARKS_FILE")
 
   if [ "$mark_count" -eq 0 ]; then
-    notify-send -t 3000 "Marks" "No marks set"
+    [ -n "$NOTIFY_ENABLED" ] && notify-send -t 3000 "Marks" "No marks set"
+    echo "No marks set"
     return
   fi
 
@@ -185,10 +188,10 @@ list_marks() {
       "\(.key): \(.value.title | .[0:30]) (ws:\(.value.workspace))"' \
     "$MARKS_FILE")
 
-  # Send notification with the marks list
-  notify-send -t 5000 "Marks ($mark_count)" "$marks_list"
+  # Send notification with the marks list if enabled
+  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 5000 "Marks ($mark_count)" "$marks_list"
 
-  # Also echo for terminal use
+  # Always echo for terminal use
   echo "Marks ($mark_count):"
   echo "$marks_list"
 }
