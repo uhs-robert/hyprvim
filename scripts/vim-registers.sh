@@ -28,12 +28,39 @@
 ################################################################################
 
 set -euo pipefail
+DEFAULT_REGISTER='"'
+DEBUG=0
 STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/registers"
 mkdir -p "$STATE_DIR"
 
 ################################################################################
 # HELPER FUNCTIONS
 ################################################################################
+
+# Print debug message if DEBUG=1
+log_debug() {
+  if [[ "$DEBUG" -eq 1 ]]; then
+    echo "[registers] $*" >&2
+  fi
+}
+
+# Sleep with debug logging
+sleep_with_debug() {
+  local duration="$1"
+  log_debug "sleep ${duration}s"
+  sleep "$duration"
+}
+
+# Read current clipboard content
+read_clipboard() {
+  wl-paste 2>/dev/null || echo ""
+}
+
+# Write content to clipboard
+write_clipboard() {
+  local content="$1"
+  copy_to_clipboard "$content"
+}
 
 # Smart copy that uses --type text/plain for single characters
 # This fixes wl-copy issues with single character content
@@ -47,6 +74,34 @@ copy_to_clipboard() {
   fi
 }
 
+# Validate register name format
+validate_register() {
+  local register="$1"
+  if ! [[ "$register" =~ ^[a-z0-9_\"/]$ ]]; then
+    echo "Error: Invalid register name: $register" >&2
+    return 1
+  fi
+  return 0
+}
+
+# Execute action with pending register, then clear and return to submap
+with_pending_register() {
+  local return_submap="$1"
+  shift
+  local action_fn="$1"
+  shift
+
+  local register
+  register=$(get_pending)
+  validate_register "$register" || return 1
+
+  log_debug "action=$action_fn register=$register return=$return_submap"
+  "$action_fn" "$register" "$return_submap" "$@"
+
+  clear_pending
+  hyprctl dispatch submap "$return_submap"
+}
+
 ################################################################################
 # CORE REGISTER OPERATIONS - Save and load register content
 ################################################################################
@@ -55,11 +110,7 @@ copy_to_clipboard() {
 save_to_register() {
   local register="$1"
 
-  # Validate register name
-  if ! [[ "$register" =~ ^[a-z0-9_\"/]$ ]]; then
-    echo "Error: Invalid register name: $register" >&2
-    return 1
-  fi
+  validate_register "$register"
 
   # Read-only registers
   if [[ "$register" == "/" ]]; then
@@ -69,7 +120,7 @@ save_to_register() {
 
   # Get clipboard content
   local content
-  content=$(wl-paste 2>/dev/null || echo "")
+  content=$(read_clipboard)
 
   # Save to register file
   local register_file="$STATE_DIR/$register"
@@ -80,11 +131,7 @@ save_to_register() {
 load_from_register() {
   local register="$1"
 
-  # Validate register name
-  if ! [[ "$register" =~ ^[a-z0-9_\"/]$ ]]; then
-    echo "Error: Invalid register name: $register" >&2
-    return 1
-  fi
+  validate_register "$register"
 
   # Handle special search register
   if [[ "$register" == "/" ]]; then
@@ -92,9 +139,9 @@ load_from_register() {
     if [[ -f "$find_state" ]]; then
       local search_term
       search_term=$(jq -r '.find_term // ""' "$find_state" 2>/dev/null || echo "")
-      copy_to_clipboard "$search_term"
+      write_clipboard "$search_term"
     else
-      copy_to_clipboard ""
+      write_clipboard ""
     fi
     return 0
   fi
@@ -104,10 +151,10 @@ load_from_register() {
   if [[ -f "$register_file" ]]; then
     local content
     content=$(<"$register_file")
-    copy_to_clipboard "$content"
+    write_clipboard "$content"
   else
     # Empty register, copy empty string
-    copy_to_clipboard ""
+    write_clipboard ""
   fi
 }
 
@@ -126,7 +173,7 @@ get_pending() {
   if [[ -f "$STATE_DIR/pending-register" ]]; then
     cat "$STATE_DIR/pending-register"
   else
-    echo '"'
+    echo "$DEFAULT_REGISTER"
   fi
 }
 
@@ -141,7 +188,7 @@ clear_pending() {
 
 # Backup current clipboard
 backup_clipboard() {
-  wl-paste 2>/dev/null >"$STATE_DIR/clipboard-backup" || echo "" >"$STATE_DIR/clipboard-backup"
+  read_clipboard >"$STATE_DIR/clipboard-backup"
 }
 
 # Restore clipboard from backup
@@ -149,7 +196,7 @@ restore_clipboard() {
   if [[ -f "$STATE_DIR/clipboard-backup" ]]; then
     local content
     content=$(<"$STATE_DIR/clipboard-backup")
-    copy_to_clipboard "$content"
+    write_clipboard "$content"
     rm -f "$STATE_DIR/clipboard-backup"
   fi
 }
@@ -157,7 +204,6 @@ restore_clipboard() {
 # Cycle numbered registers for delete operations (vim-like behavior)
 # Shifts registers 1-8 to 2-9, dropping register 9
 cycle_numbered_registers() {
-  # Shift registers 8→9, 7→8, ... 1→2
   for i in 8 7 6 5 4 3 2 1; do
     local src="$STATE_DIR/$i"
     local dst="$STATE_DIR/$((i + 1))"
@@ -167,6 +213,20 @@ cycle_numbered_registers() {
   done
 }
 
+# Save deleted content to register and numbered registers
+save_delete_content() {
+  local register="$1"
+  local content="$2"
+
+  cycle_numbered_registers
+
+  # Save to numbered register 1 (most recent delete)
+  echo -n "$content" >"$STATE_DIR/1"
+
+  # Save to the specified register (unnamed by default)
+  echo -n "$content" >"$STATE_DIR/$register"
+}
+
 ################################################################################
 # OPERATION HANDLERS - Yank, delete, and paste operations
 ################################################################################
@@ -174,15 +234,19 @@ cycle_numbered_registers() {
 # Save clipboard to registers (called after yank operation)
 save_clipboard() {
   local return_submap="$1" # e.g., "NORMAL"
-  sleep 0.15
+  with_pending_register "$return_submap" _save_clipboard
+}
 
-  # Get pending register (default to unnamed)
-  local register
-  register=$(get_pending)
+# Internal: save clipboard to register and yank register
+_save_clipboard() {
+  local register="$1"
+  local _return_submap="$2"
+
+  sleep_with_debug 0.15
 
   # Get clipboard content
   local content
-  content=$(wl-paste 2>/dev/null || echo "")
+  content=$(read_clipboard)
 
   # Save to the specified register file directly
   local register_file="$STATE_DIR/$register"
@@ -195,17 +259,11 @@ save_clipboard() {
 
   # If we saved to a named register, restore unnamed to clipboard
   # so that regular 'p' still pastes from the unnamed register
-  if [[ "$register" != '"' ]] && [[ -f "$STATE_DIR/\"" ]]; then
+  if [[ "$register" != "$DEFAULT_REGISTER" ]] && [[ -f "$STATE_DIR/$DEFAULT_REGISTER" ]]; then
     local unnamed_content
-    unnamed_content=$(<"$STATE_DIR/\"")
-    copy_to_clipboard "$unnamed_content"
+    unnamed_content=$(<"$STATE_DIR/$DEFAULT_REGISTER")
+    write_clipboard "$unnamed_content"
   fi
-
-  # Clear pending register
-  clear_pending
-
-  # Return to specified submap
-  hyprctl dispatch submap "$return_submap"
 }
 
 # Handle yank operation - sends shortcut then saves
@@ -213,12 +271,21 @@ handle_yank() {
   local shortcut="$1"      # e.g., "CTRL, C"
   local return_submap="$2" # e.g., "NORMAL"
 
+  with_pending_register "$return_submap" _handle_yank "$shortcut"
+}
+
+# Internal: execute yank shortcut and save to register
+_handle_yank() {
+  local register="$1"
+  local return_submap="$2"
+  local shortcut="$3"
+
   # Execute the yank shortcut (word splitting is intentional for hyprctl args)
   # shellcheck disable=SC2086
   hyprctl dispatch sendshortcut $shortcut, activewindow
 
   # Save from clipboard
-  save_clipboard "$return_submap"
+  _save_clipboard "$register" "$return_submap"
 }
 
 # Handle delete operations to pending register or black hole
@@ -227,9 +294,14 @@ handle_delete() {
   local shortcut="$1"      # e.g., "CTRL, X"
   local return_submap="$2" # e.g., "NORMAL"
 
-  # Get pending register
-  local register
-  register=$(get_pending)
+  with_pending_register "$return_submap" _handle_delete "$shortcut"
+}
+
+# Internal: execute delete shortcut and save to register or black hole
+_handle_delete() {
+  local register="$1"
+  local return_submap="$2"
+  local shortcut="$3"
 
   # Handle black hole register specially
   if [[ "$register" == "_" ]]; then
@@ -238,7 +310,7 @@ handle_delete() {
     # Execute delete shortcut (word splitting is intentional for hyprctl args)
     # shellcheck disable=SC2086
     hyprctl dispatch sendshortcut $shortcut, activewindow
-    sleep 0.05
+    sleep_with_debug 0.05
     restore_clipboard
   else
     # Execute delete shortcut (word splitting is intentional for hyprctl args)
@@ -246,27 +318,13 @@ handle_delete() {
     hyprctl dispatch sendshortcut $shortcut, activewindow
 
     # Wait for clipboard to be ready (increased for reliability)
-    sleep 0.2
+    sleep_with_debug 0.2
 
     # Get deleted content
     local content
-    content=$(wl-paste 2>/dev/null || echo "")
-
-    # Cycle numbered registers (1-8 → 2-9)
-    cycle_numbered_registers
-
-    # Save to numbered register 1 (most recent delete)
-    echo -n "$content" >"$STATE_DIR/1"
-
-    # Save to the specified register (unnamed by default)
-    echo -n "$content" >"$STATE_DIR/$register"
+    content=$(read_clipboard)
+    save_delete_content "$register" "$content"
   fi
-
-  # Clear pending register
-  clear_pending
-
-  # Return to specified submap
-  hyprctl dispatch submap "$return_submap"
 }
 
 # Handle paste operation - loads from pending register
@@ -274,35 +332,27 @@ handle_paste() {
   local shortcut="$1"      # e.g., "CTRL, V"
   local return_submap="$2" # e.g., "NORMAL"
 
-  # Get pending register (default to unnamed)
-  local register
-  register=$(get_pending)
+  with_pending_register "$return_submap" _handle_paste "$shortcut"
+}
+
+# Internal: load register to clipboard and execute paste shortcut
+_handle_paste() {
+  local register="$1"
+  local return_submap="$2"
+  local shortcut="$3"
 
   # Load register to clipboard
-  local register_file="$STATE_DIR/$register"
-  if [[ -f "$register_file" ]]; then
-    local content
-    content=$(<"$register_file")
-    copy_to_clipboard "$content"
-  else
-    copy_to_clipboard ""
-  fi
+  load_from_register "$register"
 
   # Wait for clipboard to be ready
-  sleep 0.15
+  sleep_with_debug 0.15
 
   # Execute paste shortcut (word splitting is intentional for hyprctl args)
   # shellcheck disable=SC2086
   hyprctl dispatch sendshortcut $shortcut, activewindow
 
   # Wait to ensure paste completes before changing submaps
-  sleep 0.15
-
-  # Clear pending register
-  clear_pending
-
-  # Return to specified submap
-  hyprctl dispatch submap "$return_submap"
+  sleep_with_debug 0.15
 }
 
 ################################################################################
@@ -321,9 +371,9 @@ list_registers() {
   fi
 
   # Show unnamed register
-  if [[ -f "$STATE_DIR/\"" ]]; then
+  if [[ -f "$STATE_DIR/$DEFAULT_REGISTER" ]]; then
     echo "\" (unnamed):"
-    head -c 50 "$STATE_DIR/\"" | tr '\n' ' '
+    head -c 50 "$STATE_DIR/$DEFAULT_REGISTER" | tr '\n' ' '
     echo
     echo
   fi
@@ -374,15 +424,23 @@ list_registers() {
 # MAIN COMMAND DISPATCHER
 ################################################################################
 
-case "$1" in
+if [[ "${1:-}" == "--debug" ]]; then
+  DEBUG=1
+  shift
+fi
+
+CMD="${1:-}"
+shift || true
+
+case "$CMD" in
 save)
-  save_to_register "$2"
+  save_to_register "$@"
   ;;
 load)
-  load_from_register "$2"
+  load_from_register "$@"
   ;;
 set-pending)
-  set_pending "$2"
+  set_pending "$@"
   ;;
 get-pending)
   get_pending
@@ -391,22 +449,22 @@ clear-pending)
   clear_pending
   ;;
 save-clipboard)
-  save_clipboard "$2"
+  save_clipboard "$@"
   ;;
 handle-yank)
-  handle_yank "$2" "$3"
+  handle_yank "$@"
   ;;
 handle-delete)
-  handle_delete "$2" "$3"
+  handle_delete "$@"
   ;;
 handle-paste)
-  handle_paste "$2" "$3"
+  handle_paste "$@"
   ;;
 list)
   list_registers
   ;;
 *)
-  echo "Usage: $0 {save|load|set-pending|get-pending|clear-pending|save-clipboard|handle-yank|handle-delete|handle-paste|list} [args...]"
+  echo "Usage: $0 [--debug] {save|load|set-pending|get-pending|clear-pending|save-clipboard|handle-yank|handle-delete|handle-paste|list} [args...]"
   exit 1
   ;;
 esac
