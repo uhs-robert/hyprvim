@@ -5,10 +5,10 @@
 </p>
 <hr/>
 <p align="center">
-  <a href="https://github.com/uhs-robert/HyprVim/stargazers"><img src="https://img.shields.io/github/stars/uhs-robert/HyprVim?colorA=192330&colorB=khaki&style=for-the-badge&cacheSeconds=4300" alt="Stargazers"></a>
-  <a href="https://github.com/uhs-robert/HyprVim/issues"><img src="https://img.shields.io/github/issues/uhs-robert/HyprVim?colorA=192330&colorB=skyblue&style=for-the-badge&cacheSeconds=4300" alt="Issues"></a>
-  <a href="https://github.com/uhs-robert/HyprVim/contributors"><img src="https://img.shields.io/github/contributors/uhs-robert/HyprVim?colorA=192330&colorB=8FD1C7&style=for-the-badge&cacheSeconds=4300" alt="Contributors"></a>
-  <a href="https://github.com/uhs-robert/HyprVim/network/members"><img src="https://img.shields.io/github/forks/uhs-robert/HyprVim?colorA=192330&colorB=C799FF&style=for-the-badge&cacheSeconds=4300" alt="Forks"></a>
+  <a href="https://github.com/uhs-robert/hyprvim/stargazers"><img src="https://img.shields.io/github/stars/uhs-robert/hyprvim?colorA=192330&colorB=khaki&style=for-the-badge&cacheSeconds=4300" alt="Stargazers"></a>
+  <a href="https://github.com/uhs-robert/hyprvim/issues"><img src="https://img.shields.io/github/issues/uhs-robert/hyprvim?colorA=192330&colorB=skyblue&style=for-the-badge&cacheSeconds=4300" alt="Issues"></a>
+  <a href="https://github.com/uhs-robert/hyprvim/contributors"><img src="https://img.shields.io/github/contributors/uhs-robert/hyprvim?colorA=192330&colorB=8FD1C7&style=for-the-badge&cacheSeconds=4300" alt="Contributors"></a>
+  <a href="https://github.com/uhs-robert/hyprvim/network/members"><img src="https://img.shields.io/github/forks/uhs-robert/hyprvim?colorA=192330&colorB=C799FF&style=for-the-badge&cacheSeconds=4300" alt="Forks"></a>
 </p>
 
 ## 🌅 Overview
@@ -134,13 +134,13 @@ Clone this repository into your Hyprland config directory:
 
 ```bash
 cd ~/.config/hypr
-git clone https://github.com/uhs-robert/HyprVim.git
+git clone https://github.com/uhs-robert/hyprvim.git
 ```
 
 Add the following line to your `~/.config/hypr/hyprland.conf`:
 
 ```bash
-source = ~/.config/hypr/HyprVim/init.conf
+source = ~/.config/hypr/hyprvim/init.conf
 ```
 
 Set up your activation keybinding in `hyprland.conf`:
@@ -272,7 +272,7 @@ Registers provide vim-like clipboard management with multiple storage locations:
 
 ### Customizing the Leader Key
 
-By default, HyprVim uses `SUPER` (Windows key) as the leader. To change it, edit `~/.config/hypr/HyprVim/init.conf`:
+By default, HyprVim uses `SUPER` (Windows key) as the leader. To change it, edit `~/.config/hypr/hyprvim/init.conf`:
 
 ```bash
 # Change leader to ALT instead of SUPER
@@ -283,25 +283,19 @@ If you already define `$LEADER` elsewhere in your Hyprland config, comment out t
 
 ### Adding Personal Submaps
 
-To integrate your own Hyprland submaps with HyprVim:
+To integrate your own Hyprland submaps with HyprVim, just source HyprVim first. This lets you do any overrides you'd like while staying up to date with the latest version.
 
-1. Copy the example config:
+For example:
+
+- Copy the example config:
 
 ```bash
-cd ~/.config/hypr/HyprVim
+cd ~/.config/hypr/hyprvim
 cp vim-user.conf.example vim-user.conf
 ```
 
-1. Edit `vim-user.conf` to add your custom submap bindings in NORMAL mode
-2. Your personal config won't be tracked by git
-
-**Example:**
-
-```bash
-submap = NORMAL
-bindd = $LEADER, X, My Custom Submap, submap, MySubmap
-submap = reset
-```
+- Edit `vim-user.conf` to add your custom submap bindings in NORMAL mode
+- Source your keymaps after HyprVim
 
 ### Visual Mode Indicator (Waybar)
 

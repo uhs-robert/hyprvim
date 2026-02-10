@@ -1,6 +1,6 @@
 #!/bin/bash
 # scripts/vim-line-motion.sh
-# hypr/.config/hypr/HyprVim/scripts/vim-line-motion.sh
+# hypr/.config/hypr/hyprvim/scripts/vim-line-motion.sh
 ################################################################################
 # vim-line-motion.sh - Execute LINE mode motions with count support
 ################################################################################

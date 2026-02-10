@@ -1,6 +1,6 @@
 #!/bin/bash
 # scripts/vim-registers.sh
-# hypr/.config/hypr/HyprVim/scripts/vim-registers.sh
+# hypr/.config/hypr/hyprvim/scripts/vim-registers.sh
 ################################################################################
 # vim-registers.sh - Register management for HyprVim
 ################################################################################

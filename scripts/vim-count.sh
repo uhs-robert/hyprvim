@@ -1,5 +1,5 @@
 #!/bin/bash
-# hypr/.config/hypr/HyprVim/scripts/vim-count.sh
+# hypr/.config/hypr/hyprvim/scripts/vim-count.sh
 ################################################################################
 # vim-count.sh - Count/repeat management for vim motions
 ################################################################################

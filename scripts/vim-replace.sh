@@ -1,5 +1,5 @@
 #!/bin/bash
-# hypr/.config/hypr/HyprVim/scripts/vim-replace.sh
+# hypr/.config/hypr/hyprvim/scripts/vim-replace.sh
 ################################################################################
 # vim-replace.sh - Replace characters (r) or forward by string (R)
 ################################################################################
@@ -103,7 +103,7 @@ if [ "$MODE" = "char" ]; then
   REPLACE_CHAR="${REPLACEMENT:0:1}"
 
   # Get count from vim-count.sh (defaults to 1)
-  COUNT_SCRIPT="${HOME}/.config/hypr/HyprVim/scripts/vim-count.sh"
+  COUNT_SCRIPT="${HOME}/.config/hypr/hyprvim/scripts/vim-count.sh"
   COUNT=$("$COUNT_SCRIPT" get)
 
   # Build replacement string (character repeated COUNT times)

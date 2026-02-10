@@ -1,6 +1,6 @@
 #!/bin/bash
 # scripts/vim-motion.sh
-# hypr/.config/hypr/HyprVim/scripts/vim-motion.sh
+# hypr/.config/hypr/hyprvim/scripts/vim-motion.sh
 ################################################################################
 # vim-motion.sh - Execute motions with count support
 ################################################################################

@@ -1,5 +1,5 @@
 #!/bin/bash
-# hypr/.config/hypr/HyprVim/scripts/vim-marks.sh
+# hypr/.config/hypr/hyprvim/scripts/vim-marks.sh
 ################################################################################
 # vim-marks.sh - Window/Workspace mark and teleportation system for Hyprland
 ################################################################################

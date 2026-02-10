@@ -1,5 +1,5 @@
 #!/bin/bash
-# hypr/.config/hypr/HyprVim/scripts/vim-find.sh
+# hypr/.config/hypr/hyprvim/scripts/vim-find.sh
 ################################################################################
 # vim-find.sh - Interactive find with configurable input methods
 ################################################################################

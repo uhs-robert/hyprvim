@@ -19,7 +19,7 @@ It aims to give you practical Hyprland ergonomics without forcing a full persona
 1. Source the config from your `hyprland.conf`:
 
 ```ini
-source = ~/.config/hypr/HyprVim/extras/hyprland-basics/keymap.conf
+source = ~/.config/hypr/hyprvim/extras/hyprland-basics/keymap.conf
 ```
 
 1. Reload Hyprland:
