@@ -167,7 +167,7 @@ jump_mark() {
 
 list_marks() {
   if [ ! -f "$MARKS_FILE" ]; then
-    echo "No marks set"
+    notify-send -t 3000 "Marks" "No marks set"
     return
   fi
 
@@ -175,18 +175,22 @@ list_marks() {
   mark_count=$(jq '. | length' "$MARKS_FILE")
 
   if [ "$mark_count" -eq 0 ]; then
-    echo "No marks set"
+    notify-send -t 3000 "Marks" "No marks set"
     return
   fi
 
+  # Build the marks list for notification
+  local marks_list
+  marks_list=$(jq -r 'to_entries | sort_by(.key) | .[] |
+      "\(.key): \(.value.title | .[0:30]) (ws:\(.value.workspace))"' \
+    "$MARKS_FILE")
+
+  # Send notification with the marks list
+  notify-send -t 5000 "Marks ($mark_count)" "$marks_list"
+
+  # Also echo for terminal use
   echo "Marks ($mark_count):"
-  echo "──────────────────────────────────────────────────────────"
-
-  jq -r 'to_entries | sort_by(.key) | .[] |
-      " \(.key)  \(.value.class | .[0:15])  \(.value.title | .[0:35])  (ws:\(.value.workspace) mon:\(.value.monitor))"' \
-    "$MARKS_FILE" | column -t
-
-  echo "──────────────────────────────────────────────────────────"
+  echo "$marks_list"
 }
 
 ################################################################################
