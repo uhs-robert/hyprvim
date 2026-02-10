@@ -29,7 +29,7 @@
 
 set -euo pipefail
 DEFAULT_REGISTER='"'
-DEBUG=0
+DEBUG="${HYPRVIM_DEBUG:-0}"
 STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/registers"
 mkdir -p "$STATE_DIR"
 

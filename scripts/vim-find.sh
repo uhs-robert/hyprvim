@@ -27,6 +27,7 @@
 
 set -euo pipefail
 
+DEBUG="${HYPRVIM_DEBUG:-${HYPRVIM_FIND_DEBUG:-0}}"
 STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim"
 STATE_FILE="$STATE_DIR/find-state.json"
 
@@ -43,6 +44,13 @@ mkdir -p "$STATE_DIR"
 #   "find_term": "example",
 #   "till": false
 # }
+
+# Log debug message if HYPRVIM_DEBUG=1
+log_debug() {
+  if [ "$DEBUG" = "1" ]; then
+    logger -t hyprvim "$*"
+  fi
+}
 
 # Get state value by key from JSON state file
 get_state() {
