@@ -52,10 +52,59 @@ log_debug() {
   fi
 }
 
+# Check for required commands and exit with notification if missing
+require_cmd() {
+  local cmd
+  for cmd in "$@"; do
+    if ! command -v "$cmd" &>/dev/null; then
+      notify-send "HyprVim Find" "Missing dependency: $cmd" 2>/dev/null || true
+      hyprctl dispatch submap NORMAL
+      exit 1
+    fi
+  done
+}
+
+# Remove newlines and trailing whitespace from search term
+sanitize_term() {
+  local term="$1"
+  echo "$term" | tr -d '\n' | sed 's/[[:space:]]*$//'
+}
+
+# Send keyboard shortcut to active window
+send_shortcut() {
+  hyprctl dispatch sendshortcut "$@"
+}
+
+# Send keyboard shortcut and sleep for specified duration
+send_shortcut_sleep() {
+  local sleep_time="$1"
+  shift
+  send_shortcut "$@"
+  sleep "$sleep_time"
+}
+
+# Validate state key is allowed in JSON state
+validate_state_key() {
+  case "$1" in
+  active | direction | char_term | find_term | till | post_move_left | post_move_left_len | last_action_direction | last_action_term_type)
+    return 0
+    ;;
+  *)
+    log_debug "state: invalid key '$1'"
+    return 1
+    ;;
+  esac
+}
+
 # Get state value by key from JSON state file
 get_state() {
   local key="$1"
   local default="${2:-}"
+
+  if ! validate_state_key "$key"; then
+    echo "$default"
+    return 0
+  fi
 
   if [ -f "$STATE_FILE" ]; then
     jq -r ".$key // \"$default\"" "$STATE_FILE" 2>/dev/null || echo "$default"
@@ -68,6 +117,8 @@ get_state() {
 set_state() {
   local key="$1"
   local value="$2"
+
+  validate_state_key "$key" || return 1
 
   # Initialize state file if it doesn't exist
   if [ ! -f "$STATE_FILE" ]; then
@@ -150,41 +201,40 @@ execute_find() {
   local direction="$2"
   local term_type="${3:-find_term}" # "char_term" or "find_term"
 
-  # Check for wl-copy
-  if ! command -v wl-copy &>/dev/null; then
-    notify-send "HyprVim Find" "wl-clipboard not found. Install wl-clipboard for find functionality." 2>/dev/null || true
-    hyprctl dispatch submap NORMAL
-    exit 1
-  fi
+  require_cmd wl-copy
 
   # Store state
   set_state "direction" "$direction"
   set_state "$term_type" "$search_term"
   set_state "active" "true"
+  set_state "post_move_left" "false"
+  set_state "post_move_left_len" "0"
+  set_state "last_action_direction" "$direction"
+  set_state "last_action_term_type" "$term_type"
 
   # Copy search term to clipboard
   echo -n "$search_term" | wl-copy
 
   # Open find dialog
-  hyprctl dispatch sendshortcut CTRL, F, activewindow
-  sleep 0.15
+  send_shortcut_sleep 0.15 CTRL, F, activewindow
 
   # Paste search term
-  hyprctl dispatch sendshortcut CTRL, V, activewindow
-  sleep 0.05
+  send_shortcut_sleep 0.05 CTRL, V, activewindow
 
   # Dismiss autocomplete by adding then removing a space
-  hyprctl dispatch sendshortcut , SPACE, activewindow
-  sleep 0.05
-  hyprctl dispatch sendshortcut , BACKSPACE, activewindow
-  sleep 0.05
+  send_shortcut_sleep 0.05 , SPACE, activewindow
+  send_shortcut_sleep 0.05 , BACKSPACE, activewindow
 
   # Execute search
-  hyprctl dispatch sendshortcut , Return, activewindow
-  sleep 0.05
+  send_shortcut_sleep 0.05 , Return, activewindow
 
   # Return to NORMAL mode
   hyprctl dispatch submap NORMAL
+
+  if [ "$direction" = "forward" ] && [ "$term_type" = "find_term" ] && [ "${#search_term}" -gt 1 ]; then
+    set_state "post_move_left" "true"
+    set_state "post_move_left_len" "${#search_term}"
+  fi
 }
 
 ################################################################################
@@ -211,6 +261,7 @@ prompt_and_execute() {
   local term_type="${action_type}_term"
   local search_term
   search_term=$(get_search_input "$prompt_text")
+  search_term=$(sanitize_term "$search_term")
 
   # Return to NORMAL mode
   hyprctl dispatch submap NORMAL
@@ -233,27 +284,36 @@ repeat_find() {
   active=$(get_state "active" "false")
   direction=$(get_state "direction" "forward")
 
-  logger -t hyprvim "repeat_find: term_type=$term_type, flip=$flip_direction, active=$active, direction=$direction"
+  log_debug "repeat_find: term_type=$term_type, flip=$flip_direction, active=$active, direction=$direction"
 
   if [ "$active" = "true" ]; then
     # Search is active, just use F3
-    logger -t hyprvim "repeat_find: search active, using F3"
-    local use_shift="false"
-    [ "$direction" = "forward" ] && use_shift="false" || use_shift="true"
-    [ "$flip_direction" = "true" ] && { [ "$use_shift" = "true" ] && use_shift="false" || use_shift="true"; }
-
-    if [ "$use_shift" = "true" ]; then
-      hyprctl dispatch sendshortcut SHIFT, F3, activewindow
-    else
-      hyprctl dispatch sendshortcut , F3, activewindow
+    log_debug "repeat_find: search active, using F3"
+    if [ "$term_type" = "find_term" ]; then
+      local action_direction="$direction"
+      if [ "$flip_direction" = "true" ]; then
+        [ "$direction" = "forward" ] && action_direction="backward" || action_direction="forward"
+      fi
+      set_state "last_action_direction" "$action_direction"
+      set_state "last_action_term_type" "$term_type"
+      local find_term
+      find_term=$(get_state "find_term" "")
+      if [ "$action_direction" = "forward" ] && [ "${#find_term}" -gt 1 ]; then
+        set_state "post_move_left" "true"
+        set_state "post_move_left_len" "${#find_term}"
+      else
+        set_state "post_move_left" "false"
+        set_state "post_move_left_len" "0"
+      fi
     fi
+    send_f3 "$direction" "$flip_direction"
   else
     # Search is not active, re-execute with stored term
     search_term=$(get_state "$term_type" "")
-    logger -t hyprvim "repeat_find: search inactive, stored term='$search_term'"
+    log_debug "repeat_find: search inactive, stored term='$search_term'"
 
     if [ -z "$search_term" ]; then
-      logger -t hyprvim "repeat_find: no stored term, aborting"
+      log_debug "repeat_find: no stored term, aborting"
       hyprctl dispatch submap NORMAL
       exit 0
     fi
@@ -264,44 +324,88 @@ repeat_find() {
       [ "$direction" = "forward" ] && new_direction="backward" || new_direction="forward"
     fi
 
-    logger -t hyprvim "repeat_find: calling execute_find with term='$search_term', direction='$new_direction'"
+    log_debug "repeat_find: calling execute_find with term='$search_term', direction='$new_direction'"
     execute_find "$search_term" "$new_direction" "$term_type"
   fi
 }
 
+# Send F3 or Shift+F3 based on direction and flip settings
+send_f3() {
+  local direction="$1"
+  local flip_direction="$2"
+  local use_shift="false"
+
+  [ "$direction" = "forward" ] && use_shift="false" || use_shift="true"
+  [ "$flip_direction" = "true" ] && { [ "$use_shift" = "true" ] && use_shift="false" || use_shift="true"; }
+
+  if [ "$use_shift" = "true" ]; then
+    send_shortcut SHIFT, F3, activewindow
+  else
+    send_shortcut , F3, activewindow
+  fi
+}
+
+# Select and return word under cursor via clipboard
+word_under_cursor() {
+  require_cmd wl-copy wl-paste
+
+  # Clear clipboard to detect if copy actually works
+  echo -n "" | wl-copy
+
+  # Select word under cursor (inner word: CTRL+RIGHT, then CTRL+SHIFT+LEFT)
+  send_shortcut_sleep 0.1 CTRL, RIGHT, activewindow
+  send_shortcut_sleep 0.15 CTRL SHIFT, LEFT, activewindow
+
+  # Copy selected word to clipboard
+  send_shortcut_sleep 0.2 CTRL, C, activewindow
+
+  # Get the word from clipboard
+  local search_term
+  search_term=$(sanitize_term "$(wl-paste 2>/dev/null)")
+  log_debug "word_under_cursor: clipboard contents='$search_term'"
+
+  # Deselect (press RIGHT to move cursor to end and deselect)
+  send_shortcut , RIGHT, activewindow
+
+  echo "$search_term"
+}
+
 # Deactivate search, handle till cursor adjustment, and mark inactive
 deactivate_search() {
-  logger -t hyprvim "deactivate: starting"
+  log_debug "deactivate: starting"
+
+  send_shortcut , ESCAPE, activewindow
 
   # Check if it was a till search and send LEFT if so
   local till
   till=$(get_state "till" "false")
-  logger -t hyprvim "deactivate: till=$till"
+  log_debug "deactivate: till=$till"
 
   if [ "$till" = "true" ]; then
-    logger -t hyprvim "deactivate: sending LEFT for till"
-    hyprctl dispatch sendshortcut , LEFT, activewindow
+    log_debug "deactivate: sending LEFT for till"
+    send_shortcut , LEFT, activewindow
     set_state "till" "false"
   fi
 
-  # If forward search term length > 1, move cursor left by term length
-  local direction find_term
-  direction=$(get_state "direction" "forward")
-  find_term=$(get_state "find_term" "")
-  if [ "$direction" = "forward" ] && [ "${#find_term}" -gt 1 ]; then
-    local move_left_count=${#find_term}
+  # If configured, move cursor left by term length
+  local post_move_left move_left_count last_action_direction last_action_term_type
+  post_move_left=$(get_state "post_move_left" "false")
+  move_left_count=$(get_state "post_move_left_len" "0")
+  last_action_direction=$(get_state "last_action_direction" "forward")
+  last_action_term_type=$(get_state "last_action_term_type" "find_term")
+  if [ "$post_move_left" = "true" ] && [ "$move_left_count" -gt 0 ] && [ "$last_action_direction" = "forward" ] && [ "$last_action_term_type" = "find_term" ]; then
     for ((i = 0; i < move_left_count; i++)); do
-      hyprctl dispatch sendshortcut , LEFT, activewindow
+      send_shortcut , LEFT, activewindow
     done
   fi
 
   # Mark search as inactive
-  logger -t hyprvim "deactivate: setting active to false"
+  log_debug "deactivate: setting active to false"
   set_state "active" "false"
-  logger -t hyprvim "deactivate: state set, verifying..."
+  log_debug "deactivate: state set, verifying..."
   local verify_active
   verify_active=$(get_state "active" "")
-  logger -t hyprvim "deactivate: verified active=$verify_active"
+  log_debug "deactivate: verified active=$verify_active"
 }
 
 ################################################################################
@@ -309,7 +413,7 @@ deactivate_search() {
 ################################################################################
 
 ACTION="$1"
-logger -t hyprvim "vim-find.sh called with ACTION='$ACTION'"
+log_debug "vim-find.sh called with ACTION='$ACTION'"
 
 if [ "$ACTION" = "char-forward" ]; then
   set_state "till" "false"
@@ -337,41 +441,16 @@ elif [ "$ACTION" = "search-backward" ]; then
 
 elif [ "$ACTION" = "forward-word" ] || [ "$ACTION" = "backward-word" ]; then
   set_state "till" "false"
-  # Check for wl-clipboard tools
-  if ! command -v wl-paste &>/dev/null; then
-    notify-send "HyprVim Find" "wl-clipboard not found. Install wl-clipboard for word search." 2>/dev/null || true
-    hyprctl dispatch submap NORMAL
-    exit 1
-  fi
-
-  # Clear clipboard to detect if copy actually works
-  echo -n "" | wl-copy
-
-  # Select word under cursor (inner word: CTRL+RIGHT, then CTRL+SHIFT+LEFT)
-  hyprctl dispatch sendshortcut CTRL, RIGHT, activewindow
-  sleep 0.1
-  hyprctl dispatch sendshortcut CTRL SHIFT, LEFT, activewindow
-  sleep 0.15
-
-  # Copy selected word to clipboard
-  hyprctl dispatch sendshortcut CTRL, C, activewindow
-  sleep 0.2
-
-  # Get the word from clipboard
-  SEARCH_TERM=$(wl-paste 2>/dev/null | tr -d '\n' | sed 's/[[:space:]]*$//')
-  logger -t hyprvim "forward-word: clipboard contents='$SEARCH_TERM'"
+  SEARCH_TERM=$(word_under_cursor)
 
   # If clipboard is empty, the selection/copy didn't work
   if [ -z "$SEARCH_TERM" ]; then
-    logger -t hyprvim "forward-word: clipboard empty after copy - selection may have failed"
+    log_debug "forward-word: clipboard empty after copy - selection may have failed"
   fi
-
-  # Deselect (press RIGHT to move cursor to end and deselect)
-  hyprctl dispatch sendshortcut , RIGHT, activewindow
 
   # If empty, abort
   if [ -z "$SEARCH_TERM" ]; then
-    logger -t hyprvim "forward-word: search term empty, aborting"
+    log_debug "forward-word: search term empty, aborting"
     hyprctl dispatch submap NORMAL
     exit 0
   fi
@@ -383,7 +462,7 @@ elif [ "$ACTION" = "forward-word" ] || [ "$ACTION" = "backward-word" ]; then
     DIRECTION="backward"
   fi
 
-  logger -t hyprvim "forward-word: executing find with term='$SEARCH_TERM' direction='$DIRECTION'"
+  log_debug "forward-word: executing find with term='$SEARCH_TERM' direction='$DIRECTION'"
   # Execute find with the search term and direction (find_term for / ? * #)
   execute_find "$SEARCH_TERM" "$DIRECTION" "find_term"
 
