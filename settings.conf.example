@@ -1,0 +1,54 @@
+# hypr/.config/hypr/hyprvim/settings.conf
+
+################################################################################
+# USER SETTINGS
+################################################################################
+#
+# Copy this file to ~/.config/hypr/hyprvim/settings.conf to edit default settings.
+#   cp settings.conf.example settings.conf
+#
+# The ./settings.conf file is ignored by git, so your personal config stays local.
+#
+################################################################################
+
+# LEADER KEY
+# ----------
+# Leader and Activate key combo for vim mode (default: SUPER/Windows key)
+# Change these to your preferred activation key combo
+
+$LEADER = SUPER
+$ACTIVATE = ESCAPE
+
+# PROMPT
+# ----------
+# Prompt input tool for user input
+# Auto-detects available tools in order: rofi, wofi, tofi, fuzzel, dmenu, zenity, kdialog
+# Set to your preferred tool or leave empty string for auto-detection.
+
+$HYPRVIM_PROMPT =
+
+# NOTIFICATIONS
+# ----------
+# Mark notifications (1 = show notifications when jumping/setting marks, empty = disable)
+
+HYPRVIM_MARK_NOTIFY =
+
+# ----------
+# TERMINAL
+# ----------
+# Terminal used to display the help viewer for keybinds.
+# Default uses kitty with a class that matches the floating window rule below.
+# Examples:
+#   $HELP_TERMINAL = ghostty --class floating-help -e
+#   $HELP_TERMINAL = wezterm start --class floating-help --
+#   $HELP_TERMINAL = alacritty --class floating-help -e
+#   $HELP_TERMINAL = foot --app-id floating-help -e
+
+$HELP_TERMINAL = kitty --class floating-help -e
+
+# ----------
+# DEBUG
+# ----------
+# Debug mode for scripts that support it (1 = enable debug logging)
+
+$HYPRVIM_DEBUG =

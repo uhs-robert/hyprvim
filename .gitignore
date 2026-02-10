@@ -142,4 +142,4 @@ QWEN.md
 .qwen
 
 # User customizations (personal submap integrations)
-vim-user.conf
+settings.conf
