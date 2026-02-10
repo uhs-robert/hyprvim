@@ -114,6 +114,7 @@ To use the extras, refer to their respective documentation.
 | Thunderbird     | Keybinds for vim driven navigation                                        | [extras/thunderbird](extras/thunderbird)         |
 | Wl-kbptr        | Keyboard-driven mouse cursor control on Wayland                           | [extras/wl-kbptr](extras/wl-kbptr)               |
 | Vimium          | Vim-style navigation for web browsers                                     | [extras/vimium](extras/vimium)                   |
+| Waybar Submap   | Waybar submap visual Indicator                                            | [extras/waybar](extras/waybar)                   |
 
 If you'd like an extra config added, raise a feature request and I'll put it together.
 
