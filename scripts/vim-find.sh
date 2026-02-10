@@ -44,6 +44,7 @@ mkdir -p "$STATE_DIR"
 #   "till": false
 # }
 
+# Get state value by key from JSON state file
 get_state() {
   local key="$1"
   local default="${2:-}"
@@ -55,6 +56,7 @@ get_state() {
   fi
 }
 
+# Set state value by key in JSON state file
 set_state() {
   local key="$1"
   local value="$2"
@@ -72,6 +74,7 @@ set_state() {
 # Detect and use appropriate input tool
 ################################################################################
 
+# Prompt user for search input using available tool (rofi, wofi, etc)
 get_search_input() {
   local prompt="${1:-Find: }"
   local tool=""
@@ -133,6 +136,7 @@ get_search_input() {
 # Execute find with the given search term and direction
 ################################################################################
 
+# Execute find operation: store state, paste search term, and trigger find dialog
 execute_find() {
   local search_term="$1"
   local direction="$2"
@@ -179,6 +183,7 @@ execute_find() {
 # Helper functions
 ################################################################################
 
+# Prompt user for search term and execute find operation
 prompt_and_execute() {
   local action_type="$1" # "char" or "find"
   local direction="$2"   # "forward" or "backward"
@@ -211,6 +216,7 @@ prompt_and_execute() {
   execute_find "$search_term" "$direction" "$term_type"
 }
 
+# Repeat previous find using F3 if active, or re-execute with stored term
 repeat_find() {
   local term_type="$1"      # "char_term" or "find_term"
   local flip_direction="$2" # "true" or "false"
@@ -253,6 +259,41 @@ repeat_find() {
     logger -t hyprvim "repeat_find: calling execute_find with term='$search_term', direction='$new_direction'"
     execute_find "$search_term" "$new_direction" "$term_type"
   fi
+}
+
+# Deactivate search, handle till cursor adjustment, and mark inactive
+deactivate_search() {
+  logger -t hyprvim "deactivate: starting"
+
+  # Check if it was a till search and send LEFT if so
+  local till
+  till=$(get_state "till" "false")
+  logger -t hyprvim "deactivate: till=$till"
+
+  if [ "$till" = "true" ]; then
+    logger -t hyprvim "deactivate: sending LEFT for till"
+    hyprctl dispatch sendshortcut , LEFT, activewindow
+    set_state "till" "false"
+  fi
+
+  # If forward search term length > 1, move cursor left by term length
+  local direction find_term
+  direction=$(get_state "direction" "forward")
+  find_term=$(get_state "find_term" "")
+  if [ "$direction" = "forward" ] && [ "${#find_term}" -gt 1 ]; then
+    local move_left_count=${#find_term}
+    for ((i = 0; i < move_left_count; i++)); do
+      hyprctl dispatch sendshortcut , LEFT, activewindow
+    done
+  fi
+
+  # Mark search as inactive
+  logger -t hyprvim "deactivate: setting active to false"
+  set_state "active" "false"
+  logger -t hyprvim "deactivate: state set, verifying..."
+  local verify_active
+  verify_active=$(get_state "active" "")
+  logger -t hyprvim "deactivate: verified active=$verify_active"
 }
 
 ################################################################################
@@ -351,23 +392,5 @@ elif [ "$ACTION" = "prev-char" ]; then
   repeat_find "char_term" "true"
 
 elif [ "$ACTION" = "deactivate" ]; then
-  logger -t hyprvim "deactivate: starting"
-
-  # Check if it was a till search and send LEFT if so
-  till=$(get_state "till" "false")
-  logger -t hyprvim "deactivate: till=$till"
-
-  if [ "$till" = "true" ]; then
-    logger -t hyprvim "deactivate: sending LEFT for till"
-    hyprctl dispatch sendshortcut , LEFT, activewindow
-    set_state "till" "false"
-  fi
-
-  # Mark search as inactive
-  logger -t hyprvim "deactivate: setting active to false"
-  set_state "active" "false"
-  logger -t hyprvim "deactivate: state set, verifying..."
-  verify_active=$(get_state "active" "")
-  logger -t hyprvim "deactivate: verified active=$verify_active"
-
+  deactivate_search
 fi

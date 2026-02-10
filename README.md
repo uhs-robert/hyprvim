@@ -253,7 +253,7 @@ Registers provide vim-like clipboard management with multiple storage locations:
 
 **Workflow Example:**
 
-```
+```text
 1. yy          - Yank line to unnamed register and register 0
 2. dd          - Delete line to unnamed register (register 0 still has yank)
 3. "0p         - Paste the yanked line (not the deleted one)
