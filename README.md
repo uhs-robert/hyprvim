@@ -13,13 +13,13 @@
 
 ## 🌅 Overview
 
-**HyprVim** brings the power of Vim keybindings to your entire Hyprland desktop environment.
+**HyprVim** brings the power of Vim keybindings and motions to your entire Hyprland desktop environment.
 
 Uses Hyprland's submap system to provide vim-style navigation and basic text editing that works across all applications in your Wayland session.
 
 Navigate text, manage selections, and perform text operations using familiar Vim motions without leaving your current application. Think of it as a lightweight, system-wide vim mode for your desktop.
 
-https://github.com/user-attachments/assets/8823c5fb-293d-4f59-982b-40b2d1180b79
+<https://github.com/user-attachments/assets/8823c5fb-293d-4f59-982b-40b2d1180b79>
 
 ## ✨ Features
 
@@ -28,7 +28,10 @@ https://github.com/user-attachments/assets/8823c5fb-293d-4f59-982b-40b2d1180b79
 - **NORMAL Mode**: Primary navigation with `hjkl` movement, word motions (`w`/`b`/`e`), and operators
 - **VISUAL Mode**: Character-wise visual selection
 - **V-LINE Mode**: Line-wise visual selection
-- **OPERATOR Modes**: Text operations with motions (d/c/y + motion/text-object)
+- **DIGITS Support**: Perform operations with `{digit}` modifier prefix to repeat actions (e.g., `6dw` to delete next 6 words)
+- **OPERATOR Modes**: Operators with motions `{operator}` + `{motion}`/`{text-object)` (e.g., `diw` for delete in word)
+  - _Operators Supported:_ `d`, `c`, `y`
+  - _Motions Supported:_ `i`, `a`
 
 ### Navigation & Motion
 
@@ -36,7 +39,7 @@ https://github.com/user-attachments/assets/8823c5fb-293d-4f59-982b-40b2d1180b79
 - **Word**: `w`, `b`, `e`, `W`, `B`, `E` for word-based navigation
 - **Line**: `0`, `^`, `$` for line start/end navigation
 - **Paragraph**: `{`, `}` for paragraph start/end navigation
-- **Page**: `Ctrl+d`, `Ctrl+u`, `Ctrl+f`, `Ctrl+b` for page scrolling
+- **Page**: `CTRL+d`, `CTRL+u`, `CTRL+f`, `CTRL+b` for page scrolling
 - **Document**: `gg`, `G` for document start/end
 - **Extended Motions**: `g` prefix for additional movements (`ge`, `gt`, `gT`)
 
@@ -103,27 +106,27 @@ If you'd like an extra config added, raise a feature request and I'll put it tog
 
 ### Quick Install
 
-1. Clone this repository into your Hyprland config directory:
+Clone this repository into your Hyprland config directory:
 
 ```bash
 cd ~/.config/hypr
 git clone https://github.com/uhs-robert/HyprVim.git
 ```
 
-1. Add the following line to your `~/.config/hypr/hyprland.conf`:
+Add the following line to your `~/.config/hypr/hyprland.conf`:
 
 ```bash
 source = ~/.config/hypr/HyprVim/init.conf
 ```
 
-1. Set up your activation keybinding in `hyprland.conf`:
+Set up your activation keybinding in `hyprland.conf`:
 
 ```bash
 # Enter NORMAL mode with SUPER + ESCAPE
 bind = SUPER, ESCAPE, submap, NORMAL
 ```
 
-1. Reload your Hyprland configuration:
+Reload your Hyprland configuration:
 
 ```bash
 hyprctl reload
@@ -147,6 +150,7 @@ The window rule in `init.conf` matches the class/app-id `floating-help`.
 ### Prompt Tool
 
 HyprVim uses a configurable prompt tool to receive user input for various features including:
+
 - **Find operations** (`/`, `?`, `f`, `F`, `t`, `T`, `*`, `#`) - search terms and patterns
 - **Replace operations** (`r` with count, `R`) - replacement text
 - **Other interactive inputs** - any feature requiring user text input
@@ -162,7 +166,7 @@ $HYPRVIM_PROMPT = rofi
 # $HYPRVIM_PROMPT = wofi
 # $HYPRVIM_PROMPT = tofi
 # $HYPRVIM_PROMPT = fuzzel
-# $HYPRVIM_PROMPT =     # Empty for auto-detection (default)
+# $HYPRVIM_PROMPT =         # Empty for auto-detection (default)
 ```
 
 Alternatively, set the `HYPRVIM_PROMPT` environment variable to override the configured tool.
