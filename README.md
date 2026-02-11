@@ -23,7 +23,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 
 ## ✨ Features
 
-### Vim Modes
+### 🚦 Vim Modes
 
 - **NORMAL Mode**: Primary navigation with `hjkl` movement, word motions (`w`/`b`/`e`), and operators
 - **INSERT Mode**: Text insertion with `ESCAPE` bound to return to normal mode
@@ -35,7 +35,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
   - _Motions Supported:_ `i`, `a`
   - _Text Objects Supported:_ `w`, `p`
 
-### Navigation & Motion
+### 🧭 Navigation & Motion
 
 - **Character**: `hjkl` for basic movement
 - **Word**: `w`, `b`, `e`, `W`, `B`, `E` for word-based navigation
@@ -45,28 +45,28 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **Document**: `gg`, `G` for document start/end
 - **Extended Motions**: `g` prefix for additional movements (`ge`, `gt`, `gT`)
 
-### Text Objects & Operators
+### 📝 Text Objects & Operators
 
 - **Delete**: `d{motion}`, `dd`, `dw`, `diw`, `daw`, `dip`, `dap`
 - **Change**: `c{motion}`, `cc`, `cw`, `ciw`, `caw`, `cip`, `cap` (enters insert mode)
 - **Yank**: `y{motion}`, `yy`, `yw`, `yiw`, `yaw`, `yip`, `yap`
 - **Inner/A**: `iw`/`aw` for word text objects, `ip`/`ap` for paragraph text objects
 
-### Mark System
+### 📌 Mark System
 
 - **Set/Jump/Delete**: `m{a-z,A-Z,0-9}`, `` `{mark} ``, `'{mark}`, `dm{mark}`
 - Remembers window/workspace locations across monitors
 
-### Register System
+### 📋️ Register System
 
 - **Named**: `"{a-z}` - 26 named registers
 - **Special**: `""` (unnamed/clipboard), `"0` (yank), `"_` (black hole), `"/` (search)
 - **Usage**: `"ayy` (yank to a), `"ap` (paste from a), `"_dd` (delete without clipboard)
 
 > [!NOTE]
-> Registers stored in tmpfs, cleared on reboot. See [Using Registers](#using-registers) for detailed examples.
+> Registers stored in tmpfs, cleared on reboot. See [Using Registers](#register-usage) for detailed examples.
 
-### Additional Operations
+### 🛟 Additional Operations
 
 - **Help**: `gh` - Show keybindings viewer
 - **Repeats**: `2dw`, `3j`, `5w` (up to 999)
@@ -78,7 +78,9 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **Delete Char**: `x`, `X`
 - **Indent**: `>`, `<`
 
-### Exit Strategy
+### ‼️ Exiting Vim Mode
+
+Just like real Vim, you also need to know how to exit HyprVim.
 
 - **Return to Normal**: `ESC` - (e.g., VISUAL → NORMAL), NORMAL passes ESC to application
 - **Toggle Vim Mode**: `$LEADER + ESC` - Toggle vim mode on/off from anywhere
@@ -152,22 +154,29 @@ Press `SUPER + ESCAPE` (or your configured leader key + activation key) to enter
 1. **Enter NORMAL mode**: `SUPER + ESC`
 2. **See all keybindings**: Press `gh` to show help
 3. **Navigate**: Use `hjkl`, `w`, `b`, `e` to move around
-4. **Select text**: Press `v` for visual mode, then navigate to select
+4. **Select text/items**: Press `v` for visual mode, then navigate to select
 5. **Edit**: Use operators like `d`, `c`, `y` with motions or in visual mode
 6. **Return to insert**: Press `i`, `a`, or other insert commands
 7. **Exit vim mode**: Press `SUPER + ESC` again
 
 ### Quick Reference
 
-**Basic operations:**
+#### Basic operations
+
 `dw` (delete word), `3dw` (delete 3 words), `5j` (move down 5 lines), `ciw` (change word), `Vjjd` (delete 3 lines), `yy` (yank line), `gg` (document start)
 
-**Marks:** `ma` (set), `` `a `` (jump), `dma` (delete) - works across monitors
+#### Marks
 
-**Registers:** `"ayy` (yank to a), `"ap` (paste from a), `"_dd` (delete without clipboard), `"0p` (paste last yank)
+`ma` (set), `` `a `` (jump), `dma` (delete) - works across monitors
+
+#### Registers
+
+`"ayy` (yank to a), `"ap` (paste from a), `"_dd` (delete without clipboard), `"0p` (paste last yank)
+
+<a id="register-usage"></a>
 
 <details>
-<summary>💾 Using Registers</summary>
+<summary>📋️ Using Registers</summary>
 <br>
 
 Registers provide vim-like clipboard management with multiple storage locations:
@@ -203,8 +212,6 @@ Registers provide vim-like clipboard management with multiple storage locations:
 
 ## ⚙️ Configuration
 
-### Customizing Settings
-
 HyprVim sets a few defaults in `./init.conf`.
 
 You can override any of these settings by creating your own `./settings.conf` in the `hyprvim` directory:
@@ -221,7 +228,7 @@ cp settings.conf.example settings.conf
 > [!TIP]
 > To override or append keys in each submap, just source your overriding keybindings after HyprVim
 
-## Where is the Visual Mode Indicator? (Waybar)
+## 🤔 Where is the Visual Mode Indicator? (Waybar)
 
 To see which vim mode you're currently in, add the [Hyprland submap module](https://github.com/Alexays/Waybar/wiki/Module:-Hyprland#submap) to your [Waybar](https://github.com/Alexays/Waybar) configuration. This displays the active submap in your status bar.
 
@@ -238,7 +245,7 @@ On that note, just check out [all the extras too](/extras)! You never know what 
 - Find operations use interactive prompts and application find dialogs
 - Effectiveness depends on application supporting standard keyboard shortcuts
 
-### Extending HyprVim
+## 📏 Extending HyprVim
 
 You can extend HyprVim by adding new submaps or referencing the submaps in your own keybinds after sourcing HyprVim.
 
