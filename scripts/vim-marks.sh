@@ -15,42 +15,23 @@
 
 set -euo pipefail
 
-MARKS_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr-vim-marks-$USER.json"
+# Source shared utilities
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+source "$SCRIPT_DIR/lib/core.sh"
+source "$SCRIPT_DIR/lib/ui.sh"
+source "$SCRIPT_DIR/lib/state.sh"
+
+# Initialize script
+init_script "marks"
+
+# Configuration
+MARKS_FILE="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/marks.json"
 ACTION="${1:-}"
 MARK="${2:-}"
-NOTIFY_ENABLED="${HYPRVIM_MARK_NOTIFY:-}"
+NOTIFY_ENABLED="${HYPRVIM_MARK_NOTIFY:-0}"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-################################################################################
-# Helper Functions
-################################################################################
-
-error() {
-  echo -e "${RED}Error: $1${NC}" >&2
-  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 2000 -u critical "Mark Error" "$1"
-  exit 1
-}
-
-success() {
-  echo -e "${GREEN}$1${NC}"
-  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 1000 -u low "Mark" "$1"
-}
-
-info() {
-  echo -e "${YELLOW}$1${NC}"
-  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 1500 -u normal "Mark" "$1"
-}
-
-ensure_marks_file() {
-  if [ ! -f "$MARKS_FILE" ]; then
-    echo '{}' >"$MARKS_FILE"
-  fi
-}
+# Check dependencies
+require_cmd jq hyprctl
 
 ################################################################################
 # Action: Set Mark
@@ -61,7 +42,7 @@ set_mark() {
 
   # Validate mark character
   if [ -z "$mark" ]; then
-    error "Mark character required"
+    notify_error "Mark character required" "$NOTIFY_ENABLED"
   fi
 
   # Get current window information
@@ -76,9 +57,10 @@ set_mark() {
 
   # Check if valid data
   if [ -z "$window" ] || [ -z "$workspace" ]; then
-    error "No active window found"
+    notify_error "No active window found" "$NOTIFY_ENABLED"
   fi
-  ensure_marks_file
+
+  ensure_json_file "$MARKS_FILE"
 
   # Update mark in JSON (atomic write via temp file)
   local temp_file="${MARKS_FILE}.tmp"
@@ -104,7 +86,7 @@ set_mark() {
   local display_title="${title:0:30}"
   [ "${#title}" -gt 30 ] && display_title="${display_title}..."
 
-  success "Mark '$mark' → $class (ws:$workspace)"
+  notify_success "Mark '$mark' → $class (ws:$workspace)" "$NOTIFY_ENABLED"
 }
 
 ################################################################################
@@ -115,11 +97,11 @@ jump_mark() {
   local mark="$1"
 
   if [ -z "$mark" ]; then
-    error "Mark character required"
+    notify_error "Mark character required" "$NOTIFY_ENABLED"
   fi
 
   if [ ! -f "$MARKS_FILE" ]; then
-    error "No marks set"
+    notify_error "No marks set" "$NOTIFY_ENABLED"
   fi
 
   # Read mark data
@@ -127,7 +109,7 @@ jump_mark() {
   mark_data=$(jq -r --arg mark "$mark" '.[$mark] // empty' "$MARKS_FILE")
 
   if [ -z "$mark_data" ]; then
-    error "Mark '$mark' not set"
+    notify_error "Mark '$mark' not set" "$NOTIFY_ENABLED"
   fi
 
   # Parse mark data
@@ -140,25 +122,25 @@ jump_mark() {
 
   # Check if monitor exists
   if ! hyprctl monitors -j | jq -e --arg mon "$monitor" '.[] | select(.name == $mon)' >/dev/null 2>&1; then
-    info "Monitor '$monitor' not found, using current monitor"
+    notify_info "Monitor '$monitor' not found, using current monitor" "$NOTIFY_ENABLED"
   else
     hyprctl dispatch focusmonitor "$monitor" 2>/dev/null || true
   fi
 
   # Switch to workspace
-  hyprctl dispatch workspace "$workspace" 2>/dev/null || error "Failed to switch to workspace $workspace"
+  hyprctl dispatch workspace "$workspace" 2>/dev/null || notify_error "Failed to switch to workspace $workspace" "$NOTIFY_ENABLED"
 
   # Check if window still exists
   if hyprctl clients -j 2>/dev/null | jq -e --arg addr "$window" '.[] | select(.address == $addr)' >/dev/null; then
     # Window exists, focus it
-    hyprctl dispatch focuswindow "address:$window" 2>/dev/null || error "Failed to focus window"
+    hyprctl dispatch focuswindow "address:$window" 2>/dev/null || notify_error "Failed to focus window" "$NOTIFY_ENABLED"
 
     local display_title="${title:0:30}"
     [ "${#title}" -gt 30 ] && display_title="${display_title}..."
-    success "Jumped to '$mark' → $class"
+    notify_success "Jumped to '$mark' → $class" "$NOTIFY_ENABLED"
   else
     # Window closed but workspace switched
-    info "Window has been closed, switched to workspace $workspace"
+    notify_info "Window has been closed, switched to workspace $workspace" "$NOTIFY_ENABLED"
   fi
 }
 
@@ -168,7 +150,7 @@ jump_mark() {
 
 list_marks() {
   if [ ! -f "$MARKS_FILE" ]; then
-    [ -n "$NOTIFY_ENABLED" ] && notify-send -t 3000 "Marks" "No marks set"
+    [ -n "$NOTIFY_ENABLED" ] && notify-send -t 3000 "Marks" "No marks set" 2>/dev/null || true
     echo "No marks set"
     return
   fi
@@ -177,7 +159,7 @@ list_marks() {
   mark_count=$(jq '. | length' "$MARKS_FILE")
 
   if [ "$mark_count" -eq 0 ]; then
-    [ -n "$NOTIFY_ENABLED" ] && notify-send -t 3000 "Marks" "No marks set"
+    [ -n "$NOTIFY_ENABLED" ] && notify-send -t 3000 "Marks" "No marks set" 2>/dev/null || true
     echo "No marks set"
     return
   fi
@@ -189,7 +171,7 @@ list_marks() {
     "$MARKS_FILE")
 
   # Send notification with the marks list if enabled
-  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 5000 "Marks ($mark_count)" "$marks_list"
+  [ -n "$NOTIFY_ENABLED" ] && notify-send -t 5000 "Marks ($mark_count)" "$marks_list" 2>/dev/null || true
 
   # Always echo for terminal use
   echo "Marks ($mark_count):"
@@ -204,16 +186,16 @@ delete_mark() {
   local mark="$1"
 
   if [ -z "$mark" ]; then
-    error "Mark character required"
+    notify_error "Mark character required" "$NOTIFY_ENABLED"
   fi
 
   if [ ! -f "$MARKS_FILE" ]; then
-    error "No marks set"
+    notify_error "No marks set" "$NOTIFY_ENABLED"
   fi
 
   # Check if mark exists
   if ! jq -e --arg mark "$mark" '.[$mark]' "$MARKS_FILE" >/dev/null 2>&1; then
-    error "Mark '$mark' not set"
+    notify_error "Mark '$mark' not set" "$NOTIFY_ENABLED"
   fi
 
   # Delete mark (atomic write)
@@ -221,7 +203,7 @@ delete_mark() {
   jq --arg mark "$mark" 'del(.[$mark])' "$MARKS_FILE" >"$temp_file"
   mv "$temp_file" "$MARKS_FILE"
 
-  success "Deleted mark '$mark'"
+  notify_success "Deleted mark '$mark'" "$NOTIFY_ENABLED"
 }
 
 ################################################################################
@@ -230,7 +212,7 @@ delete_mark() {
 
 clear_marks() {
   if [ ! -f "$MARKS_FILE" ]; then
-    info "No marks to clear"
+    notify_info "No marks to clear" "$NOTIFY_ENABLED"
     return
   fi
 
@@ -238,13 +220,13 @@ clear_marks() {
   mark_count=$(jq '. | length' "$MARKS_FILE")
 
   if [ "$mark_count" -eq 0 ]; then
-    info "No marks to clear"
+    notify_info "No marks to clear" "$NOTIFY_ENABLED"
     return
   fi
 
   # Clear all marks
   echo '{}' >"$MARKS_FILE"
-  success "Cleared $mark_count marks"
+  notify_success "Cleared $mark_count marks" "$NOTIFY_ENABLED"
 }
 
 ################################################################################
@@ -268,9 +250,9 @@ clear)
   clear_marks
   ;;
 "")
-  error "Action required: set, jump, list, delete, clear"
+  notify_error "Action required: set, jump, list, delete, clear" "$NOTIFY_ENABLED"
   ;;
 *)
-  error "Unknown action: $ACTION"
+  notify_error "Unknown action: $ACTION" "$NOTIFY_ENABLED"
   ;;
 esac

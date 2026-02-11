@@ -12,87 +12,32 @@
 
 set -euo pipefail
 
-STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim"
-mkdir -p "$STATE_DIR"
+# Source shared utilities
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+source "$SCRIPT_DIR/lib/core.sh"
+source "$SCRIPT_DIR/lib/hypr.sh"
+source "$SCRIPT_DIR/lib/ui.sh"
+source "$SCRIPT_DIR/lib/clipboard.sh"
+
+# Initialize script
+init_script "replace"
 
 MODE="${1:-char}"
-
-################################################################################
-# Detect and use appropriate input tool
-################################################################################
-
-get_input() {
-  local prompt="$1"
-  local tool=""
-
-  # Prefer environment variable override
-  if [ -n "${HYPRVIM_PROMPT:-}" ] && command -v "$HYPRVIM_PROMPT" &>/dev/null; then
-    tool="$HYPRVIM_PROMPT"
-  else
-    # Fallback to auto-detect available tools
-    for candidate in rofi wofi tofi fuzzel dmenu kdialog zenity; do
-      if command -v "$candidate" &>/dev/null; then
-        tool="$candidate"
-        break
-      fi
-    done
-  fi
-
-  # Execute the selected tool
-  local input=""
-  case "$tool" in
-  rofi)
-    input=$(
-      echo "" | rofi -dmenu -p "$prompt" -lines 0 \
-        -theme-str 'window { location: north; anchor: north; y-offset: 10%; x-offset: 0%; width: 600px; height: 40px; border: 1px; }' \
-        -theme-str 'mainbox { children: [inputbar]; padding: 0px; spacing: 0px; border: 0px; }' \
-        -theme-str 'inputbar { padding: 8px 12px; children: [prompt,entry]; border: 0px; orientation: horizontal; }' \
-        -theme-str 'prompt { padding: 0px 0px 0px 0px; vertical-align: 0.5; }' \
-        -theme-str 'entry { vertical-align: 0.5; }'
-    )
-    ;;
-  wofi)
-    input=$(echo "" | wofi --dmenu --prompt "$prompt" --lines 1)
-    ;;
-
-  tofi)
-    input=$(echo "" | tofi --prompt-text "$prompt")
-    ;;
-  fuzzel)
-    input=$(echo "" | fuzzel --dmenu --prompt "$prompt")
-    ;;
-  dmenu)
-    input=$(echo "" | dmenu -p "$prompt")
-    ;;
-  kdialog)
-    input=$(kdialog --inputbox "$prompt" 2>/dev/null)
-    ;;
-  zenity)
-    input=$(zenity --entry --title="Replace" --text="$prompt" 2>/dev/null)
-    ;;
-  *)
-    notify-send "HyprVim Replace" "No input tool found. Install wofi, rofi, tofi, fuzzel, dmenu, zenity, or kdialog." 2>/dev/null || true
-    return 1
-    ;;
-  esac
-
-  echo "$input"
-}
 
 ################################################################################
 # Main logic
 ################################################################################
 
 # Exit NORMAL mode so user can type in the input dialog
-hyprctl dispatch submap reset
+exit_vim_mode
 
 # Get replacement based on mode
 if [ "$MODE" = "char" ]; then
   # r command: get single character, use count
-  REPLACEMENT=$(get_input "Replace with: ")
+  REPLACEMENT=$(get_user_input "Replace with: " "hyprvim-replace")
 
   # Return to NORMAL mode
-  hyprctl dispatch submap NORMAL
+  return_to_normal
 
   # If empty or cancelled, abort
   if [ -z "$REPLACEMENT" ]; then
@@ -114,10 +59,10 @@ if [ "$MODE" = "char" ]; then
 
 elif [ "$MODE" = "string" ]; then
   # R command: get string, use string length as count
-  REPLACEMENT=$(get_input "REPLACE: ")
+  REPLACEMENT=$(get_user_input "REPLACE: " "hyprvim-replace")
 
   # Return to NORMAL mode
-  hyprctl dispatch submap NORMAL
+  return_to_normal
 
   # If empty or cancelled, abort
   if [ -z "$REPLACEMENT" ]; then
@@ -127,35 +72,32 @@ elif [ "$MODE" = "string" ]; then
   # Count is the length of the string
   COUNT=${#REPLACEMENT}
 else
-  echo "Unknown mode: $MODE" >&2
+  log_error "Unknown mode: $MODE"
   exit 1
 fi
 
 # Check for wl-copy
-if ! command -v wl-copy &>/dev/null; then
-  notify-send "HyprVim Replace" "wl-clipboard not found. Install wl-clipboard for replace functionality." 2>/dev/null || true
-  exit 1
-fi
+require_cmd wl-copy
 
 # Copy replacement to clipboard
-echo -n "$REPLACEMENT" | wl-copy
+clipboard_copy "$REPLACEMENT"
 
 # Select COUNT characters forward
 if [ "$COUNT" -gt 1 ]; then
   for ((i = 0; i < COUNT; i++)); do
-    hyprctl dispatch sendshortcut SHIFT, RIGHT, activewindow
+    send_shortcut SHIFT, RIGHT
     sleep 0.01
   done
 else
   # Single character: just select it
-  hyprctl dispatch sendshortcut SHIFT, RIGHT, activewindow
+  send_shortcut SHIFT, RIGHT
 fi
 
 sleep 0.05
 
 # Paste replacement
-hyprctl dispatch sendshortcut CTRL, V, activewindow
+send_shortcut CTRL, V
 sleep 0.05
 
 # Return to NORMAL mode (cursor will be at end of replacement)
-hyprctl dispatch submap NORMAL
+return_to_normal

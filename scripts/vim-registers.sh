@@ -1,5 +1,4 @@
 #!/bin/bash
-# scripts/vim-registers.sh
 # hypr/.config/hypr/hyprvim/scripts/vim-registers.sh
 ################################################################################
 # vim-registers.sh - Register management for HyprVim
@@ -28,57 +27,33 @@
 ################################################################################
 
 set -euo pipefail
+
+# Source shared utilities
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+source "$SCRIPT_DIR/lib/core.sh"
+source "$SCRIPT_DIR/lib/hypr.sh"
+source "$SCRIPT_DIR/lib/clipboard.sh"
+
+# Initialize script
+init_script "registers"
+
+# Configuration
 DEFAULT_REGISTER='"'
-DEBUG="${HYPRVIM_DEBUG:-0}"
-STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/registers"
+STATE_DIR="$HYPRVIM_STATE_DIR/registers"
 mkdir -p "$STATE_DIR"
+
+# Check dependencies
+require_cmd wl-copy wl-paste jq hyprctl
 
 ################################################################################
 # HELPER FUNCTIONS
 ################################################################################
 
-# Print debug message if DEBUG=1
-log_debug() {
-  if [[ "$DEBUG" -eq 1 ]]; then
-    echo "[registers] $*" >&2
-  fi
-}
-
-# Sleep with debug logging
-sleep_with_debug() {
-  local duration="$1"
-  log_debug "sleep ${duration}s"
-  sleep "$duration"
-}
-
-# Read current clipboard content
-read_clipboard() {
-  wl-paste 2>/dev/null || echo ""
-}
-
-# Write content to clipboard
-write_clipboard() {
-  local content="$1"
-  copy_to_clipboard "$content"
-}
-
-# Smart copy that uses --type text/plain for single characters
-# This fixes wl-copy issues with single character content
-copy_to_clipboard() {
-  local content="$1"
-  if [[ ${#content} -eq 1 ]]; then
-    # Single character: use --type text/plain to fix wl-copy issue
-    echo -n "$content" | wl-copy --type text/plain
-  else
-    echo -n "$content" | wl-copy
-  fi
-}
-
 # Validate register name format
 validate_register() {
   local register="$1"
   if ! [[ "$register" =~ ^[a-z0-9_\"/]$ ]]; then
-    echo "Error: Invalid register name: $register" >&2
+    log_error "Invalid register name: $register"
     return 1
   fi
   return 0
@@ -99,7 +74,7 @@ with_pending_register() {
   "$action_fn" "$register" "$return_submap" "$@"
 
   clear_pending
-  hyprctl dispatch submap "$return_submap"
+  switch_mode "$return_submap"
 }
 
 ################################################################################
@@ -114,13 +89,13 @@ save_to_register() {
 
   # Read-only registers
   if [[ "$register" == "/" ]]; then
-    echo "Error: Register / is read-only" >&2
+    log_error "Register / is read-only"
     return 1
   fi
 
   # Get clipboard content
   local content
-  content=$(read_clipboard)
+  content=$(clipboard_paste)
 
   # Save to register file
   local register_file="$STATE_DIR/$register"
@@ -135,13 +110,13 @@ load_from_register() {
 
   # Handle special search register
   if [[ "$register" == "/" ]]; then
-    local find_state="$STATE_DIR/../find-state.json"
+    local find_state="$HYPRVIM_STATE_DIR/find-state.json"
     if [[ -f "$find_state" ]]; then
       local search_term
       search_term=$(jq -r '.find_term // ""' "$find_state" 2>/dev/null || echo "")
-      write_clipboard "$search_term"
+      clipboard_copy "$search_term"
     else
-      write_clipboard ""
+      clipboard_copy ""
     fi
     return 0
   fi
@@ -151,10 +126,10 @@ load_from_register() {
   if [[ -f "$register_file" ]]; then
     local content
     content=$(<"$register_file")
-    write_clipboard "$content"
+    clipboard_copy "$content"
   else
     # Empty register, copy empty string
-    write_clipboard ""
+    clipboard_copy ""
   fi
 }
 
@@ -183,23 +158,8 @@ clear_pending() {
 }
 
 ################################################################################
-# CLIPBOARD OPERATIONS - Backup, restore, and numbered register cycling
+# NUMBERED REGISTER OPERATIONS
 ################################################################################
-
-# Backup current clipboard
-backup_clipboard() {
-  read_clipboard >"$STATE_DIR/clipboard-backup"
-}
-
-# Restore clipboard from backup
-restore_clipboard() {
-  if [[ -f "$STATE_DIR/clipboard-backup" ]]; then
-    local content
-    content=$(<"$STATE_DIR/clipboard-backup")
-    write_clipboard "$content"
-    rm -f "$STATE_DIR/clipboard-backup"
-  fi
-}
 
 # Cycle numbered registers for delete operations (vim-like behavior)
 # Shifts registers 1-8 to 2-9, dropping register 9
@@ -246,7 +206,7 @@ _save_clipboard() {
 
   # Get clipboard content
   local content
-  content=$(read_clipboard)
+  content=$(clipboard_paste)
 
   # Save to the specified register file directly
   local register_file="$STATE_DIR/$register"
@@ -262,7 +222,7 @@ _save_clipboard() {
   if [[ "$register" != "$DEFAULT_REGISTER" ]] && [[ -f "$STATE_DIR/$DEFAULT_REGISTER" ]]; then
     local unnamed_content
     unnamed_content=$(<"$STATE_DIR/$DEFAULT_REGISTER")
-    write_clipboard "$unnamed_content"
+    clipboard_copy "$unnamed_content"
   fi
 }
 
@@ -305,13 +265,14 @@ _handle_delete() {
 
   # Handle black hole register specially
   if [[ "$register" == "_" ]]; then
-    backup_clipboard
+    local backup_file="$STATE_DIR/clipboard-backup"
+    backup_clipboard "$backup_file"
 
     # Execute delete shortcut (word splitting is intentional for hyprctl args)
     # shellcheck disable=SC2086
     hyprctl dispatch sendshortcut $shortcut, activewindow
     sleep_with_debug 0.05
-    restore_clipboard
+    restore_clipboard "$backup_file"
   else
     # Execute delete shortcut (word splitting is intentional for hyprctl args)
     # shellcheck disable=SC2086
@@ -322,7 +283,7 @@ _handle_delete() {
 
     # Get deleted content
     local content
-    content=$(read_clipboard)
+    content=$(clipboard_paste)
     save_delete_content "$register" "$content"
   fi
 }
@@ -425,7 +386,7 @@ list_registers() {
 ################################################################################
 
 if [[ "${1:-}" == "--debug" ]]; then
-  DEBUG=1
+  HYPRVIM_DEBUG=1
   shift
 fi
 
