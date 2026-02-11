@@ -19,7 +19,7 @@ Uses Hyprland's submap system to provide vim-style navigation and basic text edi
 
 Navigate text, manage selections, and perform text operations using familiar Vim motions without leaving your current application. Think of it as a lightweight, system-wide vim mode for your desktop.
 
-<https://github.com/user-attachments/assets/35d1e3bf-3e64-45b5-9efa-4d0329e054aa>
+<https://github.com/user-attachments/assets/c2c4f2cf-73ff-4b4c-abfa-c994508b2905>
 
 ## ✨ Features
 
