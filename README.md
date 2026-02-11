@@ -386,6 +386,97 @@ _Utilities:_
 <!-- commands:end -->
 </details>
 
+#### Non-standard Vim Binds
+
+HyprVim includes pragmatic GUI helper bindings in NORMAL mode that deviate from standard vim for better desktop integration.
+
+<a id="non-standard-binds"></a>
+
+<details>
+<summary>🔧 Non-standard Binds</summary>
+<br>
+<!-- non-standard:start-->
+
+**Why These Exist:**
+
+HyprVim operates at the compositor level across ALL applications (text editors, browsers, file managers, dialogs). These bindings enable basic GUI interaction without needing to constantly switch to INSERT mode.
+
+**GUI Helper Bindings:**
+
+_Dialog Interaction:_
+
+- `TAB` / `SHIFT+TAB` - Navigate through dialog options/form fields (pass-through)
+- `RETURN` - Confirm selection/submit dialog (pass-through)
+- `q` - Close/quit dialog (sends ESC to application)
+- `CTRL+C` - Cancel operation (sends ESC to application)
+
+_Clipboard Operations:_
+
+- `CTRL+V` - Paste from system clipboard (pass-through)
+- `CTRL+X` - Cut selection (pass-through)
+- `CTRL+A` - Select all (pass-through)
+
+_File Operations:_
+
+- `CTRL+S` - Save file (pass-through)
+- `CTRL+W` - Close tab/window (pass-through)
+
+_Edit Operations:_
+
+- `CTRL+Z` - Undo (pass-through)
+- `CTRL+SHIFT+Z` - Redo (pass-through)
+
+**Trade-offs:**
+
+- **Benefit**: Dialogs, browsers, and GUI apps work intuitively without mode switching
+- **Risk**: Some keys may trigger unwanted actions in text editors (e.g., TAB inserting indentation, RETURN creating newlines)
+- **Mitigation**: Use `i` to explicitly enter INSERT mode when editing text
+
+**Customizing These Bindings:**
+
+If you prefer strict vim behavior, create your own override config that sources after HyprVim:
+
+```bash
+# In ~/.config/hypr/hyprland.conf (AFTER sourcing HyprVim)
+source = ~/.config/hypr/hyprvim/init.conf
+source = ~/.config/hypr/my-hyprvim-overrides.conf
+
+# In ~/.config/hypr/my-hyprvim-overrides.conf
+submap = NORMAL
+# Remove pass-through bindings by rebinding to nothing or vim motions
+bind = , RETURN, exec, hyprctl --batch "dispatch sendshortcut , DOWN, activewindow; dispatch sendshortcut , HOME, activewindow"  # 1 line down
+bind = CTRL, V, submap, NORMAL  # Block Ctrl+V
+# ... add more overrides as needed
+submap = reset
+```
+
+Then rely on INSERT mode (`i`, `a`, etc.) for all GUI interaction
+
+**Workflow Example:**
+
+```text
+1. [Dialog appears]
+2. SUPER+ESC  - Enter NORMAL mode
+3. TAB        - Navigate to "OK" button
+4. RETURN     - Confirm
+5. [Dialog closes automatically]
+
+# Alternative for text editing:
+1. SUPER+ESC  - Enter NORMAL mode
+2. i          - Enter INSERT mode
+3. [Type normally with all keys available]
+4. TAB        - Navigate to "OK" button
+5. RETURN     - Confirm
+6. [Dialog closes automatically]
+7. ESC        - Return to NORMAL mode
+```
+
+<!-- non-standard:end -->
+</details>
+
+> [!TIP]
+> For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide vim toggles](./extras/keyd/README.md), and [web browser vim navigation](./extras/vimium/README.md)
+
 ## ⚙️ Configuration
 
 HyprVim sets a few defaults in `./init.conf`.
