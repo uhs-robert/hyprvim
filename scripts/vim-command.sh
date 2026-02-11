@@ -46,8 +46,7 @@ cmd_write() {
 cmd_write_quit() {
   send_shortcut CTRL, S
   sleep 0.1
-  # Try to close window (Alt+F4 is most universal)
-  send_shortcut ALT, F4
+  close_window
   notify_success "File saved and closing" 0
   return_to_normal
 }
@@ -174,7 +173,7 @@ if [ "$ACTION" = "prompt" ]; then
   exit_vim_mode
 
   # Get command from user
-  cmd=$(get_user_input ":" "hyprvim-command" "w, wq, q, qa, %s, help")
+  cmd=$(get_user_input ":" "hyprvim-command" "w, wq, q, qa, %s, h|help")
 
   return_to_normal
 
