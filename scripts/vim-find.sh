@@ -67,7 +67,7 @@ require_cmd() {
 # Remove newlines and trailing whitespace from search term
 sanitize_term() {
   local term="$1"
-  echo "$term" | tr -d '\n' | sed 's/[[:space:]]*$//'
+  printf "%s" "$term" | tr -d '\n' | sed 's/[[:space:]]*$//'
 }
 
 # Extract the first word from a term (collapses whitespace/newlines)
@@ -217,8 +217,12 @@ execute_find() {
   set_state "last_action_direction" "$direction"
   set_state "last_action_term_type" "$term_type"
 
-  # Copy search term to clipboard
-  echo -n "$search_term" | wl-copy
+  # Copy search term to clipboard (use --type text/plain for single chars)
+  if [[ ${#search_term} -eq 1 ]]; then
+    echo -n "$search_term" | wl-copy --type text/plain
+  else
+    echo -n "$search_term" | wl-copy
+  fi
 
   # Open find dialog
   send_shortcut_sleep 0.15 CTRL, F, activewindow
