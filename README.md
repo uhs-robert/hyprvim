@@ -29,6 +29,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **INSERT Mode**: Text insertion with `ESCAPE` bound to return to normal mode
 - **VISUAL Mode**: Character-wise visual selection
 - **V-LINE Mode**: Line-wise visual selection
+- **COMMAND Mode**: Execute vim commands (`:w`, `:wq`, `:q`, `:qa`, `:%s`, `:help`)
 - **COUNT Modifier**: Perform operations with `{count}` modifier prefix to repeat actions (e.g., `6dw` to delete next 6 words)
 - **OPERATOR Modes**: Operators with motions `{operator}` + `{motion}`/`{text-object)` (e.g., `diw` for delete in word)
   - _Operators Supported:_ `d`, `c`, `y`
@@ -69,6 +70,15 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 ### 🛟 Additional Operations
 
 - **Help**: `gh` - Show keybindings viewer
+- **Command Mode**: `:` - Execute vim commands
+  - `:w` - Save file (Ctrl+S)
+  - `:wq` - Save and quit window
+  - `:q` - Quit window (prompts to save)
+  - `:q!` - Force quit window
+  - `:qa` - Quit all windows in workspace
+  - `:qa!` - Force quit all windows
+  - `:%s`, `:s` - Open find/replace dialog
+  - `:help`, `:h` - Show help
 - **Repeats**: `2dw`, `3j`, `5w` (up to 999)
 - **Undo/Redo**: `u`, `Ctrl+r`
 - **Find**: `/`, `?`, `f`, `F`, `t`, `T`, `*`, `#`, `n`, `N`
@@ -178,23 +188,108 @@ Press `SUPER + ESCAPE` (or your configured leader key + activation key) to enter
 
 #### Basic operations
 
-`dw` (delete word), `3dw` (delete 3 words), `5j` (move down 5 lines), `ciw` (change word), `Vjjd` (delete 3 lines), `yy` (yank line), `gg` (document start)
+Core vim operations combine motions, operators, and counts for efficient text editing.
+
+<a id="basic-operations"></a>
+
+<details>
+<summary>⌨️ Using Basic Operations</summary>
+<br>
+<!-- operations:start-->
+
+**Motions:**
+
+- `hjkl` - Move left/down/up/right
+- `w`, `b`, `e` - Move forward word, back word, end of word
+- `0`, `^`, `$` - Line start, first non-blank, line end
+- `gg`, `G` - Document start, document end
+- `i`, `a`, `A`, `o`, `O` - All enter insert mode: at cursor, after cursor, end of line, below line, above line
+
+**Operators + Motions:**
+
+- `dw` - Delete word
+- `3dw` - Delete 3 words
+- `ciw` - Change inner word (enters insert mode)
+- `yy` - Yank (copy) current line
+- `dd` - Delete current line
+
+**Visual Mode:**
+
+- `v` - Enter visual mode
+- `V` - Enter line-wise visual mode
+- `Vjjd` - Select 3 lines and delete them
+- `viwc` - Visually select inner word and change it
+
+**Counts:**
+
+- `5j` - Move down 5 lines
+- `3w` - Move forward 3 words
+- `2dd` - Delete 2 lines
+
+**Workflow Example:**
+
+```text
+1. gg          - Jump to document start
+2. 3j          - Move down 3 lines
+3. ciw         - Change current word (deletes and enters insert mode)
+4. [type]      - Type new word
+5. ESC         - Return to normal mode
+6. 2dw         - Delete next 2 words
+7. $           - Jump to end of line
+8. yy          - Yank current line
+9. p           - Paste below
+```
+
+<!-- operations:end -->
+</details>
+
+> [!TIP]
+> For the full list, it is highly recommended to [read all keybindings](./submaps/vim-modes.conf).
 
 #### Marks
 
-`ma` (set), `` `a `` (jump), `dma` (delete) - works across monitors
+Marks provide vim-like quick navigation to windows from any monitor.
+
+<a id="mark-usage"></a>
+
+<details>
+<summary>📌 Using Marks</summary>
+<br>
+<!-- marks:start-->
+
+**Basic Usage:**
+
+- `m{a-Z}` - Set mark on active window to any value from a-Z
+- `'{a-Z}` - Jump to any mark from a-Z
+  `` `{a-Z} `` - Jump to any mark from a-Z and exit vim mode
+- `dm{a-Z}` - Delete any mark from a-Z
+- `gm` - List all marks, shows window name and workspace number
+
+**Workflow Example:**
+
+```text
+1. mf          - Set mark on firefox
+2. ms          - Set mark on slack
+3. gm          - List all active marks for reference
+4. 's          - Jump to slack and stay in vim mode
+5. `f          - Jump to firefox and leave vim mode
+```
+
+> Marks are stored in `$XDG_RUNTIME_DIR/hyprvim/marks/` (tmpfs) and are cleared on reboot.
+
+<!-- marks:end -->
+</details>
 
 #### Registers
 
-`"ayy` (yank to a), `"ap` (paste from a), `"_dd` (delete without clipboard), `"0p` (paste last yank)
+Registers provide vim-like clipboard management with multiple storage locations.
 
 <a id="register-usage"></a>
 
 <details>
 <summary>📋️ Using Registers</summary>
 <br>
-
-Registers provide vim-like clipboard management with multiple storage locations:
+<!-- registers:start-->
 
 **Basic Usage:**
 
@@ -222,7 +317,73 @@ Registers provide vim-like clipboard management with multiple storage locations:
 
 > Registers are stored in `$XDG_RUNTIME_DIR/hyprvim/registers/` (tmpfs) and are cleared on reboot.
 
-<!-- extras:end -->
+<!-- registers:end -->
+</details>
+
+#### Commands
+
+Execute vim-style commands for file operations, window management, and utilities.
+
+<a id="command-usage"></a>
+
+<details>
+<summary>💻 Using Commands</summary>
+<br>
+<!-- commands:start-->
+
+**Basic Usage:**
+
+Press `:` in NORMAL mode to enter command mode, then type a command:
+
+- `:w` - Save file (Ctrl+S)
+- `:wq` - Save and quit window
+- `:q` - Quit window (prompts to save if needed)
+- `:q!` - Force quit window without saving
+- `:qa` - Quit all windows in current workspace
+- `:qa!` - Force quit all windows without saving
+- `:%s`, `:s` - Open find/replace dialog (Ctrl+H)
+- `:help`, `:h` - Show keybindings help viewer
+
+**Command Categories:**
+
+_File Operations:_
+
+- `:w` - Save current file/document
+- `:wq` - Save and close window
+
+_Window Management:_
+
+- `:q` - Close window gracefully (app prompts if unsaved)
+- `:q!` - Force close window immediately
+- `:qa` - Close all windows in workspace (apps prompt if unsaved)
+- `:qa!` - Force close all windows in workspace
+
+_Utilities:_
+
+- `:%s`, `:s` - Launch native find/replace dialog
+- `:help`, `:h` - Open help viewer with searchable keybindings
+
+**Workflow Example:**
+
+```text
+1. :h          - View help options
+2. :w          - Save current document
+3. :q          - Try to quit (app may prompt about other unsaved work)
+4. [cancel]    - Cancel the quit dialog
+5. :%s         - Open find/replace to make changes
+6. [replace]   - Perform replacements
+7. :wq         - Save and quit
+```
+
+**Alternative Workflow (Multiple Windows):**
+
+```text
+1. :w          - Save current window
+2. :qa         - Close all windows in workspace
+3. [save]      - Apps prompt individually for unsaved documents
+```
+
+<!-- commands:end -->
 </details>
 
 ## ⚙️ Configuration
