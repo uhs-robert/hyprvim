@@ -22,51 +22,96 @@
 
 set -euo pipefail
 
+# Source shared utilities
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+source "$SCRIPT_DIR/lib/hypr.sh"
+
 COUNT_SCRIPT="$SCRIPT_DIR/vim-count.sh"
+
+################################################################################
+# Helper Functions
+################################################################################
+
+# Move down from LINE mode
+motion_down() {
+  local count="$1"
+
+  # First motion: establish line selection and switch to V-LINE
+  send_shortcuts ", HOME" "SHIFT, END" "SHIFT, Down" "SHIFT, END"
+  switch_mode V-LINE
+
+  # Remaining motions
+  for ((i = 1; i < count; i++)); do
+    send_shortcuts "SHIFT, Down" "SHIFT, END"
+  done
+}
+
+# Move up from LINE mode
+motion_up() {
+  local count="$1"
+
+  # First motion: establish line selection and switch to V-LINE
+  send_shortcuts ", END" "SHIFT, HOME" "SHIFT, Up" "SHIFT, HOME"
+  switch_mode V-LINE
+
+  # Remaining motions
+  for ((i = 1; i < count; i++)); do
+    send_shortcuts "SHIFT, Up" "SHIFT, HOME"
+  done
+}
+
+# Move to previous paragraph
+motion_paragraph_up() {
+  local count="$1"
+
+  # First motion: establish paragraph selection and switch to V-LINE
+  send_shortcuts ", END" "CTRL SHIFT, Up"
+  switch_mode V-LINE
+
+  # Remaining motions
+  for ((i = 1; i < count; i++)); do
+    send_shortcuts "CTRL SHIFT, Up"
+  done
+}
+
+# Move to next paragraph
+motion_paragraph_down() {
+  local count="$1"
+
+  # First motion: establish paragraph selection and switch to V-LINE
+  send_shortcuts ", HOME" "CTRL SHIFT, Down"
+  switch_mode V-LINE
+
+  # Remaining motions
+  for ((i = 1; i < count; i++)); do
+    send_shortcuts "CTRL SHIFT, Down"
+  done
+}
+
+################################################################################
+# Main Logic
+################################################################################
 
 # Get count (and clear it)
 COUNT=$("$COUNT_SCRIPT" get)
 
 DIRECTION="$1"
 
-if [ "$DIRECTION" = "down" ]; then
-  # First motion
-  hyprctl --batch "dispatch sendshortcut , HOME, activewindow; dispatch sendshortcut SHIFT, END, activewindow; dispatch sendshortcut SHIFT, Down, activewindow"
-  hyprctl dispatch submap V-LINE
-
-  # Remaining motions
-  for ((i = 1; i < COUNT; i++)); do
-    hyprctl --batch "dispatch sendshortcut SHIFT, Down, activewindow; dispatch sendshortcut SHIFT, END, activewindow"
-  done
-elif [ "$DIRECTION" = "up" ]; then
-  # First motion
-  hyprctl --batch "dispatch sendshortcut , END, activewindow; dispatch sendshortcut SHIFT, HOME, activewindow; dispatch sendshortcut SHIFT, Up, activewindow"
-  hyprctl dispatch submap V-LINE
-
-  # Remaining motions
-  for ((i = 1; i < COUNT; i++)); do
-    hyprctl --batch "dispatch sendshortcut SHIFT, Up, activewindow; dispatch sendshortcut SHIFT, HOME, activewindow"
-  done
-elif [ "$DIRECTION" = "paragraph-up" ]; then
-  # First motion
-  hyprctl --batch "dispatch sendshortcut , END, activewindow; dispatch sendshortcut CTRL SHIFT, Up, activewindow"
-  hyprctl dispatch submap V-LINE
-
-  # Remaining motions
-  for ((i = 1; i < COUNT; i++)); do
-    hyprctl dispatch sendshortcut CTRL SHIFT, Up, activewindow
-  done
-elif [ "$DIRECTION" = "paragraph-down" ]; then
-  # First motion
-  hyprctl --batch "dispatch sendshortcut , HOME, activewindow; dispatch sendshortcut CTRL SHIFT, Down, activewindow"
-  hyprctl dispatch submap V-LINE
-
-  # Remaining motions
-  for ((i = 1; i < COUNT; i++)); do
-    hyprctl dispatch sendshortcut CTRL SHIFT, Down, activewindow
-  done
-else
+case "$DIRECTION" in
+down)
+  motion_down "$COUNT"
+  ;;
+up)
+  motion_up "$COUNT"
+  ;;
+paragraph-up)
+  motion_paragraph_up "$COUNT"
+  ;;
+paragraph-down)
+  motion_paragraph_down "$COUNT"
+  ;;
+*)
   echo "Invalid direction: $DIRECTION" >&2
   exit 1
-fi
+  ;;
+esac
