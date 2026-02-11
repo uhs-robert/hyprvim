@@ -312,7 +312,7 @@ parse_section() {
         printf "- **%s+%s** - %s\n", parts[1], parts[2], parts[3]
       }
     }
-  ' "$CONF_DIR/$file"
+  ' "$CONF_DIR/submaps/$file"
 }
 
 # Display help
