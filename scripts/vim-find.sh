@@ -93,7 +93,7 @@ send_shortcut_sleep() {
 # Validate state key is allowed in JSON state
 validate_state_key() {
   case "$1" in
-  active | direction | char_term | find_term | till | post_move_left | post_move_left_len | last_action_direction | last_action_term_type)
+  active | direction | char_term | find_term | till | last_action_direction | last_action_term_type)
     return 0
     ;;
   *)
@@ -214,8 +214,6 @@ execute_find() {
   set_state "direction" "$direction"
   set_state "$term_type" "$search_term"
   set_state "active" "true"
-  set_state "post_move_left" "false"
-  set_state "post_move_left_len" "0"
   set_state "last_action_direction" "$direction"
   set_state "last_action_term_type" "$term_type"
 
@@ -237,11 +235,6 @@ execute_find() {
 
   # Return to NORMAL mode
   hyprctl dispatch submap NORMAL
-
-  if [ "$direction" = "forward" ] && [ "$term_type" = "find_term" ] && [ "${#search_term}" -gt 1 ]; then
-    set_state "post_move_left" "true"
-    set_state "post_move_left_len" "${#search_term}"
-  fi
 }
 
 ################################################################################
@@ -303,15 +296,6 @@ repeat_find() {
       fi
       set_state "last_action_direction" "$action_direction"
       set_state "last_action_term_type" "$term_type"
-      local find_term
-      find_term=$(get_state "find_term" "")
-      if [ "$action_direction" = "forward" ] && [ "${#find_term}" -gt 1 ]; then
-        set_state "post_move_left" "true"
-        set_state "post_move_left_len" "${#find_term}"
-      else
-        set_state "post_move_left" "false"
-        set_state "post_move_left_len" "0"
-      fi
     fi
     send_f3 "$direction" "$flip_direction"
   else
@@ -398,18 +382,6 @@ deactivate_search() {
     log_debug "deactivate: sending LEFT for till"
     send_shortcut , LEFT, activewindow
     set_state "till" "false"
-  fi
-
-  # If configured, move cursor left by term length
-  local post_move_left move_left_count last_action_direction last_action_term_type
-  post_move_left=$(get_state "post_move_left" "false")
-  move_left_count=$(get_state "post_move_left_len" "0")
-  last_action_direction=$(get_state "last_action_direction" "forward")
-  last_action_term_type=$(get_state "last_action_term_type" "find_term")
-  if [ "$post_move_left" = "true" ] && [ "$move_left_count" -gt 0 ] && [ "$last_action_direction" = "forward" ] && [ "$last_action_term_type" = "find_term" ]; then
-    for ((i = 0; i < move_left_count; i++)); do
-      send_shortcut , LEFT, activewindow
-    done
   fi
 
   # Mark search as inactive
