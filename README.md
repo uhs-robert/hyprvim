@@ -78,6 +78,21 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **Delete Char**: `x`, `X`
 - **Indent**: `>`, `<`
 
+### ✏️ Full Editor Access
+
+For complex editing tasks that require the full power of vim/nvim (multi-line edits, macros, plugins, syntax highlighting), HyprVim includes an **Open Editor** helper script:
+
+- **`$LEADER + N`** - Opens vim/nvim in a floating window
+  - Automatically grabs selected text (if any)
+  - Edit with full vim features and your personal config
+  - On save (`:wq`), pastes content back to focused window
+  - Works in all vim modes (NORMAL, VISUAL, LINE, V-LINE, G-submaps)
+
+Examples of how to use this script in your own keybindings can be found in [hyprland-basics](/extras/hyprland-basics/keymap.conf)
+
+> [!TIP]
+> Set `$HYPRVIM_EDITOR` in `./settings.conf` to use `vim` or `nvim` (default: `nvim`)
+
 ### ‼️ Exiting Vim Mode
 
 Just like real Vim, you also need to know how to exit HyprVim.

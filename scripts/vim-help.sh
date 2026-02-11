@@ -228,11 +228,33 @@ EOF
 
 EOF
 
-  ---
+  cat <<'EOF'
 
-  ## ↩️ Undo/Redo
+---
 
-  EOF
+## ✏️ Full Editor Access
+
+EOF
+  parse_section "vim-modes.conf" "## Editor Operations"
+
+  cat <<'EOF'
+
+**Opens vim/nvim in a floating window for advanced editing:**
+- Automatically grabs selected text (if any)
+- Edit with full vim features and your personal config
+- On save (`:w`), pastes content back to focused window
+- Perfect for complex form fields, multi-line edits, or syntax highlighting
+
+**Configuration:**
+- Set `$HYPRVIM_EDITOR` in settings.conf to use 'vim' or 'nvim'
+- Use `--ask-ext` flag for syntax highlighting (prompts for file extension)
+- Use `--keystroke-mode` for terminals that don't accept clipboard paste
+
+---
+
+## ↩️ Undo/Redo
+
+EOF
   parse_section "vim-modes.conf" "## Undo"
 
   cat <<'EOF'

@@ -47,6 +47,14 @@ HYPRVIM_MARK_NOTIFY =
 $HELP_TERMINAL = kitty --class floating-help -e
 
 # ----------
+# EDITOR
+# ----------
+# Editor for vim-open-editor feature (nvim or vim)
+# Default is nvim, set to 'vim' if you prefer classic vim
+
+$HYPRVIM_EDITOR = nvim
+
+# ----------
 # DEBUG
 # ----------
 # Debug mode for scripts that support it (1 = enable debug logging)
