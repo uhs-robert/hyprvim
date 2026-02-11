@@ -380,7 +380,14 @@ word_under_cursor() {
 deactivate_search() {
   log_debug "deactivate: starting"
 
-  send_shortcut , ESCAPE, activewindow
+  # Only send ESC if search is active
+  local active
+  active=$(get_state "active" "false")
+  log_debug "deactivate: active=$active"
+
+  if [ "$active" = "true" ]; then
+    send_shortcut , ESCAPE, activewindow
+  fi
 
   # Check if it was a till search and send LEFT if so
   local till
