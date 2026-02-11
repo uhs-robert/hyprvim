@@ -47,11 +47,12 @@ detect_prompt_tool() {
 }
 
 # Get user input using available prompt tool
-# Usage: get_user_input "Prompt text" "window-class"
+# Usage: get_user_input "Prompt text" "window-class" ["placeholder/help text"]
 # Returns: user input string
 get_user_input() {
   local prompt="${1:-Input: }"
   local window_class="${2:-hyprvim-prompt}"
+  local placeholder="${3:-}"
   local tool
 
   tool=$(detect_prompt_tool)
@@ -64,20 +65,23 @@ get_user_input() {
   local input=""
   case "$tool" in
   rofi)
-    input=$(
-      echo "" | rofi -dmenu -p "$prompt" -lines 0 \
-        -theme-str 'window { location: north; anchor: north; y-offset: 10%; x-offset: 0%; width: 600px; height: 40px; border: 1px; }' \
-        -theme-str 'mainbox { children: [inputbar]; padding: 0px; spacing: 0px; border: 0px; }' \
-        -theme-str 'inputbar { padding: 8px 12px; children: [prompt,entry]; border: 0px; orientation: horizontal; }' \
-        -theme-str 'prompt { padding: 0px 0px 0px 0px; vertical-align: 0.5; }' \
-        -theme-str 'entry { vertical-align: 0.5; }'
+    local rofi_args=(
+      -dmenu -p "$prompt" -lines 0
+      -theme-str 'window { location: north; anchor: north; y-offset: 10%; x-offset: 0%; width: 600px; height: 40px; border: 1px; }'
+      -theme-str 'mainbox { children: [inputbar]; padding: 0px; spacing: 0px; border: 0px; }'
+      -theme-str 'inputbar { padding: 8px 12px; children: [prompt,entry]; border: 0px; orientation: horizontal; }'
+      -theme-str 'prompt { padding: 0px 0px 0px 0px; vertical-align: 0.5; }'
+      -theme-str 'entry { vertical-align: 0.5; placeholder: "'"$placeholder"'"; }'
     )
+    input=$(echo "" | rofi "${rofi_args[@]}")
     ;;
   wofi)
     input=$(echo "" | wofi --dmenu --prompt "$prompt" --lines 0 --gtk-application-id "$window_class")
     ;;
   tofi)
-    input=$(echo "" | tofi --prompt-text "$prompt")
+    local tofi_args=(--prompt-text "$prompt")
+    [ -n "$placeholder" ] && tofi_args+=(--placeholder-text "$placeholder")
+    input=$(echo "" | tofi "${tofi_args[@]}")
     ;;
   fuzzel)
     input=$(echo "" | fuzzel --dmenu --prompt "$prompt" --app-id "$window_class")

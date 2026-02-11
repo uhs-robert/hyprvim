@@ -209,6 +209,30 @@ Auto-detects: wofi, rofi, tofi, fuzzel, dmenu, zenity, kdialog.
 
 ---
 
+## ⌨️ Command Mode
+
+EOF
+  parse_section "vim-modes.conf" "## Command Mode"
+
+  cat <<'EOF'
+
+**Supported Commands:**
+- `:w` - Save file (Ctrl+S)
+- `:wq` - Save and quit (Ctrl+S then close window)
+- `:q` - Quit window (allows app to prompt for save)
+- `:q!` - Force quit window (kill immediately)
+- `:qa` - Quit all windows in current workspace
+- `:qa!` - Force quit all windows in current workspace
+- `:%s` or `:s` - Open native find/replace dialog (Ctrl+H)
+- `:help` or `:h` - Show this help
+
+**Examples:**
+- `:w` - Save current file
+- `:wq` - Save and close window
+- `:%s` - Open the application's native find/replace dialog
+
+---
+
 ## 🔄 Replace
 
 EOF
