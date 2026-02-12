@@ -23,6 +23,8 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 
 ## ✨ Features
 
+> **📚 Full Reference:** For a complete, searchable reference of all keybindings, commands, and features, visit the [Wiki Keybindings Page](https://github.com/uhs-robert/hyprvim/wiki/Keybindings).
+
 ### 🚦 Vim Modes
 
 - **NORMAL Mode**: Primary navigation with `hjkl` movement, word motions (`w`/`b`/`e`), and operators
@@ -193,6 +195,8 @@ Press `SUPER + ESCAPE` (or your configured leader key + activation key) to enter
 
 ### Quick Reference
 
+> **📚 Full Reference:** For a complete, searchable reference of all keybindings, commands, and features, visit the [Wiki Keybindings Page](https://github.com/uhs-robert/hyprvim/wiki/Keybindings).
+
 #### Basic operations
 
 Core vim operations combine motions, operators, and counts for efficient text editing.
@@ -251,7 +255,7 @@ Core vim operations combine motions, operators, and counts for efficient text ed
 </details>
 
 > [!TIP]
-> For the full list, it is highly recommended to [read all keybindings](./submaps/vim-modes.conf).
+> For the complete list of all keybindings, see the [Wiki Keybindings Page](https://github.com/uhs-robert/hyprvim/wiki/Keybindings) or browse the [submaps configuration files](./submaps/vim-modes.conf).
 
 #### Marks
 
@@ -392,6 +396,9 @@ _Utilities:_
 
 <!-- commands:end -->
 </details>
+
+> [!NOTE]
+> Command mode also includes window management (`:split`, `:float`, `:ws`), system control (`:reload`, `:lock`), and more. See the [Command Mode section in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Keybindings#-command-mode) for the complete list.
 
 #### Non-standard Vim Binds
 
