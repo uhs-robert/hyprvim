@@ -139,7 +139,9 @@ EOF
 **Example:**
 - `ma` - Set mark 'a' at current location
 - `` `a `` - Jump back to mark 'a'
+- `gm` - List all marks
 - `dma` - Delete mark 'a'
+- `dm` + **Backspace** - Clear all marks
 
 ---
 
