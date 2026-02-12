@@ -31,9 +31,11 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **V-LINE Mode**: Line-wise visual selection
 - **COMMAND Mode**: Execute vim commands (`:w`, `:wq`, `:q`, `:qa`, `:%s`, `:help`)
 - **COUNT Modifier**: Perform operations with `{count}` modifier prefix to repeat actions (e.g., `6dw` to delete next 6 words)
-- **OPERATOR Modes**: Operators with motions `{operator}` + `{motion}`/`{text-object)` (e.g., `diw` for delete in word)
+- **OPERATOR Modes**: Operators with motions `{operator}` + `{motion}`/`{text-object}` (e.g., `diw` for delete in word)
   - _Operators Supported:_ `d`, `c`, `y`
-  - _Motions Supported:_ `i`, `a`
+  - _Motions Supported:_ `w`, `e`, `b`, `0`, `^`, `$`, `gg`, `G`
+  - _Linewise Supported:_ `dd`, `cc`, `yy`
+  - _Text-Object Modifiers:_ `i`, `a`
   - _Text Objects Supported:_ `w`, `p`
 
 ### 🧭 Navigation & Motion
