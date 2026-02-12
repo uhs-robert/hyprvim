@@ -84,6 +84,46 @@ ensure_json_file() {
 }
 
 ################################################################################
+# Submap State Management
+################################################################################
+
+# Set which submap to return to after next operation
+# Usage: set_after_submap "state_file.json" "NORMAL"
+#        set_after_submap "state_file.json" "reset"
+set_after_submap() {
+  local state_file="$1"
+  local submap="${2:-NORMAL}"
+
+  require_cmd jq
+  ensure_json_file "$state_file"
+
+  local temp_file="${state_file}.tmp"
+  jq --arg after "$submap" '.after = $after' "$state_file" >"$temp_file" && mv "$temp_file" "$state_file"
+}
+
+# Dispatch to saved submap and clear it
+# Usage: dispatch_to_after_submap "state_file.json" ["default_submap"]
+# Returns: Dispatches to stored submap (or default if none stored)
+dispatch_to_after_submap() {
+  local state_file="$1"
+  local default="${2:-NORMAL}"
+
+  local after_submap="$default"
+
+  # Read from state file
+  if [ -f "$state_file" ]; then
+    require_cmd jq
+    after_submap=$(jq -r ".after // \"$default\"" "$state_file" 2>/dev/null || echo "$default")
+
+    # Clear the after property
+    local temp_file="${state_file}.tmp"
+    jq 'del(.after)' "$state_file" >"$temp_file" 2>/dev/null && mv "$temp_file" "$state_file"
+  fi
+
+  hyprctl dispatch submap "$after_submap" 2>/dev/null || true
+}
+
+################################################################################
 # Export Functions
 ################################################################################
 
@@ -91,3 +131,5 @@ export -f validate_state_key
 export -f get_state
 export -f set_state
 export -f ensure_json_file
+export -f set_after_submap
+export -f dispatch_to_after_submap

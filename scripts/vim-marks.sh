@@ -43,29 +43,6 @@ MARK="${2:-}"
 # Check dependencies
 require_cmd jq hyprctl
 
-# Helper function to dispatch to submap after action
-dispatch_submap() {
-  local after_submap="NORMAL"
-
-  # Read from marks.json state
-  if [ -f "$MARKS_FILE" ]; then
-    after_submap=$(jq -r '.after // "NORMAL"' "$MARKS_FILE" 2>/dev/null || echo "NORMAL")
-    # Clear the after property
-    local temp_file="${MARKS_FILE}.tmp"
-    jq 'del(.after)' "$MARKS_FILE" >"$temp_file" 2>/dev/null && mv "$temp_file" "$MARKS_FILE"
-  fi
-
-  hyprctl dispatch submap "$after_submap" 2>/dev/null || true
-}
-
-# Set the after-submap property
-set_after_submap() {
-  local submap="${1:-NORMAL}"
-  ensure_json_file "$MARKS_FILE"
-  local temp_file="${MARKS_FILE}.tmp"
-  jq --arg after "$submap" '.after = $after' "$MARKS_FILE" >"$temp_file" && mv "$temp_file" "$MARKS_FILE"
-}
-
 ################################################################################
 # Action: Set Mark
 ################################################################################
@@ -120,7 +97,7 @@ set_mark() {
   [ "${#title}" -gt 30 ] && display_title="${display_title}..."
 
   notify_success "Mark '$mark' → $class (ws:$workspace)" "$NOTIFY_ENABLED"
-  dispatch_submap
+  dispatch_to_after_submap "$MARKS_FILE"
 }
 
 ################################################################################
@@ -176,7 +153,7 @@ jump_mark() {
     # Window closed but workspace switched
     notify_info "Window has been closed, switched to workspace $workspace" "$NOTIFY_ENABLED"
   fi
-  dispatch_submap
+  dispatch_to_after_submap "$MARKS_FILE"
 }
 
 ################################################################################
@@ -239,7 +216,7 @@ delete_mark() {
   mv "$temp_file" "$MARKS_FILE"
 
   notify_success "Deleted mark '$mark'" "$NOTIFY_ENABLED"
-  dispatch_submap
+  dispatch_to_after_submap "$MARKS_FILE"
 }
 
 ################################################################################
@@ -263,7 +240,7 @@ clear_marks() {
   # Clear all marks
   echo '{}' >"$MARKS_FILE"
   notify_success "Cleared $mark_count marks" "$NOTIFY_ENABLED"
-  dispatch_submap
+  dispatch_to_after_submap "$MARKS_FILE"
 }
 
 ################################################################################
@@ -287,10 +264,10 @@ clear)
   clear_marks
   ;;
 after)
-  set_after_submap "$MARK"
+  set_after_submap "$MARKS_FILE" "$MARK"
   ;;
 exit)
-  dispatch_submap
+  dispatch_to_after_submap "$MARKS_FILE"
   ;;
 "")
   notify_error "Action required: set, jump, list, delete, clear, after, exit" "$NOTIFY_ENABLED"
