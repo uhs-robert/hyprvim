@@ -18,6 +18,10 @@
 #   :qa!                     - Force quit all windows in current workspace
 #   :help, :h                - Show keybindings help
 #   :%s, :s                  - Open native find/replace dialog (Ctrl+H)
+#   System Control:
+#     :reload, :r            - Reload Hyprland config
+#     :lock                  - Lock screen
+#     :logout                - Exit Hyprland
 #
 ################################################################################
 
@@ -117,6 +121,29 @@ cmd_substitute() {
 }
 
 ################################################################################
+################################################################################
+# System/Hyprland Control Commands
+################################################################################
+
+# :reload, :r - Reload Hyprland config
+cmd_reload() {
+  reload_hyprland_config
+  notify_success "Hyprland config reloaded" 1
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :lock - Lock screen
+cmd_lock() {
+  lock_screen
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :logout - Logout/exit Hyprland
+cmd_logout() {
+  logout_hyprland
+}
+
+################################################################################
 # Command Parser and Dispatcher
 ################################################################################
 
@@ -152,6 +179,19 @@ execute_command() {
 
   qa!)
     cmd_force_quit_all
+    ;;
+
+  # System control
+  reload | r)
+    cmd_reload
+    ;;
+
+  lock)
+    cmd_lock
+    ;;
+
+  logout)
+    cmd_logout
     ;;
 
   help | h)

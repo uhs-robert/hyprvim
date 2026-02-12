@@ -226,6 +226,11 @@ EOF
 - `:qa` - Quit all windows in current workspace
 - `:qa!` - Force quit all windows in current workspace
 - `:%s` or `:s` - Open native find/replace dialog (Ctrl+H)
+**System Control:**
+- `:reload` or `:r` - Reload Hyprland config
+- `:lock` - Lock screen
+- `:logout` - Exit Hyprland
+
 - `:help` or `:h` - Show this help
 
 **Examples:**

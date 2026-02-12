@@ -55,6 +55,14 @@ $HYPRVIM_TERMINAL = kitty --class floating-help -e
 $HYPRVIM_EDITOR = nvim
 
 # ----------
+# LOCK COMMAND
+# ----------
+# Command to execute when locking the screen
+# Default is hyprlock, but you can use any lock command (swaylock, gtklock, etc.)
+
+$HYPRVIM_LOCK = hyprlock
+
+# ----------
 # DEBUG
 # ----------
 # Debug mode for scripts that support it (1 = enable debug logging)

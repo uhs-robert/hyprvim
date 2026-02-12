@@ -141,6 +141,26 @@ kill_workspace_windows() {
 }
 
 ################################################################################
+################################################################################
+# System Control
+################################################################################
+
+# Reload Hyprland configuration
+reload_hyprland_config() {
+  hyprctl reload
+}
+
+# Lock screen
+lock_screen() {
+  hyprctl dispatch exec "${HYPRVIM_LOCK:-hyprlock}"
+}
+
+# Exit/logout from Hyprland
+logout_hyprland() {
+  hyprctl dispatch exit
+}
+
+################################################################################
 # Export Functions
 ################################################################################
 
