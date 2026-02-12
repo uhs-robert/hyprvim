@@ -1,15 +1,23 @@
 #!/bin/bash
+# scripts/vim-marks.sh
 # hypr/.config/hypr/hyprvim/scripts/vim-marks.sh
 ################################################################################
 # vim-marks.sh - Window/Workspace mark and teleportation system for Hyprland
 ################################################################################
 #
 # Usage:
-#   vim-marks.sh set <char>     - Save current window/workspace as mark
-#   vim-marks.sh jump <char>    - Jump to saved mark
-#   vim-marks.sh list           - List all marks
-#   vim-marks.sh delete <char>  - Delete specific mark
-#   vim-marks.sh clear          - Clear all marks
+#   vim-marks.sh set <char>    - Save current window/workspace as mark
+#   vim-marks.sh jump <char>   - Jump to saved mark
+#   vim-marks.sh list          - List all marks
+#   vim-marks.sh delete <char> - Delete specific mark
+#   vim-marks.sh clear         - Clear all marks
+#   vim-marks.sh after <name>  - Set submap to transition to after next operation
+#   vim-marks.sh exit          - Dispatch to saved submap state
+#
+# Examples:
+#   vim-marks.sh after reset && hyprctl dispatch submap JUMP-MARK   # Jump resets submaps
+#   vim-marks.sh after NORMAL && hyprctl dispatch submap SET-MARK   # Set goes to NORMAL
+#   bind = , ESCAPE, exec, $HYPRVIM_MARKS exit                      # Exit to saved submap
 #
 ################################################################################
 
@@ -26,12 +34,37 @@ init_script "marks"
 
 # Configuration
 MARKS_FILE="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/marks.json"
+NOTIFY_ENABLED="${HYPRVIM_MARK_NOTIFY:-0}"
+
+# Parse arguments
 ACTION="${1:-}"
 MARK="${2:-}"
-NOTIFY_ENABLED="${HYPRVIM_MARK_NOTIFY:-0}"
 
 # Check dependencies
 require_cmd jq hyprctl
+
+# Helper function to dispatch to submap after action
+dispatch_submap() {
+  local after_submap="NORMAL"
+
+  # Read from marks.json state
+  if [ -f "$MARKS_FILE" ]; then
+    after_submap=$(jq -r '.after // "NORMAL"' "$MARKS_FILE" 2>/dev/null || echo "NORMAL")
+    # Clear the after property
+    local temp_file="${MARKS_FILE}.tmp"
+    jq 'del(.after)' "$MARKS_FILE" >"$temp_file" 2>/dev/null && mv "$temp_file" "$MARKS_FILE"
+  fi
+
+  hyprctl dispatch submap "$after_submap" 2>/dev/null || true
+}
+
+# Set the after-submap property
+set_after_submap() {
+  local submap="${1:-NORMAL}"
+  ensure_json_file "$MARKS_FILE"
+  local temp_file="${MARKS_FILE}.tmp"
+  jq --arg after "$submap" '.after = $after' "$MARKS_FILE" >"$temp_file" && mv "$temp_file" "$MARKS_FILE"
+}
 
 ################################################################################
 # Action: Set Mark
@@ -87,6 +120,7 @@ set_mark() {
   [ "${#title}" -gt 30 ] && display_title="${display_title}..."
 
   notify_success "Mark '$mark' → $class (ws:$workspace)" "$NOTIFY_ENABLED"
+  dispatch_submap
 }
 
 ################################################################################
@@ -142,6 +176,7 @@ jump_mark() {
     # Window closed but workspace switched
     notify_info "Window has been closed, switched to workspace $workspace" "$NOTIFY_ENABLED"
   fi
+  dispatch_submap
 }
 
 ################################################################################
@@ -204,6 +239,7 @@ delete_mark() {
   mv "$temp_file" "$MARKS_FILE"
 
   notify_success "Deleted mark '$mark'" "$NOTIFY_ENABLED"
+  dispatch_submap
 }
 
 ################################################################################
@@ -227,6 +263,7 @@ clear_marks() {
   # Clear all marks
   echo '{}' >"$MARKS_FILE"
   notify_success "Cleared $mark_count marks" "$NOTIFY_ENABLED"
+  dispatch_submap
 }
 
 ################################################################################
@@ -249,8 +286,14 @@ delete)
 clear)
   clear_marks
   ;;
+after)
+  set_after_submap "$MARK"
+  ;;
+exit)
+  dispatch_submap
+  ;;
 "")
-  notify_error "Action required: set, jump, list, delete, clear" "$NOTIFY_ENABLED"
+  notify_error "Action required: set, jump, list, delete, clear, after, exit" "$NOTIFY_ENABLED"
   ;;
 *)
   notify_error "Unknown action: $ACTION" "$NOTIFY_ENABLED"
