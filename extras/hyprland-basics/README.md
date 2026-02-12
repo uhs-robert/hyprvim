@@ -10,7 +10,7 @@ The `keymap.conf` file defines a few focused submaps and a set of core managemen
 
 - **Quick Access to HyprVim Scripts**: Direct access to HyprVim utilities outside of vim mode
   - `$HYPRVIM_LEADER+N` - Open vim/nvim editor anywhere (grabs selected text or opens empty)
-  - Additional examples: Help viewer, using marks, find tool, etc:
+  - Additional examples: Marks operations, find/search, command mode
 - **Resize**: window resize controls with normal/fast/precise steps.
 - **Move**: move floating windows with normal/fast/precise steps.
 - **Windows**: window focus, workspace navigation, and common window actions.
