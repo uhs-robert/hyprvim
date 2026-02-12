@@ -9,7 +9,7 @@ Repo: [hyprwm/Hyprland](https://github.com/hyprwm/Hyprland)
 The `keymap.conf` file defines a few focused submaps and a set of core management bindings:
 
 - **Quick Access to HyprVim Scripts**: Direct access to HyprVim utilities outside of vim mode
-  - `$LEADER+N` - Open vim/nvim editor anywhere (grabs selected text or opens empty)
+  - `$HYPRVIM_LEADER+N` - Open vim/nvim editor anywhere (grabs selected text or opens empty)
   - Additional examples: Help viewer, marks list, find, replace
 - **Resize**: window resize controls with normal/fast/precise steps.
 - **Move**: move floating windows with normal/fast/precise steps.
@@ -33,6 +33,6 @@ hyprctl reload
 
 ## Usage
 
-- Use your `$LEADER` key to enter submaps (see `keymap.conf` for the exact bindings).
+- Use your `$HYPRVIM_LEADER` key to enter submaps (see `keymap.conf` for the exact bindings).
 - Each submap has an `ESC` exit back to normal mode.
 - Adjust or remove bindings as needed; this is a starter kit.

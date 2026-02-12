@@ -92,7 +92,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 
 For complex editing tasks that require the full power of vim/nvim (multi-line edits, macros, plugins, syntax highlighting), HyprVim includes an **Open Editor** helper script:
 
-- **`$LEADER + N`** - Opens vim/nvim in a floating window
+- **`$HYPRVIM_LEADER + N`** - Opens vim/nvim in a floating window
   - Automatically grabs selected text (if any)
   - Edit with full vim features and your personal config
   - On save (`:wq`), pastes content back to focused window
@@ -108,7 +108,7 @@ Examples of how to use this script in your own keybindings can be found in [hypr
 Just like real Vim, you also need to know how to exit HyprVim.
 
 - **Return to Normal**: `ESC` - (e.g., VISUAL → NORMAL), NORMAL passes ESC to application
-- **Toggle Vim Mode**: `$LEADER + ESC` - Toggle vim mode on/off from anywhere
+- **Toggle Vim Mode**: `$HYPRVIM_LEADER + ESC` - Toggle vim mode on/off from anywhere
 - **Emergency Exit**: `ALT + ESC` - Immediate return to normal Hyprland bindings
 
 <details>

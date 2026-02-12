@@ -288,7 +288,7 @@ EOF
 ## 🚪 Exiting
 
 - **ESC** - Return to NORMAL mode from any mode
-- **$LEADER + ESC** - Exit vim mode entirely (back to normal Hyprland)
+- **$HYPRVIM_LEADER + ESC** - Exit vim mode entirely (back to normal Hyprland)
 - **ALT + ESC** - Emergency exit (panic button)
 
 ---

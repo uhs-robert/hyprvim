@@ -16,8 +16,8 @@
 # Leader and Activate key combo for vim mode (default: SUPER/Windows key)
 # Change these to your preferred activation key combo
 
-$LEADER = SUPER
-$ACTIVATE = ESCAPE
+$HYPRVIM_LEADER = SUPER
+$HYPRVIM_ACTIVATE = ESCAPE
 
 # PROMPT
 # ----------
@@ -39,12 +39,12 @@ HYPRVIM_MARK_NOTIFY =
 # Terminal used to display the help viewer for keybinds.
 # Default uses kitty with a class that matches the floating window rule below.
 # Examples:
-#   $HELP_TERMINAL = ghostty --class floating-help -e
-#   $HELP_TERMINAL = wezterm start --class floating-help --
-#   $HELP_TERMINAL = alacritty --class floating-help -e
-#   $HELP_TERMINAL = foot --app-id floating-help -e
+#   $HYPRVIM_TERMINAL = ghostty --class floating-help -e
+#   $HYPRVIM_TERMINAL = wezterm start --class floating-help --
+#   $HYPRVIM_TERMINAL = alacritty --class floating-help -e
+#   $HYPRVIM_TERMINAL = foot --app-id floating-help -e
 
-$HELP_TERMINAL = kitty --class floating-help -e
+$HYPRVIM_TERMINAL = kitty --class floating-help -e
 
 # ----------
 # EDITOR
