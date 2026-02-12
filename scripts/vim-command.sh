@@ -1,4 +1,5 @@
 #!/bin/bash
+# scripts/vim-command.sh
 # hypr/.config/hypr/hyprvim/scripts/vim-command.sh
 ################################################################################
 # vim-command.sh - Command mode for HyprVim
@@ -10,18 +11,48 @@
 #   vim-command.sh exit           - Dispatch to saved submap state
 #
 # Supported Commands:
-#   :w                       - Save file (Ctrl+S)
-#   :wq                      - Save and quit (Ctrl+S then Alt+F4)
-#   :q                       - Quit window (Alt+F4, allows app to prompt for save)
-#   :q!                      - Force quit window (kill immediately)
-#   :qa                      - Quit all windows in current workspace
-#   :qa!                     - Force quit all windows in current workspace
-#   :help, :h                - Show keybindings help
-#   :%s, :s                  - Open native find/replace dialog (Ctrl+H)
+#
+#   File Operations:
+#     :w                     - Save file (Ctrl+S)
+#     :wq                    - Save and quit
+#     :q                     - Quit window
+#     :q!                    - Force quit window (kill immediately)
+#     :qa                    - Quit all windows in current workspace
+#     :qa!                   - Force quit all windows in current workspace
+#
+#   Window Management:
+#     :split, :sp            - Split window horizontally
+#     :vsplit, :vsp, :vs     - Split window vertically
+#     :only                  - Close all other windows (keep current)
+#
+#   Window States:
+#     :float, :f             - Toggle floating mode
+#     :fullscreen, :fs       - Toggle fullscreen
+#     :pin                   - Pin window to all workspaces
+#     :center, :c            - Center floating window
+#     :pseudo                - Toggle pseudo-tiling
+#
+#   Workspace Navigation:
+#     :tabn, :tn             - Next workspace
+#     :tabp, :tp             - Previous workspace
+#     :ws <num>              - Switch to workspace number
+#     :move <num>            - Move window to workspace number
+#
 #   System Control:
 #     :reload, :r            - Reload Hyprland config
 #     :lock                  - Lock screen
 #     :logout                - Exit Hyprland
+#
+#   Visual:
+#     :opacity <0.0-1.0>     - Set window opacity
+#
+#   App Launching:
+#     :e, :edit              - Open application launcher
+#     :term, :t              - Open terminal
+#
+#   Utilities:
+#     :help, :h              - Show keybindings help
+#     :%s, :s                - Open native find/replace dialog (Ctrl+H)
 #
 ################################################################################
 
@@ -121,6 +152,110 @@ cmd_substitute() {
 }
 
 ################################################################################
+# Window Management Commands
+################################################################################
+
+# :split, :sp - Split window horizontally
+cmd_split() {
+  split_window_horizontal
+  notify_success "Window split" 0
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :vsplit, :vsp - Split window vertically
+cmd_vsplit() {
+  split_window_vertical
+  notify_success "Window split vertically" 0
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :only - Close all other windows in workspace (keep current)
+cmd_only() {
+  local count
+  count=$(close_other_windows)
+  notify_success "Closed $count other window(s)" 1
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+################################################################################
+# Window State Commands
+################################################################################
+
+# :float, :f - Toggle floating mode
+cmd_float() {
+  toggle_floating
+  notify_success "Toggled floating mode" 0
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :fullscreen, :fs - Toggle fullscreen
+cmd_fullscreen() {
+  toggle_fullscreen
+  notify_success "Toggled fullscreen" 0
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :pin - Pin window to all workspaces
+cmd_pin() {
+  toggle_pin
+  notify_success "Window pinned" 0
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :center, :c - Center floating window
+cmd_center() {
+  center_window
+  notify_success "Window centered" 0
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :pseudo - Toggle pseudo-tiling
+cmd_pseudo() {
+  toggle_pseudo
+  notify_success "Toggled pseudo-tiling" 0
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+################################################################################
+# Workspace Navigation Commands
+################################################################################
+
+# :tabn, :tn - Next workspace (like gt in vim)
+cmd_workspace_next() {
+  next_workspace
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :tabp, :tp - Previous workspace (like gT in vim)
+cmd_workspace_prev() {
+  prev_workspace
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :ws <num> - Switch to workspace number
+cmd_workspace() {
+  local ws_num="$1"
+  if [[ "$ws_num" =~ ^[0-9]+$ ]]; then
+    switch_to_workspace "$ws_num"
+    notify_success "Switched to workspace $ws_num" 0
+  else
+    notify_info "Usage: :ws <number>" 1
+  fi
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :move <num> - Move window to workspace
+cmd_move_workspace() {
+  local ws_num="$1"
+  if [[ "$ws_num" =~ ^[0-9]+$ ]]; then
+    move_window_to_workspace "$ws_num"
+    notify_success "Moved to workspace $ws_num" 1
+  else
+    notify_info "Usage: :move <number>" 1
+  fi
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
 ################################################################################
 # System/Hyprland Control Commands
 ################################################################################
@@ -144,6 +279,50 @@ cmd_logout() {
 }
 
 ################################################################################
+# Visual Commands
+################################################################################
+
+# :opacity <value> - Set window opacity (0.0-1.0)
+cmd_opacity() {
+  local value="${1:-1.0}"
+  if [[ "$value" =~ ^[0-9]*\.?[0-9]+$ ]]; then
+    set_window_opacity "$value"
+    notify_success "Opacity set to $value" 0
+  else
+    notify_info "Usage: :opacity <0.0-1.0>" 1
+  fi
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+################################################################################
+# App Launching Commands
+################################################################################
+
+# :e, :edit - Open launcher
+cmd_edit() {
+  exit_vim_mode
+
+  local launcher
+  launcher=$(get_launcher_command)
+
+  if [ -z "$launcher" ]; then
+    notify_info "No launcher found (rofi, wofi, tofi, fuzzel)" 1
+    dispatch_to_after_submap "$COMMAND_STATE_FILE"
+    return
+  fi
+
+  exec_command "$launcher"
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+# :term, :t - Open terminal
+cmd_terminal() {
+  exec_command "${TERMINAL:-kitty}"
+  notify_success "Terminal launched" 0
+  dispatch_to_after_submap "$COMMAND_STATE_FILE"
+}
+
+################################################################################
 # Command Parser and Dispatcher
 ################################################################################
 
@@ -157,6 +336,7 @@ execute_command() {
   cmd=$(echo "$cmd" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
 
   case "$cmd" in
+  # File operations
   w)
     cmd_write
     ;;
@@ -181,6 +361,63 @@ execute_command() {
     cmd_force_quit_all
     ;;
 
+  # Window management
+  split | sp)
+    cmd_split
+    ;;
+
+  vsplit | vsp | vs)
+    cmd_vsplit
+    ;;
+
+  only)
+    cmd_only
+    ;;
+
+  # Window states
+  float | f)
+    cmd_float
+    ;;
+
+  fullscreen | fs)
+    cmd_fullscreen
+    ;;
+
+  pin)
+    cmd_pin
+    ;;
+
+  center | c)
+    cmd_center
+    ;;
+
+  pseudo)
+    cmd_pseudo
+    ;;
+
+  # Workspace navigation
+  tabn | tn)
+    cmd_workspace_next
+    ;;
+
+  tabp | tp)
+    cmd_workspace_prev
+    ;;
+
+  ws*)
+    # Extract workspace number: ":ws5" or ":ws 5"
+    local num="${cmd#ws}"
+    num="${num#[[:space:]]}"
+    cmd_workspace "$num"
+    ;;
+
+  move*)
+    # Extract workspace number: ":move5" or ":move 5"
+    local num="${cmd#move}"
+    num="${num#[[:space:]]}"
+    cmd_move_workspace "$num"
+    ;;
+
   # System control
   reload | r)
     cmd_reload
@@ -194,6 +431,24 @@ execute_command() {
     cmd_logout
     ;;
 
+  # Visual
+  opacity*)
+    # Extract opacity value: ":opacity0.5" or ":opacity 0.5"
+    local val="${cmd#opacity}"
+    val="${val#[[:space:]]}"
+    cmd_opacity "$val"
+    ;;
+
+  # App launching
+  e | edit)
+    cmd_edit
+    ;;
+
+  term | t)
+    cmd_terminal
+    ;;
+
+  # Utilities
   help | h)
     cmd_help
     ;;
@@ -221,8 +476,7 @@ prompt)
   exit_vim_mode
 
   # Get command from user
-  cmd=$(get_user_input ":" "hyprvim-command" "w, wq, q, qa, %s, h|help")
-
+  cmd=$(get_user_input ":" "hyprvim-command" "w, wq, q, float, fullscreen, ws, move, reload, help")
 
   # If empty or cancelled, abort
   if [ -z "$cmd" ]; then

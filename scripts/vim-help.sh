@@ -218,25 +218,55 @@ EOF
 
   cat <<'EOF'
 
-**Supported Commands:**
+**File Operations:**
 - `:w` - Save file (Ctrl+S)
-- `:wq` - Save and quit (Ctrl+S then close window)
+- `:wq` - Save and quit
 - `:q` - Quit window (allows app to prompt for save)
 - `:q!` - Force quit window (kill immediately)
 - `:qa` - Quit all windows in current workspace
 - `:qa!` - Force quit all windows in current workspace
-- `:%s` or `:s` - Open native find/replace dialog (Ctrl+H)
+
+**Window Management:**
+- `:split` or `:sp` - Split window horizontally
+- `:vsplit`, `:vsp`, `:vs` - Split window vertically
+- `:only` - Close all other windows (keep current)
+
+**Window States:**
+- `:float` or `:f` - Toggle floating mode
+- `:fullscreen` or `:fs` - Toggle fullscreen
+- `:pin` - Pin window to all workspaces
+- `:center` or `:c` - Center floating window
+- `:pseudo` - Toggle pseudo-tiling
+
+**Workspace Navigation:**
+- `:tabn` or `:tn` - Next workspace
+- `:tabp` or `:tp` - Previous workspace
+- `:ws <num>` - Switch to workspace number (e.g., `:ws 3`)
+- `:move <num>` - Move window to workspace (e.g., `:move 5`)
+
 **System Control:**
 - `:reload` or `:r` - Reload Hyprland config
 - `:lock` - Lock screen
 - `:logout` - Exit Hyprland
 
+**Visual:**
+- `:opacity <value>` - Set window opacity 0.0-1.0 (e.g., `:opacity 0.8`)
+
+**App Launching:**
+- `:e` or `:edit` - Open application launcher
+- `:term` or `:t` - Open terminal
+
+**Utilities:**
 - `:help` or `:h` - Show this help
+- `:%s` or `:s` - Open native find/replace dialog (Ctrl+H)
 
 **Examples:**
 - `:w` - Save current file
 - `:wq` - Save and close window
-- `:%s` - Open the application's native find/replace dialog
+- `:float` - Toggle floating mode for current window
+- `:ws 3` - Switch to workspace 3
+- `:move 5` - Move current window to workspace 5
+- `:opacity 0.7` - Set window to 70% opacity
 
 ---
 

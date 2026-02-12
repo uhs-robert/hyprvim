@@ -150,6 +150,39 @@ get_user_selection() {
   echo "$choice"
 }
 
+# Get launcher command for application launcher
+# Returns: launcher command string (e.g., "rofi -show drun")
+get_launcher_command() {
+  local tool
+  tool=$(detect_prompt_tool)
+
+  if [ -z "$tool" ]; then
+    return 1
+  fi
+
+  case "$tool" in
+  rofi)
+    echo "rofi -show drun"
+    ;;
+  wofi)
+    echo "wofi --show drun"
+    ;;
+  tofi)
+    echo "tofi-drun --drun-launch=true"
+    ;;
+  fuzzel)
+    echo "fuzzel"
+    ;;
+  dmenu)
+    echo "dmenu_run"
+    ;;
+  *)
+    # Fallback: try to use the tool with -show drun
+    echo "$tool -show drun"
+    ;;
+  esac
+}
+
 ################################################################################
 # Notification and Terminal Output Helpers
 ################################################################################
@@ -203,6 +236,7 @@ notify_info() {
 export -f detect_prompt_tool
 export -f get_user_input
 export -f get_user_selection
+export -f get_launcher_command
 export -f notify_error
 export -f notify_success
 export -f notify_info

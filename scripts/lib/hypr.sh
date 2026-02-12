@@ -89,6 +89,25 @@ kill_window() {
   hyprctl dispatch killactive
 }
 
+# Close all other windows in workspace (keep current)
+# Returns: Number of windows closed
+close_other_windows() {
+  local current_address
+  current_address=$(hyprctl activewindow -j | jq -r '.address')
+  local workspace_id
+  workspace_id=$(hyprctl activeworkspace -j | jq -r '.id')
+  local count=0
+
+  while IFS= read -r address; do
+    if [ "$address" != "$current_address" ] && [ -n "$address" ]; then
+      hyprctl dispatch closewindow "address:$address"
+      ((count++))
+    fi
+  done < <(hyprctl clients -j | jq -r ".[] | select(.workspace.id == $workspace_id) | .address")
+
+  echo "$count"
+}
+
 # Close all windows in current workspace
 # Returns: Number of windows closed
 close_workspace_windows() {
@@ -141,6 +160,83 @@ kill_workspace_windows() {
 }
 
 ################################################################################
+# Window State Operations
+################################################################################
+
+# Toggle floating mode for active window
+toggle_floating() {
+  hyprctl dispatch togglefloating
+}
+
+# Toggle fullscreen for active window
+toggle_fullscreen() {
+  hyprctl dispatch fullscreen 1
+}
+
+# Toggle pin (show on all workspaces)
+toggle_pin() {
+  hyprctl dispatch pin
+}
+
+# Toggle pseudo-tiling mode
+toggle_pseudo() {
+  hyprctl dispatch pseudo
+}
+
+# Center active floating window
+center_window() {
+  hyprctl dispatch centerwindow
+}
+
+# Set window opacity (0.0-1.0)
+# Usage: set_window_opacity 0.8
+set_window_opacity() {
+  local value="${1:-1.0}"
+  hyprctl setprop active alpha "$value"
+}
+
+################################################################################
+# Window Layout Operations
+################################################################################
+
+# Split window horizontally (preselect down)
+split_window_horizontal() {
+  hyprctl dispatch layoutmsg preselect d
+}
+
+# Split window vertically (preselect right)
+split_window_vertical() {
+  hyprctl dispatch layoutmsg preselect r
+}
+
+################################################################################
+# Workspace Operations
+################################################################################
+
+# Switch to next workspace
+next_workspace() {
+  hyprctl dispatch workspace e+1
+}
+
+# Switch to previous workspace
+prev_workspace() {
+  hyprctl dispatch workspace e-1
+}
+
+# Switch to specific workspace number
+# Usage: switch_to_workspace 3
+switch_to_workspace() {
+  local workspace="$1"
+  hyprctl dispatch workspace "$workspace"
+}
+
+# Move active window to workspace
+# Usage: move_window_to_workspace 5
+move_window_to_workspace() {
+  local workspace="$1"
+  hyprctl dispatch movetoworkspace "$workspace"
+}
+
 ################################################################################
 # System Control
 ################################################################################
@@ -161,6 +257,17 @@ logout_hyprland() {
 }
 
 ################################################################################
+# Application Launching
+################################################################################
+
+# Execute command via Hyprland
+# Usage: exec_command "kitty"
+exec_command() {
+  local cmd="$1"
+  hyprctl dispatch exec "$cmd"
+}
+
+################################################################################
 # Export Functions
 ################################################################################
 
@@ -175,3 +282,20 @@ export -f close_window
 export -f kill_window
 export -f close_workspace_windows
 export -f kill_workspace_windows
+export -f close_other_windows
+export -f toggle_floating
+export -f toggle_fullscreen
+export -f toggle_pin
+export -f toggle_pseudo
+export -f center_window
+export -f set_window_opacity
+export -f split_window_horizontal
+export -f split_window_vertical
+export -f next_workspace
+export -f prev_workspace
+export -f switch_to_workspace
+export -f move_window_to_workspace
+export -f reload_hyprland_config
+export -f lock_screen
+export -f logout_hyprland
+export -f exec_command
