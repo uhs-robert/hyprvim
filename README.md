@@ -139,11 +139,14 @@ If you'd like an extra config added, raise a feature request and I'll put it tog
 
 ### Prerequisites
 
-| Name                                           | Description              |
-| ---------------------------------------------- | ------------------------ |
-| [Hyprland](https://github.com/hyprwm/Hyprland) | Wayland compositor       |
-| Bash                                           | For shell scripts        |
-| A terminal emulator                            | For the `gh` help viewer |
+| Name                                           | Description                                                               |
+| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| [Hyprland](https://github.com/hyprwm/Hyprland) | Wayland compositor                                                        |
+| Bash                                           | For shell scripts                                                         |
+| `wl-clipboard`                                 | Wayland clipboard utilities (`wl-copy`, `wl-paste`)                       |
+| `jq`                                           | JSON processor for parsing hyprctl output                                 |
+| A terminal emulator                            | For the `gh` help viewer                                                  |
+| A prompt tool                                  | One of: `rofi`, `wofi`, `tofi`, `fuzzel`, `dmenu`, `zenity`, or `kdialog` |
 
 ### Quick Install
 
@@ -167,6 +170,8 @@ source = ~/.config/hypr/hyprvim/init.conf
 ```bash
 hyprctl reload
 ```
+
+- **Verify installation**: Press `SUPER + ESC` and you should enter NORMAL mode. Press `gh` to view the help viewer.
 
 ## 🚀 Usage
 
@@ -494,6 +499,29 @@ cp settings.conf.example settings.conf
 
 > [!TIP]
 > To override or append keys in each submap, just source your overriding keybindings after HyprVim
+
+## 🗑️ Uninstalling
+
+To remove HyprVim from your system:
+
+Remove the source line from your `~/.config/hypr/hyprland.conf`:
+
+```bash
+# Remove this line:
+source = ~/.config/hypr/hyprvim/init.conf
+```
+
+Delete the HyprVim directory:
+
+```bash
+rm -rf ~/.config/hypr/hyprvim
+```
+
+Reload your Hyprland configuration:
+
+```bash
+hyprctl reload
+```
 
 ## 🤔 Where is the Visual Mode Indicator? (Waybar)
 
