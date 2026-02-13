@@ -19,6 +19,7 @@ ASK_EXT=false
 REMOVE_TMP=false
 KEYSTROKE_MODE=false
 COPY_SELECTED=false
+INSERT_MODE=false
 
 TERM_CLASS="hyprvim-open-vim"
 TERMINAL_CMD=""
@@ -133,6 +134,9 @@ show_help() {
   echo "--copy-selected"
   echo "  Copy the currently selected text with Ctrl + C and start editing it"
   echo ""
+  echo "--insert-mode"
+  echo "  Start the editor in INSERT mode instead of NORMAL mode"
+  echo ""
   echo "--keystroke-mode"
   echo "  Switches from clipboard-paste to **direct keystroke mode** using wtype."
   echo "  - Useful in cases where pasting is blocked, unreliable, or when working inside apps that don't accept clipboard input. (e.g: a Terminal; because they take a CTRL+SHIFT+V) "
@@ -167,6 +171,11 @@ parse_args() {
 
     --copy-selected)
       COPY_SELECTED=true
+      shift
+      ;;
+
+    --insert-mode)
+      INSERT_MODE=true
       shift
       ;;
 
@@ -272,8 +281,12 @@ fi
 # Record file modification time before opening editor
 MTIME_BEFORE=$(stat -c %Y "$TMPFILE" 2>/dev/null || echo "0")
 
-# Launch vim/nvim in insert mode, auto-quit on write
-"$TERMINAL_CMD" "${TERM_OPTS[@]}" "$EDITOR_CMD" +startinsert +'autocmd BufWritePost <buffer> quit' "$TMPFILE"
+# Launch vim/nvim, auto-quit on write
+if $INSERT_MODE; then
+  "$TERMINAL_CMD" "${TERM_OPTS[@]}" "$EDITOR_CMD" +startinsert +'autocmd BufWritePost <buffer> quit' "$TMPFILE"
+else
+  "$TERMINAL_CMD" "${TERM_OPTS[@]}" "$EDITOR_CMD" +'autocmd BufWritePost <buffer> quit' "$TMPFILE"
+fi
 
 # Check if file was actually modified (user saved)
 MTIME_AFTER=$(stat -c %Y "$TMPFILE" 2>/dev/null || echo "0")
