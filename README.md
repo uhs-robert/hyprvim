@@ -165,7 +165,7 @@ cp settings.conf.example settings.conf
 ```
 
 > [!NOTE]
-> For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide Vim toggles](./extras/keyd/README.md), and [web browser Vim navigation](./extras/vimium/README.md)
+> For further customization, see extras: [waybar hyprsubmap indicator](./extras/waybar) [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [web browser Vim navigation](./extras/vimium/README.md), and [even more](./extras).
 
 ## 🗑️ Uninstalling
 
