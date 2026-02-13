@@ -35,6 +35,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **📋 Registers** - Multi-clipboard with named (`"a-z`) and special registers (`"0`, `"_`, `"/`)
 - **🔍 Find/Search** - Interactive search (`/`, `?`, `f`, `t`, `*`, `#`) with next/previous (`n/N`)
 - **🔄 Replace** - Character (`r`) and string replacement (`R`)
+- **🔁 Surround** - Wrap text with pairs (`gs` for word, `S` in visual) - supports `()`, `{}`, `[]`, `<div>`, or custom with spaces
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
 - **Open Vim/Nvim Anywhere** - Press `$HYPRVIM_LEADER + N` to open selected text in Vim/Nvim for complex editing. Save/close to paste.
