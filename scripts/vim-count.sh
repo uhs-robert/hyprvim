@@ -9,7 +9,8 @@
 #   vim-count.sh get                - Get count and clear (returns 1 if empty)
 #   vim-count.sh clear              - Clear pending count
 #   vim-count.sh peek               - Get count without clearing
-#   vim-count.sh handle_zero        - Special handling for '0' key
+#   vim-count.sh handle_zero        - Special handling for '0' key in NORMAL mode
+#   vim-count.sh handle_zero_visual - Special handling for '0' key in VISUAL mode
 #
 ################################################################################
 
@@ -95,6 +96,26 @@ handle_zero() {
   fi
 }
 
+handle_zero_visual() {
+  # In visual mode:
+  # - '0' alone = extend selection to start of line (SHIFT+HOME)
+  # - '10j' = 0 is part of count
+  # So if count is empty, treat as motion. Otherwise append.
+
+  local current=""
+  if [ -f "$COUNT_FILE" ]; then
+    current=$(cat "$COUNT_FILE")
+  fi
+
+  if [ -z "$current" ]; then
+    # No pending count, extend selection to line start (SHIFT+HOME)
+    hyprctl dispatch sendshortcut SHIFT, HOME, activewindow
+  else
+    # Pending count exists, append 0
+    append_digit "0"
+  fi
+}
+
 ################################################################################
 # Main
 ################################################################################
@@ -115,8 +136,11 @@ peek)
 handle_zero)
   handle_zero
   ;;
+handle_zero_visual)
+  handle_zero_visual
+  ;;
 "")
-  echo "Action required: append, get, clear, peek, handle_zero" >&2
+  echo "Action required: append, get, clear, peek, handle_zero, handle_zero_visual" >&2
   exit 1
   ;;
 *)
