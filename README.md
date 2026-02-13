@@ -165,7 +165,7 @@ cp settings.conf.example settings.conf
 ```
 
 > [!NOTE]
-> For further customization, see extras: [waybar hyprsubmap indicator](./extras/waybar) [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [web browser Vim navigation](./extras/vimium/README.md), and [even more](./extras).
+> For further customization, see extras: [waybar hyprsubmap indicator](./extras/waybar), [keyboard-driven mouse control](./extras/wl-kbptr), [other hyprland submaps](./extras/hyprland-basics), [web browser Vim navigation](./extras/vimium), and [even more](./extras).
 
 ## 🗑️ Uninstalling
 
