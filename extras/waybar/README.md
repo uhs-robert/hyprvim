@@ -1,6 +1,6 @@
 # Waybar Submap
 
-This extra shows the active Hyprland submap in Waybar using the built-in `hyprland/submap` module. It is meant to pair with HyprVim-style submaps so you always know which mode you are in.
+This extra shows the active [Hyprland submap in Waybar](https://github.com/Alexays/Waybar/wiki/Module:-Hyprland#submap) using the built-in `hyprland/submap` module. It is meant to pair with HyprVim-style submaps so you always know which mode you are in.
 
 Repo: [Alexays/Waybar](https://github.com/Alexays/Waybar)
 

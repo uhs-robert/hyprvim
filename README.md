@@ -9,6 +9,7 @@
   <a href="https://github.com/uhs-robert/hyprvim/issues"><img src="https://img.shields.io/github/issues/uhs-robert/hyprvim?colorA=192330&colorB=skyblue&style=for-the-badge&cacheSeconds=4300" alt="Issues"></a>
   <a href="https://github.com/uhs-robert/hyprvim/contributors"><img src="https://img.shields.io/github/contributors/uhs-robert/hyprvim?colorA=192330&colorB=8FD1C7&style=for-the-badge&cacheSeconds=4300" alt="Contributors"></a>
   <a href="https://github.com/uhs-robert/hyprvim/network/members"><img src="https://img.shields.io/github/forks/uhs-robert/hyprvim?colorA=192330&colorB=C799FF&style=for-the-badge&cacheSeconds=4300" alt="Forks"></a>
+  <a href="https://github.com/uhs-robert/hyprvim/releases"><img src="https://img.shields.io/github/v/release/uhs-robert/hyprvim?colorA=192330&colorB=6DDFA0&style=for-the-badge&cacheSeconds=4300" alt="Latest Release"></a>
 </p>
 
 ## 🌅 Overview
@@ -104,9 +105,31 @@ hyprctl reload
 > [!TIP]
 > **Verify installation**: Press `SUPER + ESC` and you should enter NORMAL mode. Press `gh` to view the help viewer.
 
+## 🔄 Staying Updated
+
+### Getting the Latest Changes
+
+To update your installation with the latest features and fixes:
+
+```bash
+cd ~/.config/hypr/hyprvim
+git pull
+hyprctl reload
+```
+
+### Release Notifications
+
+Stay informed about new releases:
+
+1. **Watch the repository** - Click "Watch" → "Custom" → Check "Releases" on this page
+2. **Check the releases page** - View all releases at <https://github.com/uhs-robert/hyprvim/releases>
+3. **RSS Feed** - Subscribe to releases: `https://github.com/uhs-robert/hyprvim/releases.atom`
+
+Each release includes a detailed changelog with new features, improvements, and bug fixes.
+
 ## 🚀 Usage
 
-> **📚 Full Reference:** For a complete reference of all keybindings and commands, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
+> **📚 Full Reference:** For on complete reference of all keybindings and commands, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
 
 ### Quick Start
 
@@ -192,9 +215,7 @@ hyprctl reload
 
 ## 🤔 Where is the Visual Mode Indicator? (Waybar)
 
-To see which Vim mode you're currently in, add the [Hyprland submap module](https://github.com/Alexays/Waybar/wiki/Module:-Hyprland#submap) to your [Waybar](https://github.com/Alexays/Waybar) configuration. This displays the active submap in your status bar.
-
-Refer to the [waybar extras](/extras/waybar) for detailed installation instructions.
+To see which Vim mode you're currently in, add the [Hyprland submap module](/extras/waybar) to your Waybar configuration. This displays the active submap in your status bar.
 
 On that note, just check out [all the extras too](/extras)! You never know what you might find.
 
