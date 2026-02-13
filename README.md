@@ -140,7 +140,7 @@ Press `:` in NORMAL mode to execute vim-style commands. Common commands: `:w` (s
 
 > **📖 Learn more:** [Command Mode documentation in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Modes#-command-mode)
 
-### Non-standard Vim Binds
+### Access to Common Keyboard Shortcuts Too
 
 HyprVim includes pragmatic pass-through bindings in NORMAL mode for better GUI interaction: `TAB`, `RETURN`, `CTRL+V/X/A/S/W/Z`. This enables seamless dialog navigation and clipboard operations without constantly switching to INSERT mode.
 
@@ -156,14 +156,13 @@ You can override any of these settings by creating your own `./settings.conf` in
 > [!TIP]
 > To override or append keys in each submap, be sure to source your overriding keybindings after HyprVim
 
-- Copy the example config:
+1. Copy the example config:
+2. Edit `./settings.conf` to override any defaults from `./init.conf`
 
 ```bash
 cd ~/.config/hypr/hyprvim
 cp settings.conf.example settings.conf
 ```
-
-- Edit `./settings.conf` to override any defaults from `./init.conf`
 
 > [!NOTE]
 > For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide vim toggles](./extras/keyd/README.md), and [web browser vim navigation](./extras/vimium/README.md)
