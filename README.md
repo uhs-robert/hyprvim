@@ -15,9 +15,9 @@
 
 **HyprVim** brings the power of Vim keybindings and motions to your entire Hyprland desktop environment.
 
-Uses Hyprland's submap system to provide vim-style navigation and basic text editing that works across all applications in your Wayland session.
+Built on Hyprland’s native submap system, uses standard keyboard shortcut macros to emulate Vim-style navigation and text editing.
 
-Navigate text, manage selections, and perform text operations using familiar Vim motions without leaving your current application. Think of it as a lightweight, system-wide vim mode for your desktop.
+Navigate text, manage selections, and perform text operations using familiar Vim motions without leaving your current application. Think of it as a lightweight, system-wide Vim mode for your desktop.
 
 <https://github.com/user-attachments/assets/735c4930-a527-4f3a-9f1a-308a9c047332>
 
@@ -36,7 +36,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **🔄 Replace** - Character (`r`) and string replacement (`R`)
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
-- **Open Vim/Nvim Anywhere** - Press `$HYPRVIM_LEADER + N` to open selected text in vim/nvim for complex editing. Save/close to paste.
+- **Open Vim/Nvim Anywhere** - Press `$HYPRVIM_LEADER + N` to open selected text in Vim/Nvim for complex editing. Save/close to paste.
 
 > [!WARNING]
 > Just like real Vim, you also need to know how to exit HyprVim: press `$HYPRVIM_LEADER + ESC` or `ALT+ESC`
@@ -45,7 +45,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 <summary><h3>🍭 Extras</h3></summary>
 <br>
 
-[All extra configs](extras/) for a better global vim experience.
+[All extra configs](extras/) for a better global Vim experience.
 
 To use the extras, refer to their respective documentation.
 
@@ -55,7 +55,7 @@ To use the extras, refer to their respective documentation.
 | --------------- | ------------------------------------------------------------------------- | ------------------------------------------------ |
 | Hyprland Basics | Hyprland keymap kickstart config for HyprVim (Resize, Move, Windows, etc) | [extras/hyprland-basics](extras/hyprland-basics) |
 | Keyd            | System-wide key remaps and tap/hold layers                                | [extras/keyd](extras/keyd)                       |
-| Thunderbird     | Keybinds for vim driven navigation                                        | [extras/thunderbird](extras/thunderbird)         |
+| Thunderbird     | Keybinds for Vim driven navigation                                        | [extras/thunderbird](extras/thunderbird)         |
 | Wl-kbptr        | Keyboard-driven mouse cursor control on Wayland                           | [extras/wl-kbptr](extras/wl-kbptr)               |
 | Vimium          | Vim-style navigation for web browsers                                     | [extras/vimium](extras/vimium)                   |
 | Waybar Submap   | Waybar submap visual Indicator                                            | [extras/waybar](extras/waybar)                   |
@@ -120,7 +120,7 @@ Press `SUPER + ESCAPE` (or your configured leader key + activation key) to enter
 4. **Select text/items**: Press `v` for visual mode, then navigate to select
 5. **Edit**: Use operators like `d`, `c`, `y` with motions or in visual mode
 6. **Return to insert**: Press `i`, `a`, or other insert commands
-7. **Exit vim mode**: Press `SUPER + ESC` again
+7. **Exit Vim mode**: Press `SUPER + ESC` again
 
 ### Marks
 
@@ -136,7 +136,7 @@ Multi-clipboard management with named registers (`"a` - `"z`) and special regist
 
 ### Commands
 
-Press `:` in NORMAL mode to execute vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float` (toggle floating), `:ws <num>` (switch workspace), `:reload` (reload Hyprland config).
+Press `:` in NORMAL mode to execute Vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float` (toggle floating), `:ws <num>` (switch workspace), `:reload` (reload Hyprland config).
 
 > **📖 Learn more:** [Command Mode documentation in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Modes#-command-mode)
 
@@ -165,7 +165,7 @@ cp settings.conf.example settings.conf
 ```
 
 > [!NOTE]
-> For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide vim toggles](./extras/keyd/README.md), and [web browser vim navigation](./extras/vimium/README.md)
+> For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide Vim toggles](./extras/keyd/README.md), and [web browser Vim navigation](./extras/vimium/README.md)
 
 ## 🗑️ Uninstalling
 
@@ -192,7 +192,7 @@ hyprctl reload
 
 ## 🤔 Where is the Visual Mode Indicator? (Waybar)
 
-To see which vim mode you're currently in, add the [Hyprland submap module](https://github.com/Alexays/Waybar/wiki/Module:-Hyprland#submap) to your [Waybar](https://github.com/Alexays/Waybar) configuration. This displays the active submap in your status bar.
+To see which Vim mode you're currently in, add the [Hyprland submap module](https://github.com/Alexays/Waybar/wiki/Module:-Hyprland#submap) to your [Waybar](https://github.com/Alexays/Waybar) configuration. This displays the active submap in your status bar.
 
 Refer to the [waybar extras](/extras/waybar) for detailed installation instructions.
 
