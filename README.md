@@ -36,18 +36,10 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **🔄 Replace** - Character (`r`) and string replacement (`R`)
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
+- **Open Vim/Nvim Anywhere** - Press `$HYPRVIM_LEADER+N` to open selected text in vim/nvim for complex editing. Save/close to paste.
 
-### ✏️ Full Editor Access
-
-Press **`$HYPRVIM_LEADER + N`** to open vim/nvim in a floating window for complex editing tasks. Automatically grabs selected text to edit with full vim features. Pastes back on save.
-
-### ‼️ Exiting Vim Mode
-
-Just like real Vim, you also need to know how to exit HyprVim.
-
-- **Return to Normal**: `ESC` - (e.g., VISUAL → NORMAL)
-- **Toggle Vim Mode**: `$HYPRVIM_LEADER + ESC` - Toggle vim mode on/off
-- **Emergency Exit**: `ALT + ESC` - Return to normal Hyprland bindings
+> [!WARNING]
+> Just like real Vim, you also need to know how to exit HyprVim: press `$HYPRVIM_LEADER+ESC` or `ALT+ESC`
 
 <details>
 <summary>🍭 Extras</summary>
