@@ -42,7 +42,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 > Just like real Vim, you also need to know how to exit HyprVim: press `$HYPRVIM_LEADER+ESC` or `ALT+ESC`
 
 <details>
-<summary>🍭 Extras</summary>
+<summary><🍭 Extras</summary>
 <br>
 
 [All extra configs](extras/) for a better global vim experience.
@@ -121,47 +121,33 @@ Press `SUPER + ESCAPE` (or your configured leader key + activation key) to enter
 6. **Return to insert**: Press `i`, `a`, or other insert commands
 7. **Exit vim mode**: Press `SUPER + ESC` again
 
-### Quick Reference
+> [!TIP]
+> For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide vim toggles](./extras/keyd/README.md), and [web browser vim navigation](./extras/vimium/README.md)
 
-#### Basic operations
-
-**Quick Examples:**
-
-- `hjkl` - Move left/down/up/right
-- `w`, `b` - Forward/back word
-- `dd`, `yy` - Delete/yank line
-- `diw`, `ciw` - Delete/change inner word
-- `v`, `V` - Visual/line-wise visual mode
-- `5j`, `3dw` - Count + motion/operator
-
-> **📖 Learn more:** [Complete navigation and operators reference in the Basics of the wiki](https://github.com/uhs-robert/hyprvim/wiki/Basics)
-
-#### Marks
+### Marks
 
 Save and jump to window positions across workspaces and monitors using `m{mark}` to set, `` `{mark} `` to jump.
 
 > **📖 Learn more:** [Marks documentation in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Advanced#-marks)
 
-#### Registers
+### Registers
 
 Multi-clipboard management with named registers (`"a` - `"z`) and special registers (`""` unnamed, `"0` yank, `"_` black hole). Use `"{register}{operation}` (e.g., `"ayy` to yank to register a, `"ap` to paste from register a).
 
 > **📖 Learn more:** [Registers documentation in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Advanced#-registers)
 
-#### Commands
+### Commands
 
 Press `:` in NORMAL mode to execute vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float` (toggle floating), `:ws <num>` (switch workspace), `:reload` (reload Hyprland config).
 
 > **📖 Learn more:** [Command Mode documentation in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Modes#-command-mode)
 
-#### Non-standard Vim Binds
+### Non-standard Vim Binds
 
 HyprVim includes pragmatic pass-through bindings in NORMAL mode for better GUI interaction: `TAB`, `RETURN`, `CTRL+V/X/A/S/W/Z`. This enables seamless dialog navigation and clipboard operations without constantly switching to INSERT mode.
 
-> **⚠️ Note:** These may trigger unwanted actions in text editors. Use `i` to enter INSERT mode when editing text, or create override bindings by sourcing a custom config after HyprVim.
-
-> [!TIP]
-> For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide vim toggles](./extras/keyd/README.md), and [web browser vim navigation](./extras/vimium/README.md)
+> [!WARNING]
+> These may trigger unwanted actions in text editors. Use `i` to enter INSERT mode when editing text, or create override bindings by sourcing a custom config after HyprVim.
 
 ## ⚙️ Configuration
 
