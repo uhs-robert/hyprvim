@@ -111,6 +111,25 @@ EOF
 
 ---
 
+## 🔄 Surround
+
+EOF
+  parse_section "vim-modes.conf" "## Surround"
+
+  cat <<'EOF'
+
+**Surround operations:**
+- In NORMAL mode: `S` - Surround current word
+- In VISUAL mode: `S` - Surround selected text
+- After pressing `S`, enter the surrounding character (e.g., `(`, `"`, `[`, `'`)
+
+**Examples:**
+- `S"` - Surround word/selection with double quotes
+- `S(` - Surround word/selection with parentheses
+- `S[` - Surround word/selection with square brackets
+
+---
+
 ## ↹ Indent
 
 EOF
