@@ -36,13 +36,13 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **🔄 Replace** - Character (`r`) and string replacement (`R`)
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
-- **Open Vim/Nvim Anywhere** - Press `$HYPRVIM_LEADER+N` to open selected text in vim/nvim for complex editing. Save/close to paste.
+- **Open Vim/Nvim Anywhere** - Press `$HYPRVIM_LEADER + N` to open selected text in vim/nvim for complex editing. Save/close to paste.
 
 > [!WARNING]
-> Just like real Vim, you also need to know how to exit HyprVim: press `$HYPRVIM_LEADER+ESC` or `ALT+ESC`
+> Just like real Vim, you also need to know how to exit HyprVim: press `$HYPRVIM_LEADER + ESC` or `ALT+ESC`
 
 <details>
-<summary><🍭 Extras</summary>
+<summary><h3>🍭 Extras</h3></summary>
 <br>
 
 [All extra configs](extras/) for a better global vim experience.
@@ -101,17 +101,18 @@ source = ~/.config/hypr/hyprvim/init.conf
 hyprctl reload
 ```
 
-- **Verify installation**: Press `SUPER + ESC` and you should enter NORMAL mode. Press `gh` to view the help viewer.
+> [!TIP]
+> **Verify installation**: Press `SUPER + ESC` and you should enter NORMAL mode. Press `gh` to view the help viewer.
 
 ## 🚀 Usage
 
 > **📚 Full Reference:** For a complete reference of all keybindings and commands, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
 
-### Activation
+### Quick Start
 
 Press `SUPER + ESCAPE` (or your configured leader key + activation key) to enter NORMAL mode.
 
-### Basic Workflow
+#### Basic Workflow
 
 1. **Enter NORMAL mode**: `SUPER + ESC`
 2. **See all keybindings**: Press `gh` to show help
@@ -120,9 +121,6 @@ Press `SUPER + ESCAPE` (or your configured leader key + activation key) to enter
 5. **Edit**: Use operators like `d`, `c`, `y` with motions or in visual mode
 6. **Return to insert**: Press `i`, `a`, or other insert commands
 7. **Exit vim mode**: Press `SUPER + ESC` again
-
-> [!TIP]
-> For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide vim toggles](./extras/keyd/README.md), and [web browser vim navigation](./extras/vimium/README.md)
 
 ### Marks
 
@@ -155,6 +153,9 @@ HyprVim sets a few defaults in `./init.conf`.
 
 You can override any of these settings by creating your own `./settings.conf` in the `hyprvim` directory:
 
+> [!TIP]
+> To override or append keys in each submap, be sure to source your overriding keybindings after HyprVim
+
 - Copy the example config:
 
 ```bash
@@ -164,12 +165,12 @@ cp settings.conf.example settings.conf
 
 - Edit `./settings.conf` to override any defaults from `./init.conf`
 
-> [!TIP]
-> To override or append keys in each submap, just source your overriding keybindings after HyprVim
+> [!NOTE]
+> For further customization, see extras: [keyboard-driven mouse control](./extras/wl-kbptr/README.md), [system-wide vim toggles](./extras/keyd/README.md), and [web browser vim navigation](./extras/vimium/README.md)
 
 ## 🗑️ Uninstalling
 
-To remove HyprVim from your system:
+Removing HyprVim from your system is a three step process:
 
 Remove the source line from your `~/.config/hypr/hyprland.conf`:
 
