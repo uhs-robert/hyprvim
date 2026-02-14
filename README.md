@@ -97,7 +97,7 @@ source = ~/.config/hypr/hyprvim/init.conf
 
 3. Set up any settings in `~/.config/hypr/hyprvim/settings.conf`, see [configuration](#️-configuration)
 
-- Reload your Hyprland configuration:
+4. Reload your Hyprland configuration:
 
 ```bash
 hyprctl reload
