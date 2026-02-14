@@ -188,8 +188,18 @@ cd ~/.config/hypr/hyprvim
 cp settings.conf.example settings.conf
 ```
 
+You can customize even more in [the extras](https://github.com/uhs-robert/hyprvim/tree/main/extras):
+
 > [!NOTE]
-> For further customization, see extras: [waybar hyprsubmap indicator](./extras/waybar), [keyboard-driven mouse control](./extras/wl-kbptr), [other hyprland submaps](./extras/hyprland-basics), [web browser Vim navigation](./extras/vimium), and [even more](./extras).
+> [Waybar Hyprsubmap Indicator](https://github.com/uhs-robert/hyprvim/tree/main/extras/waybar)
+>
+> [Keyboard-driven Mouse Control](https://github.com/uhs-robert/hyprvim/tree/main/extras/wl-kbptr)
+>
+> [Other Hyprland Submaps](https://github.com/uhs-robert/hyprvim/tree/main/extras/hyprland-basics)
+>
+> [Web Browser Vim Navigation](https://github.com/uhs-robert/hyprvim/tree/main/extras/vimium)
+>
+> And more...
 
 ## 🗑️ Uninstalling
 
