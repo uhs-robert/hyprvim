@@ -130,7 +130,7 @@ Each release includes a detailed changelog with new features, improvements, and 
 
 ## 🚀 Usage
 
-> **📚 Full Reference:** For on complete reference of all keybindings and commands, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
+> **📚 Full Reference:** For a complete reference of all keybindings and commands, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
 
 ### Quick Start
 
@@ -150,19 +150,19 @@ Press `SUPER + ESCAPE` (or your configured leader key + activation key) to enter
 
 Save and jump to window positions across workspaces and monitors using `m{mark}` to set, `` `{mark} `` to jump.
 
-> **📖 Learn more:** [Marks documentation in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Advanced#-marks)
+> **📖 Learn more:** [Marks wiki](https://github.com/uhs-robert/hyprvim/wiki/Advanced#-marks)
 
 ### Registers
 
 Multi-clipboard management with named registers (`"a` - `"z`) and special registers (`""` unnamed, `"0` yank, `"_` black hole). Use `"{register}{operation}` (e.g., `"ayy` to yank to register a, `"ap` to paste from register a).
 
-> **📖 Learn more:** [Registers documentation in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Advanced#-registers)
+> **📖 Learn more:** [Registers wiki](https://github.com/uhs-robert/hyprvim/wiki/Advanced#-registers)
 
 ### Commands
 
 Press `:` in NORMAL mode to execute Vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float` (toggle floating), `:ws <num>` (switch workspace), `:reload` (reload Hyprland config).
 
-> **📖 Learn more:** [Command Mode documentation in the wiki](https://github.com/uhs-robert/hyprvim/wiki/Modes#-command-mode)
+> **📖 Learn more:** [Command Mode wiki](https://github.com/uhs-robert/hyprvim/wiki/Modes#-command-mode)
 
 ### Access to Common Keyboard Shortcuts Too
 
@@ -195,20 +195,20 @@ cp settings.conf.example settings.conf
 
 Removing HyprVim from your system is a three step process:
 
-Remove the source line from your `~/.config/hypr/hyprland.conf`:
+1. Remove the source line from your `~/.config/hypr/hyprland.conf`:
 
 ```bash
 # Remove this line:
 source = ~/.config/hypr/hyprvim/init.conf
 ```
 
-Delete the HyprVim directory:
+2. Delete the HyprVim directory:
 
 ```bash
 rm -rf ~/.config/hypr/hyprvim
 ```
 
-Reload your Hyprland configuration:
+3. Reload your Hyprland configuration:
 
 ```bash
 hyprctl reload
@@ -218,7 +218,7 @@ hyprctl reload
 
 To see which Vim mode you're currently in, add the [Hyprland submap module](/extras/waybar) to your Waybar configuration. This displays the active submap in your status bar.
 
-On that note, just check out [all the extras too](/extras)! You never know what you might find.
+On that note, check out [all the extras too](/extras)! You never know what you might find.
 
 ## ⚠️ Known Limitations
 
@@ -231,6 +231,6 @@ On that note, just check out [all the extras too](/extras)! You never know what 
 
 ## 📏 Extending HyprVim
 
-You can extend HyprVim by adding new submaps or referencing the submaps in your own keybinds after sourcing HyprVim.
+You can extend HyprVim by adding new submaps or referencing the submaps in your own keybinds after sourcing HyprVim as well as using HyprVim scripts in your own keybinds. Some examples of this are included in the [Hyprland basics](./extras/hyprland-basics).
 
 If you make an enhancement that you think would benefit the community then please submit a pull request and I'll be happy to review it.
