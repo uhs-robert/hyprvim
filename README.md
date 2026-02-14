@@ -26,7 +26,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 
 > **📚 Full Reference:** For a complete, searchable reference of all features, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
 
-- **🚦 Vim Modes** - NORMAL, INSERT, VISUAL, V-LINE, and COMMAND modes
+- **🚦 Vim Modes** - `NORMAL`, `INSERT`, `VISUAL`, `V-LINE`, and `COMMAND` modes
 - **🧭 Navigation** - Character (`hjkl`), word (`w/b/e`), line (`0/$`), paragraph (`{}`), page (`Ctrl+d/u`), document (`gg/G`)
 - **✂️ Operators** - Delete (`d`), change (`c`), yank (`y`) with motion and text object support
 - **📝 Text Objects** - Inner/around word (`iw/aw`), inner/around paragraph (`ip/ap`)
@@ -38,10 +38,10 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **🔁 Surround** - Wrap text with pairs (`gs` for word, `S` in visual) - supports `()`, `{}`, `[]`, `<div>`, or custom with spaces
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
-- **Open Vim/Nvim Anywhere** - Press `$HYPRVIM_LEADER + N` to open selected text in Vim/Nvim for complex editing. Save/close to paste.
+- **Open Vim/Nvim Anywhere** - Press `SUPER + N` to open selected text in Vim/Nvim for complex editing. Save/close to paste.
 
 > [!WARNING]
-> Just like real Vim, you also need to know how to exit HyprVim: press `$HYPRVIM_LEADER + ESC` or `ALT+ESC`
+> Just like real Vim, you also need to know how to exit HyprVim: press `SUPER + ESC` or `ALT+ESC`
 
 <details>
 <summary><h3>🍭 Extras</h3></summary>
