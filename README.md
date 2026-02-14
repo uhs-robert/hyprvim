@@ -82,20 +82,20 @@ If you'd like an extra config added, raise a feature request and I'll put it tog
 
 ### Quick Install
 
-- Clone this repository into your Hyprland config directory:
+1. Clone this repository into your Hyprland config directory:
 
 ```bash
 cd ~/.config/hypr
 git clone https://github.com/uhs-robert/hyprvim.git
 ```
 
-- Add the following line to your `~/.config/hypr/hyprland.conf`:
+2. Add the following line to your `~/.config/hypr/hyprland.conf`:
 
 ```bash
 source = ~/.config/hypr/hyprvim/init.conf
 ```
 
-- Set up any settings in `~/.config/hypr/hyprvim/settings.conf`, see [configuration](#️-configuration)
+3. Set up any settings in `~/.config/hypr/hyprvim/settings.conf`, see [configuration](#️-configuration)
 
 - Reload your Hyprland configuration:
 
