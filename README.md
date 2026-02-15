@@ -18,7 +18,7 @@
 
 Built on Hyprland’s native submap system, uses standard keyboard shortcut macros to emulate Vim-style navigation and text editing.
 
-Navigate text, manage selections, and perform text operations using familiar Vim motions without leaving your current application. Think of it as a lightweight, system-wide Vim mode for your desktop.
+Navigate text, manage selections, and perform text operations using familiar Vim motions without leaving your current application. Think of it as a lightweight, system-wide Vim mode for all of your GUI applications.
 
 <https://github.com/user-attachments/assets/735c4930-a527-4f3a-9f1a-308a9c047332>
 
@@ -238,6 +238,7 @@ On that note, check out [all the extras too](/extras)! You never know what you m
 - Registers/marks are stored in tmpfs (not persistent across reboots)
 - Find operations use interactive prompts and application find dialogs
 - Effectiveness depends on application supporting standard keyboard shortcuts
+- HyprVim is designed for GUI applications first, terminals behave differently and often use a different set of keyboard shortcuts. Your mileage in terminal apps may vary, instead, try using your terminal's native Vim mode.
 
 ## 📏 Extending HyprVim
 
