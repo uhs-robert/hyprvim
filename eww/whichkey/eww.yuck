@@ -1,0 +1,109 @@
+(defvar visible false)
+(defvar title "WhichKey")
+(defvar items "[]") ; JSON: [["K","Desc"], ["J","Desc"]]
+(defvar col1 "[]")
+(defvar col2 "[]")
+(defvar col3 "[]")
+(defvar col4 "[]")
+
+(defwidget row [k d]
+  (box :class "wk-row" :orientation "h" :spacing 6 :space-evenly false
+    (label :class "wk-key"  :text k :xalign 0)
+    (label :class "wk-arrow" :text "→" :xalign 0)
+    (label :class "wk-desc" :text d :xalign 0)))
+
+(defwidget rows []
+  (box :class "wk-rows" :orientation "v" :spacing 3 :space-evenly false
+    (for item in items
+      (row :k {item[0]} :d {item[1]}))))
+
+(defwidget rows-center []
+  (box :class "wk-rows-center" :orientation "h" :space-evenly true
+    (box :orientation "v" :spacing 3
+      (for item in col1
+        (row :k {item[0]} :d {item[1]})))
+    (box :orientation "v" :spacing 3 :visible {arraylength(col2) > 0}
+      (for item in col2
+        (row :k {item[0]} :d {item[1]})))
+    (box :orientation "v" :spacing 3 :visible {arraylength(col3) > 0}
+      (for item in col3
+        (row :k {item[0]} :d {item[1]})))
+    (box :orientation "v" :spacing 3 :visible {arraylength(col4) > 0}
+      (for item in col4
+        (row :k {item[0]} :d {item[1]})))))
+
+(defwidget footer []
+  (box :class "wk-footer" :orientation "v" :space-evenly false
+    (box :orientation "h" :halign "center" :space-evenly false :spacing 20
+      (box :orientation "h" :spacing 6
+        (label :class "wk-footer-key" :text "ESC")
+        (label :class "wk-footer-text" :text "close"))
+      (box :orientation "h" :spacing 6
+        (label :class "wk-footer-key" :text "BS")
+        (label :class "wk-footer-text" :text "back")))))
+
+(defwidget panel []
+  (box :class "wk" :orientation "v" :spacing 6 :space-evenly false
+    (box :class "wk-titlebar" :orientation "h" :spacing 6 :space-evenly false
+      (label :class "wk-title" :text title :xalign 0))
+    (rows)
+    (footer)))
+
+(defwidget panel-center []
+  (box :class "wk" :orientation "v" :spacing 6 :space-evenly false
+    (box :class "wk-titlebar" :orientation "h" :spacing 6 :space-evenly false
+      (label :class "wk-title" :text title :xalign 0))
+    (rows-center)
+    (footer)))
+
+; Window definitions for different positions
+; The script opens the appropriate one based on $HYPRVIM_WHICH_KEY_POSITION
+
+(defwindow whichkey-bottom-right
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :geometry (geometry :anchor "bottom right" :x "18px" :y "18px")
+  :visible visible
+  (panel))
+
+(defwindow whichkey-bottom-center
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :geometry (geometry :anchor "bottom center" :x "0px" :y "18px" :width "100%")
+  :visible visible
+  (panel-center))
+
+(defwindow whichkey-top-center
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :geometry (geometry :anchor "top center" :x "0px" :y "18px" :width "100%")
+  :visible visible
+  (panel-center))
+
+(defwindow whichkey-bottom-left
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :geometry (geometry :anchor "bottom left" :x "18px" :y "18px")
+  :visible visible
+  (panel))
+
+(defwindow whichkey-top-right
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :geometry (geometry :anchor "top right" :x "18px" :y "18px")
+  :visible visible
+  (panel))
+
+(defwindow whichkey-top-left
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :geometry (geometry :anchor "top left" :x "18px" :y "18px")
+  :visible visible
+  (panel))
+

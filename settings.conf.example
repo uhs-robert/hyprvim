@@ -68,3 +68,20 @@ $HYPRVIM_LOCK = hyprlock
 # Debug mode for scripts that support it (1 = enable debug logging)
 
 $HYPRVIM_DEBUG =
+
+# ----------
+# WHICH-KEY HUD
+# ----------
+# Show which-key style HUD when entering operator/visual modes (1 = enable, empty = disable)
+# The HUD displays available keybindings without stealing focus
+# Appears when entering: d-motion, c-motion, y-motion, visual modes
+
+$HYPRVIM_WHICH_KEY_ENABLED =
+
+# WHICH-KEY POSITION
+# ------------------
+# Configure where the which-key HUD appears on screen
+# Options: bottom-right, bottom-center, top-center, bottom-left, top-right, top-left
+# Recommended: bottom-center (mimics vim's command line area, less likely to block windows)
+
+$HYPRVIM_WHICH_KEY_POSITION = bottom-right

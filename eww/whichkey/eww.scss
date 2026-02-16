@@ -1,0 +1,135 @@
+// eww/whichkey/eww.scss
+// Semantic color definitions (auto-generated from theme.conf)
+$bg_core: #1a283f;
+$bg_border: #3b6a87;
+$fg: #d9e6fa;
+$primary: #58b8fd;
+$secondary: #f9a05e;
+$info: #94d0fe;
+
+// Font sizing (all sizes scale from base using rem)
+* {
+  font-size: 12px;
+}
+
+$title_font_size: 1.08rem; // ~13px at 12px base
+$base_font_size: 1rem; // Base size
+$footer_font_size: 0.92rem; // ~11px at 12px base
+.whichkey {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(20, 20, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.whichkey-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+label {
+  font-size: $title_font_size;
+}
+
+.wk {
+  padding: 8px 10px;
+  border-radius: 6px;
+
+  /* NeoVim floating window style */
+  background: $bg_core;
+  border: 2px solid $bg_border;
+
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  font-family:
+    Maple Mono NF,
+    JetBrainsMono Nerd Font,
+    monospace;
+}
+
+.wk-titlebar {
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid $bg_border;
+}
+
+.wk-title {
+  font-size: $title_font_size;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: $primary;
+}
+
+.wk-rows {
+  padding-top: 2px;
+}
+
+/* For center variants - same as regular for now */
+.wk-rows-center {
+  padding-top: 2px;
+}
+
+/* Row layout */
+.wk-row {
+  padding: 3px 5px;
+  border-radius: 3px;
+  transition: background 0.1s ease;
+}
+
+.wk-row:hover {
+  background: rgba(255, 158, 100, 0.08);
+}
+
+/* Key - Primary accent */
+.wk-key {
+  min-width: 50px;
+  padding: 0;
+  background: transparent;
+
+  font-weight: 600;
+  font-size: $base_font_size;
+  color: $secondary;
+  letter-spacing: 0.5px;
+}
+
+/* Arrow separator */
+.wk-arrow {
+  font-size: $base_font_size;
+  color: $bg_border;
+  padding: 0 6px;
+  min-width: 12px;
+}
+
+/* Description - Info/secondary */
+.wk-desc {
+  font-size: $base_font_size;
+  font-weight: 400;
+  color: $info;
+  letter-spacing: 0.2px;
+}
+
+/* Footer row */
+.wk-footer {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid $bg_border;
+}
+
+.wk-footer-key {
+  min-width: 50px;
+  padding: 0;
+  background: transparent;
+  font-weight: 600;
+  font-size: $base_font_size;
+  color: $primary;
+  letter-spacing: 0.5px;
+}
+
+.wk-footer-text {
+  font-size: $footer_font_size;
+  font-weight: 400;
+  color: $fg;
+  opacity: 0.7;
+}
