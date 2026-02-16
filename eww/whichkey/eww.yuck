@@ -6,31 +6,31 @@
 (defvar col3 "[]")
 (defvar col4 "[]")
 
-(defwidget row [k d]
+(defwidget row [k d ?c]
   (box :class "wk-row" :orientation "h" :spacing 6 :space-evenly false
-    (label :class "wk-key"  :text k :xalign 0)
-    (label :class "wk-arrow" :text "→" :xalign 0)
-    (label :class "wk-desc" :text d :xalign 0)))
+    (label :class "wk-key ${c ?: ''}"  :text k :xalign 0)
+    (label :class "wk-arrow ${c ?: ''}" :text "→" :xalign 0)
+    (label :class "wk-desc ${c ?: ''}" :text d :xalign 0)))
 
 (defwidget rows []
   (box :class "wk-rows" :orientation "v" :spacing 3 :space-evenly false
     (for item in items
-      (row :k {item[0]} :d {item[1]}))))
+      (row :k {item.key} :d {item.desc} :c {item.class}))))
 
 (defwidget rows-center []
   (box :class "wk-rows-center" :orientation "h" :space-evenly true
     (box :orientation "v" :spacing 3
       (for item in col1
-        (row :k {item[0]} :d {item[1]})))
+        (row :k {item.key} :d {item.desc} :c {item.class})))
     (box :orientation "v" :spacing 3 :visible {arraylength(col2) > 0}
       (for item in col2
-        (row :k {item[0]} :d {item[1]})))
+        (row :k {item.key} :d {item.desc} :c {item.class})))
     (box :orientation "v" :spacing 3 :visible {arraylength(col3) > 0}
       (for item in col3
-        (row :k {item[0]} :d {item[1]})))
+        (row :k {item.key} :d {item.desc} :c {item.class})))
     (box :orientation "v" :spacing 3 :visible {arraylength(col4) > 0}
       (for item in col4
-        (row :k {item[0]} :d {item[1]})))))
+        (row :k {item.key} :d {item.desc} :c {item.class})))))
 
 (defwidget footer []
   (box :class "wk-footer" :orientation "v" :space-evenly false
@@ -65,6 +65,7 @@
   :exclusive false
   :geometry (geometry :anchor "bottom right" :x "18px" :y "18px")
   :visible visible
+  :namespace "hyprvim-whichkey"
   (panel))
 
 (defwindow whichkey-bottom-center
@@ -73,6 +74,7 @@
   :exclusive false
   :geometry (geometry :anchor "bottom center" :x "0px" :y "18px" :width "100%")
   :visible visible
+  :namespace "hyprvim-whichkey"
   (panel-center))
 
 (defwindow whichkey-top-center
@@ -81,6 +83,7 @@
   :exclusive false
   :geometry (geometry :anchor "top center" :x "0px" :y "18px" :width "100%")
   :visible visible
+  :namespace "hyprvim-whichkey"
   (panel-center))
 
 (defwindow whichkey-bottom-left
@@ -89,6 +92,7 @@
   :exclusive false
   :geometry (geometry :anchor "bottom left" :x "18px" :y "18px")
   :visible visible
+  :namespace "hyprvim-whichkey"
   (panel))
 
 (defwindow whichkey-top-right
@@ -97,6 +101,7 @@
   :exclusive false
   :geometry (geometry :anchor "top right" :x "18px" :y "18px")
   :visible visible
+  :namespace "hyprvim-whichkey"
   (panel))
 
 (defwindow whichkey-top-left
@@ -105,5 +110,15 @@
   :exclusive false
   :geometry (geometry :anchor "top left" :x "18px" :y "18px")
   :visible visible
+  :namespace "hyprvim-whichkey"
   (panel))
+
+(defwindow whichkey-center
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :geometry (geometry :anchor "center" :x "0px" :y "0px")
+  :visible visible
+  :namespace "hyprvim-whichkey"
+  (panel-center))
 

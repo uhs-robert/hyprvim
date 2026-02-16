@@ -1,20 +1,20 @@
-// eww/whichkey/eww.scss
 // Semantic color definitions (auto-generated from theme.conf)
-$bg_core: #1a283f;
-$bg_border: #3b6a87;
-$fg: #d9e6fa;
-$primary: #58b8fd;
-$secondary: #f9a05e;
-$info: #94d0fe;
+$bg_core: #1a283f;;
+$bg_border: #3b6a87;;
+$fg: #d9e6fa;;
+$primary: #58b8fd;;
+$secondary: #f9a05e;;
+$accent: #FFA0A0;;
+$info: #94d0fe;;
 
 // Font sizing (all sizes scale from base using rem)
 * {
   font-size: 12px;
 }
 
-$title_font_size: 1.08rem; // ~13px at 12px base
-$base_font_size: 1rem; // Base size
-$footer_font_size: 0.92rem; // ~11px at 12px base
+$title_font_size: 1.08rem;    // ~13px at 12px base
+$base_font_size: 1rem;        // Base size
+$footer_font_size: 0.92rem;   // ~11px at 12px base
 .whichkey {
   padding: 14px 16px;
   border-radius: 12px;
@@ -110,6 +110,12 @@ label {
   letter-spacing: 0.2px;
 }
 
+/* Submap keys (descriptions starting with +) */
+.wk-desc.is-submap {
+  color: $accent;
+  font-weight: 600;
+}
+
 /* Footer row */
 .wk-footer {
   margin-top: 8px;
@@ -129,7 +135,7 @@ label {
 
 .wk-footer-text {
   font-size: $footer_font_size;
+  font-style: italic;
   font-weight: 400;
-  color: $fg;
-  opacity: 0.7;
+  color: $bg_border;
 }

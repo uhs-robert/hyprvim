@@ -1,35 +1,85 @@
 #!/usr/bin/env bash
-# scripts/whichkey-render.sh
+# hypr/.config/hypr/hyprvim/scripts/whichkey-render.sh
+################################################################################
+# whichkey-render.sh - Render which-key HUD for active submap
+################################################################################
+#
+# Usage:
+#   whichkey-render.sh <submap>   - Render which-key for given submap
+#   whichkey-render.sh ""         - Hide which-key
+#   whichkey-render.sh info       - Re-show which-key for current submap
+#
+# Environment Variables:
+#   EWW_DIR                       - Path to eww configuration directory
+#   HYPRVIM_WHICH_KEY_POSITION   - Position: bottom-right, bottom-center, etc.
+#
+################################################################################
 
 set -euo pipefail
 
+################################################################################
+# Configuration
+################################################################################
+
 EWW_DIR="${EWW_DIR:-$HOME/.config/hypr/hyprvim/eww/whichkey}"
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim"
+POSITION="${HYPRVIM_WHICH_KEY_POSITION:-bottom-right}"
+
+mkdir -p "$STATE_DIR"
+
+################################################################################
+# Info Command - Re-show Current Submap
+################################################################################
+
+if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
+  # Try to get current submap from state file
+  current_submap=""
+  if [[ -f "$STATE_DIR/current-submap" ]]; then
+    current_submap=$(cat "$STATE_DIR/current-submap" 2>/dev/null || echo "")
+  fi
+
+  # If we found a submap, re-render it (allow NORMAL mode when explicitly requested)
+  if [[ -n "$current_submap" ]] && [[ "$current_submap" != "reset" ]]; then
+    exec "$0" "$current_submap"
+  else
+    echo "No active submap to show" >&2
+    exit 1
+  fi
+fi
+
+################################################################################
+# Submap Processing
+################################################################################
+
 submap="${1:-}"
 
-# Read position setting (default: bottom-right)
-POSITION="${HYPRVIM_WHICH_KEY_POSITION:-bottom-right}"
-# Convert to window name (e.g., "bottom-center" -> "whichkey-bottom-center")
-WINDOW="whichkey-${POSITION}"
+# Save current submap to state for info command
+if [[ -n "$submap" ]] && [[ "$submap" != "reset" ]]; then
+  echo "$submap" >"$STATE_DIR/current-submap"
+fi
 
-# Normalize "reset"
+# Normalize "reset" to empty
 [[ "$submap" == "reset" ]] && submap=""
 
-# Hide/close when no submap - do this FIRST to avoid flash
+# Hide when no submap
 if [[ -z "$submap" ]]; then
   eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
-  # Close all possible window positions
-  for pos in bottom-right bottom-center top-center bottom-left top-right top-left; do
+  for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
     eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
   done
   exit 0
 fi
 
-# Focused Hyprland monitor id (often matches eww --screen index)
+################################################################################
+# Build Key Bindings JSON
+################################################################################
+
+# Get focused monitor
 screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .id' 2>/dev/null || echo 0)"
 
 title="$submap"
 
-# Build JSON array for eww `items`
+# Query Hyprland bindings and format for eww
 items="$(
   hyprctl binds -j |
     jq -c --arg sm "$submap" '
@@ -57,12 +107,12 @@ items="$(
           if ($k | test("^[a-zA-Z]$")) then ($k | ascii_downcase) else $k end
         else
           if $shift and (($ctrl or $alt or $super) | not) then
-            # Only SHIFT: uppercase letters or shift symbols
+            # Only SHIFT: uppercase letters, shift symbols, or S- prefix
             if ($k | test("^[a-zA-Z]$")) then
               ($k | ascii_upcase)
             else
               # Shift number/symbol translations
-              ($k
+              (($k
                 | gsub("^1$"; "!") | gsub("^2$"; "@") | gsub("^3$"; "#")
                 | gsub("^4$"; "$") | gsub("^5$"; "%") | gsub("^6$"; "^")
                 | gsub("^7$"; "&") | gsub("^8$"; "*") | gsub("^9$"; "(")
@@ -70,7 +120,12 @@ items="$(
                 | gsub("^\\[$"; "{") | gsub("^\\]$"; "}") | gsub("^\\\\$"; "|")
                 | gsub("^;$"; ":") | gsub("^,$"; "<")
                 | gsub("^\\.$"; ">") | gsub("^/$"; "?")
-              )
+              ) as $translated
+              | if (($translated | test("^[a-zA-Z0-9]$")) | not) and ($translated == $k) then
+                  ("S-" + $translated)
+                else
+                  $translated
+                end)
             end
           else
             # Has modifiers: prepend prefixes
@@ -85,34 +140,65 @@ items="$(
       [ .[]
         | select((.submap // "") == $sm)
         | select((.description // "") != "")
-        | [(normalize_key(.key // ""; .modmask // 0)), (.description // "")]
+        | {
+            key: (normalize_key(.key // ""; .modmask // 0)),
+            desc: (.description // ""),
+            class: (if (.description // "") | startswith("+") then "is-submap" else "" end)
+          }
       ]
       # Sort: letters, special chars, modifiers, ESC
-      | (map(select(.[0] == "ESC"))) as $esc
-      | (map(select(.[0] != "ESC" and (.[0] | test("C-|A-|M-|S-"))))) as $mods
-      | (map(select(.[0] != "ESC" and (.[0] | test("C-|A-|M-|S-") | not) and (.[0] | test("^[a-zA-Z]$"))))) as $letters
-      | (map(select(.[0] != "ESC" and (.[0] | test("C-|A-|M-|S-") | not) and (.[0] | test("^[a-zA-Z]$") | not)))) as $special
-      | ($letters | sort_by(.[0] | ascii_downcase)) + ($special | sort_by(.[0])) + ($mods | sort_by(.[0])) + $esc
+      | (map(select(.key == "ESC"))) as $esc
+      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-"))))) as $mods
+      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$"))))) as $letters
+      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$") | not)))) as $special
+      | ($letters | sort_by(.key | ascii_downcase)) + ($special | sort_by(.key)) + ($mods | sort_by(.key)) + $esc
     '
 )"
 
+################################################################################
+# Position and Overflow Detection
+################################################################################
+
+num_items=$(echo "$items" | jq 'length')
+
 # Hide if no bindings to show
-if [[ "$(echo "$items" | jq 'length')" -eq 0 ]]; then
+if [[ "$num_items" -eq 0 ]]; then
   eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
-  # Close all possible window positions
-  for pos in bottom-right bottom-center top-center bottom-left top-right top-left; do
+  for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
     eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
   done
   exit 0
 fi
 
+# Auto-detect overflow for non-center positions
+# Center positions use multi-column layout and won't overflow
+# Non-center positions use single column and may overflow
+if [[ "$POSITION" != *"center"* ]]; then
+  monitor_height=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .height' 2>/dev/null || echo 1080)
+
+  # Estimate widget height for single-column layout
+  estimated_height=$((16 + 30 + (num_items * 26) + 50 + 40))
+  max_allowed_height=$((monitor_height * 80 / 100))
+
+  if [[ "$estimated_height" -gt "$max_allowed_height" ]]; then
+    POSITION="bottom-center"
+  fi
+fi
+
+WINDOW="whichkey-${POSITION}"
+
+################################################################################
+# Render Window
+################################################################################
+
 # Close other positions and open the configured one
-for pos in bottom-right bottom-center top-center bottom-left top-right top-left; do
+for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
   [[ "whichkey-$pos" != "$WINDOW" ]] && eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
 done
+
 eww -c "$EWW_DIR" open --screen "$screen" "$WINDOW" >/dev/null 2>&1 || true
 
-# For center layouts, distribute items round-robin across 4 columns
+# For center layouts, distribute items across 4 columns
 if [[ "$POSITION" == *"center"* ]]; then
   col1=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 0) | .value]')
   col2=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 1) | .value]')

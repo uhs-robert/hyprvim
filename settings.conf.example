@@ -31,7 +31,7 @@ $HYPRVIM_PROMPT =
 # ----------
 # Mark notifications (1 = show notifications when jumping/setting marks, empty = disable)
 
-HYPRVIM_MARK_NOTIFY =
+$HYPRVIM_MARK_NOTIFY =
 
 # ----------
 # TERMINAL
@@ -70,18 +70,14 @@ $HYPRVIM_LOCK = hyprlock
 $HYPRVIM_DEBUG =
 
 # ----------
-# WHICH-KEY HUD
+# WHICH-KEY
 # ----------
-# Show which-key style HUD when entering operator/visual modes (1 = enable, empty = disable)
-# The HUD displays available keybindings without stealing focus
-# Appears when entering: d-motion, c-motion, y-motion, visual modes
+# Show which-key style HUD when entering a submap to see all keybindings (1 = enable, empty = disable)
+# The HUD will only display keys that have a description field
+# Position Options: bottom-right, bottom-center, top-center, bottom-left, top-right, top-left
 
-$HYPRVIM_WHICH_KEY_ENABLED =
-
-# WHICH-KEY POSITION
-# ------------------
-# Configure where the which-key HUD appears on screen
-# Options: bottom-right, bottom-center, top-center, bottom-left, top-right, top-left
-# Recommended: bottom-center (mimics vim's command line area, less likely to block windows)
-
+$HYPRVIM_WHICH_KEY_ENABLED = 1
 $HYPRVIM_WHICH_KEY_POSITION = bottom-right
+
+## Press ? to view which-key on any submap after dismall (pressing any key dismisses)
+bindun = SHIFT, SLASH, exec, $HYPRVIM_WHICH_KEY info
