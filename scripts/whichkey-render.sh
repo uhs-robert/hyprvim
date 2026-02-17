@@ -38,13 +38,44 @@ if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
     current_submap=$(cat "$STATE_DIR/current-submap" 2>/dev/null || echo "")
   fi
 
-  # If we found a submap, re-render it (allow NORMAL mode when explicitly requested)
+  # Determine which submap to show
   if [[ -n "$current_submap" ]] && [[ "$current_submap" != "reset" ]]; then
-    exec "$0" "$current_submap"
+    target_submap="$current_submap"
   else
-    echo "No active submap to show" >&2
-    exit 1
+    target_submap="GLOBAL"
   fi
+
+  # Render the submap
+  "$0" "$target_submap" || true
+
+  # Start keyboard monitor to auto-dismiss on any keypress
+  MONITOR_PID_FILE="$STATE_DIR/whichkey-info-monitor.pid"
+  (
+    # Create named pipe
+    PIPE=$(mktemp -u)
+    mkfifo "$PIPE"
+    trap 'rm -f "$PIPE"' EXIT
+
+    sleep 0.2
+
+    # Start libinput and wait for one keypress
+    (stdbuf -oL libinput debug-events 2>&1 | grep --line-buffered -E 'KEYBOARD_KEY.*pressed' >"$PIPE") &
+    LIBINPUT_PID=$!
+
+    # Read one keypress
+    read -r line <"$PIPE"
+
+    # Kill libinput
+    pkill -P $LIBINPUT_PID 2>/dev/null || true
+    kill $LIBINPUT_PID 2>/dev/null || true
+
+    # Hide which-key
+    "$0" "" >/dev/null 2>&1 || true
+    rm -f "$MONITOR_PID_FILE"
+  ) &
+  echo $! >"$MONITOR_PID_FILE"
+
+  exit 0
 fi
 
 ################################################################################
@@ -54,14 +85,17 @@ fi
 submap="${1:-}"
 
 # Save current submap to state for info command
-if [[ -n "$submap" ]] && [[ "$submap" != "reset" ]]; then
+if [[ -n "$submap" ]] && [[ "$submap" != "reset" ]] && [[ "$submap" != "GLOBAL" ]]; then
   echo "$submap" >"$STATE_DIR/current-submap"
+elif [[ -z "$submap" ]] || [[ "$submap" == "reset" ]]; then
+  # Clear state when exiting vim mode
+  rm -f "$STATE_DIR/current-submap"
 fi
 
 # Normalize "reset" to empty
 [[ "$submap" == "reset" ]] && submap=""
 
-# Hide when no submap
+# Hide when no submap (but not GLOBAL)
 if [[ -z "$submap" ]]; then
   eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
   for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
@@ -77,7 +111,12 @@ fi
 # Get focused monitor
 screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .id' 2>/dev/null || echo 0)"
 
-title="$submap"
+# Set title (use friendly name for GLOBAL)
+if [[ "$submap" == "GLOBAL" ]]; then
+  title="Global Bindings"
+else
+  title="$submap"
+fi
 
 # Query Hyprland bindings and format for eww
 items="$(
@@ -138,7 +177,13 @@ items="$(
         end;
 
       [ .[]
-        | select((.submap // "") == $sm)
+        | select(
+            if $sm == "GLOBAL" then
+              (.submap // "") == ""
+            else
+              (.submap // "") == $sm
+            end
+          )
         | select((.description // "") != "")
         | {
             key: (normalize_key(.key // ""; .modmask // 0)),
