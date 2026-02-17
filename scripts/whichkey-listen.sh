@@ -123,6 +123,17 @@ kill_pending_render() {
   kill "$pid" 2>/dev/null || true
 }
 
+# Atomic token write: write to a temp file then rename (mv is atomic on the
+# same filesystem). This avoids any partial-read window during truncate+write.
+write_token() {
+  local tmp="$RENDER_TOKEN_FILE.$$.$RANDOM"
+  printf '%s\n' "$1" >"$tmp" && mv -f "$tmp" "$RENDER_TOKEN_FILE"
+}
+
+read_token() {
+  cat "$RENDER_TOKEN_FILE" 2>/dev/null || echo 0
+}
+
 start_keypress_monitor() {
   kill_keypress_monitor
   (
@@ -133,7 +144,9 @@ start_keypress_monitor() {
       grep --line-buffered -m1 -E 'KEYBOARD_KEY.*pressed' >"$_pipe" &
     # Only act on a real keypress (read returns 0); EOF from being killed returns 1
     IFS= read -r _ <"$_pipe" && {
-      echo "cancelled" >"$RENDER_TOKEN_FILE" 2>/dev/null || true
+      local tok
+      tok=$(( $(read_token) + 1 ))
+      write_token "$tok" 2>/dev/null || true
       "$RENDER" "hide" >/dev/null 2>&1 || true
     }
   ) &
@@ -146,7 +159,7 @@ start_keypress_monitor() {
 
 last="__init__"
 _wk_token=0
-echo "$_wk_token" >"$RENDER_TOKEN_FILE"
+write_token "$_wk_token"
 
 socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
   case "$line" in
@@ -168,7 +181,7 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     # screen_id (hyprctl + jq) takes ~20ms; if it ran first, an in-flight render
     # could complete and pass the late-stage token check during that window.
     _wk_token=$((_wk_token + 1))
-    echo "$_wk_token" >"$RENDER_TOKEN_FILE"
+    write_token "$_wk_token"
     _my_token="$_wk_token"
 
     # Track current submap immediately so --info always reflects actual state,
@@ -217,7 +230,7 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
         start_keypress_monitor
         (
           sleep "$_show_delay"
-          [[ "$(cat "$RENDER_TOKEN_FILE" 2>/dev/null)" == "$_my_token" ]] || exit 0
+          [[ "$(read_token)" == "$_my_token" ]] || exit 0
           "$RENDER" "$sm" "$screen_id" "$_my_token" || true
         ) &
         echo $! >"$PENDING_RENDER_PID_FILE"
