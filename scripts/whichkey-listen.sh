@@ -136,6 +136,10 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     [[ "$sm" == "$last" ]] && continue
     last="$sm"
 
+    # Capture focused monitor immediately, before any delays, to avoid race conditions
+    # Use array index (not .id) because eww --screen uses list position, not Hyprland monitor ID
+    screen_id="$(hyprctl -j monitors | jq -r 'to_entries[] | select(.value.focused) | .key' 2>/dev/null || echo 0)"
+
     # Kill any existing keyboard monitor
     if [[ -f "$MONITOR_PID_FILE" ]]; then
       MONITOR_PID=$(cat "$MONITOR_PID_FILE" 2>/dev/null)
@@ -156,11 +160,11 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
       start_keyboard_monitor
     elif [[ -n "$sm" ]]; then
       # Render which-key and start monitor for other submaps
-      "$RENDER" "$sm" || true
+      "$RENDER" "$sm" "$screen_id" || true
       start_keyboard_monitor
     else
       # Empty submap - just render (will hide)
-      "$RENDER" "$sm" || true
+      "$RENDER" "$sm" "$screen_id" || true
     fi
 
     # Debounce to avoid flicker on rapid transitions

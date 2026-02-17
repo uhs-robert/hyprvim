@@ -45,8 +45,11 @@ if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
     target_submap="GLOBAL"
   fi
 
+  # Query focused monitor here (info is manually triggered, no race condition)
+  info_screen="$(hyprctl -j monitors | jq -r 'to_entries[] | select(.value.focused) | .key' 2>/dev/null || echo 0)"
+
   # Render the submap
-  "$0" "$target_submap" || true
+  "$0" "$target_submap" "$info_screen" || true
 
   # Start keyboard monitor to auto-dismiss on any keypress
   MONITOR_PID_FILE="$STATE_DIR/whichkey-info-monitor.pid"
@@ -83,6 +86,9 @@ fi
 ################################################################################
 
 submap="${1:-}"
+# Screen index passed from listener (captured at event time to avoid race conditions).
+# Falls back to querying focused monitor when called directly (e.g. from info path).
+screen="${2:-}"
 
 # Save current submap to state for info command
 if [[ -n "$submap" ]] && [[ "$submap" != "reset" ]] && [[ "$submap" != "GLOBAL" ]] && [[ "$submap" != "hide" ]]; then
@@ -109,8 +115,10 @@ fi
 # Build Key Bindings JSON
 ################################################################################
 
-# Get focused monitor
-screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .id' 2>/dev/null || echo 0)"
+# Resolve screen index: use value passed from listener (race-free), or query now as fallback
+if [[ -z "$screen" ]]; then
+  screen="$(hyprctl -j monitors | jq -r 'to_entries[] | select(.value.focused) | .key' 2>/dev/null || echo 0)"
+fi
 
 # Set title (use friendly name for GLOBAL)
 if [[ "$submap" == "GLOBAL" ]]; then
@@ -220,7 +228,7 @@ fi
 # Center positions use multi-column layout and won't overflow
 # Non-center positions use single column and may overflow
 if [[ "$POSITION" != *"center"* ]]; then
-  monitor_height=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .height' 2>/dev/null || echo 1080)
+  monitor_height=$(hyprctl -j monitors | jq -r --argjson idx "$screen" 'nth($idx; .[]) | .height' 2>/dev/null || echo 1080)
 
   # Estimate widget height for single-column layout
   estimated_height=$((16 + 30 + (num_items * 26) + 50 + 40))
