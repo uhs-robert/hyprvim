@@ -14,7 +14,7 @@
 # Environment Variables:
 #   EWW_DIR                  - Path to eww configuration directory
 #   RENDER                   - Path to whichkey-render.sh
-#   DEBOUNCE_MS              - Debounce delay in milliseconds (default: 35)
+#   DEBOUNCE_MS              - Minimum render delay floor = DEBOUNCE_MS * 2 (default: 35)
 #   WHICHKEY_SHOW_DELAY_MS   - Delay before showing HUD in milliseconds (default: 100)
 #
 ################################################################################
@@ -137,15 +137,28 @@ read_token() {
 start_keypress_monitor() {
   kill_keypress_monitor
   (
-    _pipe=$(mktemp -u)
+    # mktemp -u is unsafe (race between name reservation and mkfifo).
+    # Instead: let mktemp create a regular file to reserve a unique path,
+    # then replace it atomically with a fifo.
+    _pipe="$(mktemp -p "$STATE_DIR" whichkey.fifo.XXXXXX)"
+    rm -f "$_pipe"
     mkfifo "$_pipe"
     trap 'rm -f "$_pipe"; pkill -P $BASHPID 2>/dev/null || true' EXIT INT TERM
     stdbuf -oL libinput debug-events 2>&1 |
       grep --line-buffered -m1 -E 'KEYBOARD_KEY.*pressed' >"$_pipe" &
     # Only act on a real keypress (read returns 0); EOF from being killed returns 1
     IFS= read -r _ <"$_pipe" && {
-      local tok
-      tok=$(( $(read_token) + 1 ))
+      # Inline kill_pending_render: functions may not be inherited reliably
+      # across all subshell invocation patterns, so paste the body explicitly.
+      if [[ -f "$PENDING_RENDER_PID_FILE" ]]; then
+        _pr_pid="$(cat "$PENDING_RENDER_PID_FILE" 2>/dev/null || echo "")"
+        rm -f "$PENDING_RENDER_PID_FILE"
+        if [[ -n "$_pr_pid" ]]; then
+          pkill -P "$_pr_pid" 2>/dev/null || true
+          kill "$_pr_pid" 2>/dev/null || true
+        fi
+      fi
+      tok=$(($(read_token) + 1))
       write_token "$tok" 2>/dev/null || true
       "$RENDER" "hide" >/dev/null 2>&1 || true
     }
@@ -241,8 +254,6 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
       "$RENDER" "" >/dev/null 2>&1 || true
     fi
 
-    # Debounce to avoid flicker on rapid transitions
-    usleep "$((DEBOUNCE_MS * 1000))" 2>/dev/null || sleep 0.03
     ;;
   esac
 done
