@@ -15,13 +15,10 @@ set -euo pipefail
 ################################################################################
 
 # Send keyboard shortcut to active window (or specified window)
-# Usage: send_shortcut MODIFIER, KEY[, WINDOW]
+# Usage: send_shortcut "MODIFIER, KEY " [WINDOW]
 send_shortcut() {
-  # If only 2 args provided, default to activewindow
-  if [ $# -eq 2 ]; then
-    set -- "$1" "${2}," activewindow
-  fi
-  hyprctl dispatch sendshortcut "$@" >/dev/null 2>&1
+  local window="${2:-activewindow}"
+  hyprctl --batch "dispatch sendshortcut $1, $window" >/dev/null 2>&1
 }
 
 # Send keyboard shortcut with sleep delay

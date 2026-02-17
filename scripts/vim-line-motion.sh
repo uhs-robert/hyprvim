@@ -53,84 +53,64 @@ reset_state() {
 motion_down() {
   local count="$1"
 
+  # First motion: establish paragraph selection
   if [[ -f "$FIRST_MOTION_FLAG" ]]; then
-    # First motion: establish line selection
-    send_shortcuts ", HOME" "SHIFT, END" "SHIFT, Down" "SHIFT, END"
+    send_shortcuts ", HOME" "SHIFT, END"
     reset_state
-
-    # Remaining motions
-    for ((i = 1; i < count; i++)); do
-      send_shortcuts "SHIFT, Down" "SHIFT, END"
-    done
-  else
-    # Subsequent motions in V-LINE: standard behavior
-    for ((i = 0; i < count; i++)); do
-      send_shortcuts "SHIFT, Down" "SHIFT, END"
-    done
   fi
+
+  # Standard behavior
+  for ((i = 0; i < count; i++)); do
+    send_shortcuts "SHIFT, DOWN" "SHIFT, END"
+  done
 }
 
 # Move up in V-LINE mode
 motion_up() {
   local count="$1"
 
+  # First motion: establish paragraph selection
   if [[ -f "$FIRST_MOTION_FLAG" ]]; then
-    # First motion: establish line selection
-    send_shortcuts ", END" "SHIFT, HOME" "SHIFT, Up" "SHIFT, HOME"
+    send_shortcuts ", END" "SHIFT, HOME"
     reset_state
-
-    # Remaining motions
-    for ((i = 1; i < count; i++)); do
-      send_shortcuts "SHIFT, Up" "SHIFT, HOME"
-    done
-  else
-    # Subsequent motions in V-LINE: standard behavior
-    for ((i = 0; i < count; i++)); do
-      send_shortcuts "SHIFT, Up" "SHIFT, HOME"
-    done
   fi
+
+  # Standard behavior
+  for ((i = 0; i < count; i++)); do
+    send_shortcuts "SHIFT, UP" "SHIFT, HOME"
+  done
 }
 
 # Move to previous paragraph in V-LINE mode
 motion_paragraph_up() {
   local count="$1"
 
+  # First motion: establish paragraph selection
   if [[ -f "$FIRST_MOTION_FLAG" ]]; then
-    # First motion: establish paragraph selection
-    send_shortcuts ", END" "CTRL SHIFT, Up"
+    send_shortcuts "SHIFT, HOME"
     reset_state
-
-    # Remaining motions
-    for ((i = 1; i < count; i++)); do
-      send_shortcut "CTRL SHIFT," UP
-    done
-  else
-    # Subsequent motions in V-LINE: standard behavior
-    for ((i = 0; i < count; i++)); do
-      send_shortcuts ", END" "CTRL SHIFT, Up"
-    done
   fi
+
+  # Standard behavior
+  for ((i = 0; i < count; i++)); do
+    send_shortcut "CTRL SHIFT, UP"
+  done
 }
 
 # Move to next paragraph in V-LINE mode
 motion_paragraph_down() {
   local count="$1"
 
+  # First motion: establish paragraph selection
   if [[ -f "$FIRST_MOTION_FLAG" ]]; then
-    # First motion: establish paragraph selection
-    send_shortcuts ", HOME" "CTRL SHIFT, Down"
+    send_shortcuts "SHIFT, END"
     reset_state
-
-    # Remaining motions
-    for ((i = 1; i < count; i++)); do
-      send_shortcut "CTRL SHIFT," DOWN
-    done
-  else
-    # Subsequent motions in V-LINE: standard behavior
-    for ((i = 0; i < count; i++)); do
-      send_shortcuts ", HOME" "CTRL SHIFT, Down"
-    done
   fi
+
+  # Standard behavior
+  for ((i = 0; i < count; i++)); do
+    send_shortcut "CTRL SHIFT, DOWN"
+  done
 }
 
 # Go to document start (gg)
@@ -139,16 +119,16 @@ motion_goto_start() {
     send_shortcuts , END
     reset_state
   fi
-  send_shortcut "CTRL SHIFT," HOME
+  send_shortcut "CTRL SHIFT, HOME"
 }
 
 # Go to document end (G)
 motion_goto_end() {
   if [[ -f "$FIRST_MOTION_FLAG" ]]; then
-    send_shortcut , HOME
+    send_shortcut ", HOME"
     reset_state
   fi
-  send_shortcut "CTRL SHIFT," END
+  send_shortcut "CTRL SHIFT, END"
 }
 
 ################################################################################

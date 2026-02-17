@@ -85,18 +85,18 @@ clipboard_copy "$REPLACEMENT"
 # Select COUNT characters forward
 if [ "$COUNT" -gt 1 ]; then
   for ((i = 0; i < COUNT; i++)); do
-    send_shortcut SHIFT, RIGHT
+    send_shortcut "SHIFT, RIGHT"
     sleep 0.01
   done
 else
   # Single character: just select it
-  send_shortcut SHIFT, RIGHT
+  send_shortcut "SHIFT, RIGHT"
 fi
 
 sleep 0.05
 
 # Paste replacement
-send_shortcut CTRL, V
+send_shortcut "CTRL, V"
 sleep 0.05
 
 # Return to NORMAL mode (cursor will be at end of replacement)

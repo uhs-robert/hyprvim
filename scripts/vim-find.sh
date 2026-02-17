@@ -227,9 +227,9 @@ send_f3() {
   [ "$flip_direction" = "true" ] && { [ "$use_shift" = "true" ] && use_shift="false" || use_shift="true"; }
 
   if [ "$use_shift" = "true" ]; then
-    send_shortcut SHIFT, F3
+    send_shortcut "SHIFT, F3"
   else
-    send_shortcut , F3
+    send_shortcut ", F3"
   fi
 }
 
@@ -252,7 +252,7 @@ word_under_cursor() {
   log_debug "word_under_cursor: clipboard contents='$search_term'"
 
   # Deselect (press RIGHT to move cursor to end and deselect)
-  send_shortcut , RIGHT
+  send_shortcut ", RIGHT"
 
   echo "$search_term"
 }
@@ -267,7 +267,7 @@ deactivate_search() {
   log_debug "deactivate: active=$active"
 
   if [ "$active" = "true" ]; then
-    send_shortcut , ESCAPE
+    send_shortcut ", ESCAPE"
   fi
 
   # Check if it was a till search and send LEFT if so
@@ -277,7 +277,7 @@ deactivate_search() {
 
   if [ "$till" = "true" ]; then
     log_debug "deactivate: sending LEFT for till"
-    send_shortcut , LEFT
+    send_shortcut ", LEFT"
     set_find_state "till" "false"
   fi
 

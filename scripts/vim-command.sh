@@ -1,5 +1,4 @@
 #!/bin/bash
-# scripts/vim-command.sh
 # hypr/.config/hypr/hyprvim/scripts/vim-command.sh
 ################################################################################
 # vim-command.sh - Command mode for HyprVim
@@ -78,14 +77,14 @@ COMMAND_STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/command-state.json"
 
 # :w - Save file
 cmd_write() {
-  send_shortcut CTRL, S
+  send_shortcut "CTRL, S"
   notify_success "File saved" 0
   dispatch_to_after_submap "$COMMAND_STATE_FILE"
 }
 
 # :wq - Save and quit
 cmd_write_quit() {
-  send_shortcut CTRL, S
+  send_shortcut "CTRL, S"
   sleep 0.1
   close_window
   notify_success "File saved and closing" 0
@@ -147,7 +146,7 @@ cmd_help() {
 
 # :%s, :s - Open native find/replace dialog
 cmd_substitute() {
-  send_shortcut CTRL, H
+  send_shortcut "CTRL, H"
   switch_mode INSERT
 }
 
