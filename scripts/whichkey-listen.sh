@@ -166,17 +166,38 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
       rm -f "$STATE_DIR/current-submap"
     fi
 
+    # Read and clear one-shot opts set via: $HYPRVIM_WHICH_KEY -s -d <ms>
+    _skip_next=0
+    _next_delay=""
+    if [[ -f "$STATE_DIR/whichkey-skip-next" ]]; then
+      _skip_next=1
+      rm -f "$STATE_DIR/whichkey-skip-next"
+    fi
+    if [[ -f "$STATE_DIR/whichkey-next-delay" ]]; then
+      _next_delay=$(cat "$STATE_DIR/whichkey-next-delay" 2>/dev/null || echo "")
+      rm -f "$STATE_DIR/whichkey-next-delay"
+    fi
+
     if [[ "$sm" == "NORMAL" ]]; then
       kill_keypress_monitor # no HUD for NORMAL mode
     elif [[ -n "$sm" ]]; then
-      # Start monitor before the delayed render so it is already listening
-      # by the time the HUD appears (covers the delay=0 case too)
-      start_keypress_monitor
-      (
-        sleep "$WHICHKEY_SHOW_DELAY"
-        [[ "$(cat "$RENDER_TOKEN_FILE" 2>/dev/null)" == "$_my_token" ]] || exit 0
-        "$RENDER" "$sm" "$screen_id" || true
-      ) &
+      if [[ "$_skip_next" -eq 1 ]]; then
+        kill_keypress_monitor # no HUD for this entry, no monitor needed
+      else
+        # Convert optional ms delay override to seconds
+        _show_delay="$WHICHKEY_SHOW_DELAY"
+        if [[ -n "$_next_delay" ]]; then
+          _show_delay=$(awk "BEGIN {printf \"%.3f\", ${_next_delay} / 1000}")
+        fi
+        # Start monitor before the delayed render so it is already listening
+        # by the time the HUD appears (covers the delay=0 case too)
+        start_keypress_monitor
+        (
+          sleep "$_show_delay"
+          [[ "$(cat "$RENDER_TOKEN_FILE" 2>/dev/null)" == "$_my_token" ]] || exit 0
+          "$RENDER" "$sm" "$screen_id" || true
+        ) &
+      fi
     else
       # Empty submap — kill monitor and immediately hide
       kill_keypress_monitor
