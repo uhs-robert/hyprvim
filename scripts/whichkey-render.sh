@@ -5,10 +5,10 @@
 ################################################################################
 #
 # Usage:
-#   whichkey-render.sh <submap>        - Render which-key for given submap
-#   whichkey-render.sh ""              - Hide which-key
-#   whichkey-render.sh info            - Re-show which-key for current submap
-#   whichkey-render.sh [-s] [-d <ms>]  - Set one-shot opts for next submap entry
+#   whichkey-render.sh <submap> [screen] [token]  - Render which-key for given submap
+#   whichkey-render.sh ""                          - Hide which-key
+#   whichkey-render.sh info                        - Re-show which-key for current submap
+#   whichkey-render.sh [-s] [-d <ms>]              - Set one-shot opts for next submap entry
 #     -s, --skip         Skip showing HUD for the next submap entry
 #     -d, --delay <ms>   Override show delay (ms) for the next submap entry
 #
@@ -115,6 +115,9 @@ submap="${1:-}"
 # Monitor name passed from listener (captured at event time to avoid race conditions).
 # Falls back to querying focused monitor when called directly (e.g. from info path).
 screen="${2:-}"
+# Render token passed from listener background subshell; re-checked before final show
+# to abort stale renders that were already in-flight when the submap changed.
+render_token="${3:-}"
 
 # Save current submap to state for info command
 if [[ -n "$submap" ]] && [[ "$submap" != "reset" ]] && [[ "$submap" != "GLOBAL" ]] && [[ "$submap" != "hide" ]]; then
@@ -299,6 +302,15 @@ for pos in bottom-right bottom-center top-center bottom-left top-right top-left 
   [[ "whichkey-$pos" != "$WINDOW" ]] && eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
 done
 eww -c "$EWW_DIR" open --screen "$screen" "$WINDOW" >/dev/null 2>&1 || true
+
+# Re-validate token before making visible: if the submap changed while this
+# render was running (hyprctl + jq take ~100ms), bail out instead of flashing
+# a stale HUD on screen.
+if [[ -n "$render_token" ]]; then
+  RENDER_TOKEN_FILE="${STATE_DIR}/whichkey-render-token"
+  _cur_tok=$(cat "$RENDER_TOKEN_FILE" 2>/dev/null || echo "")
+  [[ "$_cur_tok" == "$render_token" ]] || exit 0
+fi
 
 # Show at the correct size
 eww -c "$EWW_DIR" update visible=true >/dev/null 2>&1 || true

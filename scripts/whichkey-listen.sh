@@ -179,10 +179,12 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     fi
 
     if [[ "$sm" == "NORMAL" ]]; then
-      kill_keypress_monitor # no HUD for NORMAL mode
+      kill_keypress_monitor
+      "$RENDER" "hide" >/dev/null 2>&1 || true # no HUD for NORMAL mode; dismiss any prior
     elif [[ -n "$sm" ]]; then
       if [[ "$_skip_next" -eq 1 ]]; then
         kill_keypress_monitor # no HUD for this entry, no monitor needed
+        "$RENDER" "hide" >/dev/null 2>&1 || true # dismiss any prior HUD
       else
         # Convert optional ms delay override to seconds
         _show_delay="$WHICHKEY_SHOW_DELAY"
@@ -195,7 +197,7 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
         (
           sleep "$_show_delay"
           [[ "$(cat "$RENDER_TOKEN_FILE" 2>/dev/null)" == "$_my_token" ]] || exit 0
-          "$RENDER" "$sm" "$screen_id" || true
+          "$RENDER" "$sm" "$screen_id" "$_my_token" || true
         ) &
       fi
     else
