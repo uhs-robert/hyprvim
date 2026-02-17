@@ -5,12 +5,13 @@
 (defvar col2 "[]")
 (defvar col3 "[]")
 (defvar col4 "[]")
+(defvar panel-width "100%") ; Logical monitor width, set by render script
 
-(defwidget row [k d ?c]
+(defwidget row [k d ?c ?t]
   (box :class "wk-row" :orientation "h" :spacing 6 :space-evenly false
     (label :class "wk-key ${c ?: ''}"  :text k :xalign 0)
     (label :class "wk-arrow ${c ?: ''}" :text "→" :xalign 0)
-    (label :class "wk-desc ${c ?: ''}" :text d :xalign 0)))
+    (label :class "wk-desc ${c ?: ''}" :text d :xalign 0 :truncate {t ?: false})))
 
 (defwidget rows []
   (box :class "wk-rows" :orientation "v" :spacing 3 :space-evenly false
@@ -21,16 +22,16 @@
   (box :class "wk-rows-center" :orientation "h" :space-evenly true
     (box :orientation "v" :spacing 3
       (for item in col1
-        (row :k {item.key} :d {item.desc} :c {item.class})))
+        (row :k {item.key} :d {item.desc} :c {item.class} :t true)))
     (box :orientation "v" :spacing 3 :visible {arraylength(col2) > 0}
       (for item in col2
-        (row :k {item.key} :d {item.desc} :c {item.class})))
+        (row :k {item.key} :d {item.desc} :c {item.class} :t true)))
     (box :orientation "v" :spacing 3 :visible {arraylength(col3) > 0}
       (for item in col3
-        (row :k {item.key} :d {item.desc} :c {item.class})))
+        (row :k {item.key} :d {item.desc} :c {item.class} :t true)))
     (box :orientation "v" :spacing 3 :visible {arraylength(col4) > 0}
       (for item in col4
-        (row :k {item.key} :d {item.desc} :c {item.class})))))
+        (row :k {item.key} :d {item.desc} :c {item.class} :t true)))))
 
 (defwidget footer []
   (box :class "wk-footer" :orientation "v" :space-evenly false
@@ -51,6 +52,7 @@
 
 (defwidget panel-center []
   (box :class "wk" :orientation "v" :spacing 6 :space-evenly false
+       :style "max-width: ${panel-width};"
     (box :class "wk-titlebar" :orientation "h" :spacing 6 :space-evenly false
       (label :class "wk-title" :text title :xalign 0))
     (rows-center)

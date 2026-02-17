@@ -71,6 +71,11 @@ label {
   padding-top: 2px;
 }
 
+/* Allow center columns to shrink below their natural width */
+.wk-rows-center > box {
+  min-width: 0;
+}
+
 /* Row layout */
 .wk-row {
   padding: 3px 5px;

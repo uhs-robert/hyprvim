@@ -46,7 +46,7 @@ if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
   fi
 
   # Query focused monitor here (info is manually triggered, no race condition)
-  info_screen="$(hyprctl -j monitors | jq -r 'to_entries[] | select(.value.focused) | .key' 2>/dev/null || echo 0)"
+  info_screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
 
   # Render the submap
   "$0" "$target_submap" "$info_screen" || true
@@ -86,7 +86,7 @@ fi
 ################################################################################
 
 submap="${1:-}"
-# Screen index passed from listener (captured at event time to avoid race conditions).
+# Monitor name passed from listener (captured at event time to avoid race conditions).
 # Falls back to querying focused monitor when called directly (e.g. from info path).
 screen="${2:-}"
 
@@ -115,9 +115,10 @@ fi
 # Build Key Bindings JSON
 ################################################################################
 
-# Resolve screen index: use value passed from listener (race-free), or query now as fallback
+# Resolve monitor name: use value passed from listener (race-free), or query now as fallback
+# Monitor name (e.g. "eDP-2", "DP-11") is more reliable than array index for eww --screen
 if [[ -z "$screen" ]]; then
-  screen="$(hyprctl -j monitors | jq -r 'to_entries[] | select(.value.focused) | .key' 2>/dev/null || echo 0)"
+  screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
 fi
 
 # Set title (use friendly name for GLOBAL)
@@ -224,15 +225,21 @@ if [[ "$num_items" -eq 0 ]]; then
   exit 0
 fi
 
+# Query monitor dimensions by name (hyprctl reports physical pixels; divide by scale for logical)
+monitor_info=$(hyprctl -j monitors | jq -r --arg name "$screen" '.[] | select(.name == $name) | "\(.width)x\(.height)x\(.scale)"' 2>/dev/null || echo "1920x1080x1.0")
+monitor_phys_width=$(echo "$monitor_info" | cut -dx -f1)
+monitor_phys_height=$(echo "$monitor_info" | cut -dx -f2)
+monitor_scale=$(echo "$monitor_info" | cut -dx -f3)
+monitor_logical_width=$(echo "$monitor_phys_width $monitor_scale" | awk '{printf "%d", $1 / $2}')
+monitor_logical_height=$(echo "$monitor_phys_height $monitor_scale" | awk '{printf "%d", $1 / $2}')
+
 # Auto-detect overflow for non-center positions
 # Center positions use multi-column layout and won't overflow
 # Non-center positions use single column and may overflow
 if [[ "$POSITION" != *"center"* ]]; then
-  monitor_height=$(hyprctl -j monitors | jq -r --argjson idx "$screen" 'nth($idx; .[]) | .height' 2>/dev/null || echo 1080)
-
   # Estimate widget height for single-column layout
   estimated_height=$((16 + 30 + (num_items * 26) + 50 + 40))
-  max_allowed_height=$((monitor_height * 80 / 100))
+  max_allowed_height=$((monitor_logical_height * 80 / 100))
 
   if [[ "$estimated_height" -gt "$max_allowed_height" ]]; then
     POSITION="bottom-center"
@@ -255,7 +262,8 @@ if [[ "$POSITION" == *"center"* ]]; then
   col2=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 1) | .value]')
   col3=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 2) | .value]')
   col4=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 3) | .value]')
-  eww -c "$EWW_DIR" update title="$title" col1="$col1" col2="$col2" col3="$col3" col4="$col4" >/dev/null 2>&1 || true
+  eww -c "$EWW_DIR" update title="$title" col1="$col1" col2="$col2" col3="$col3" col4="$col4" \
+    "panel-width=${monitor_logical_width}px" >/dev/null 2>&1 || true
 else
   eww -c "$EWW_DIR" update title="$title" items="$items" >/dev/null 2>&1 || true
 fi

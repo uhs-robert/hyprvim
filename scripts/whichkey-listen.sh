@@ -137,8 +137,8 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     last="$sm"
 
     # Capture focused monitor immediately, before any delays, to avoid race conditions
-    # Use array index (not .id) because eww --screen uses list position, not Hyprland monitor ID
-    screen_id="$(hyprctl -j monitors | jq -r 'to_entries[] | select(.value.focused) | .key' 2>/dev/null || echo 0)"
+    # Use monitor name (e.g. "eDP-2") because eww --screen accepts names and it's unambiguous
+    screen_id="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
 
     # Kill any existing keyboard monitor
     if [[ -f "$MONITOR_PID_FILE" ]]; then
