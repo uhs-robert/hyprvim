@@ -15,7 +15,7 @@
 #   EWW_DIR               - Path to eww configuration directory
 #   RENDER                - Path to whichkey-render.sh
 #   DEBOUNCE_MS           - Debounce delay in milliseconds (default: 35)
-#   WHICHKEY_SHOW_DELAY   - Delay before showing HUD in seconds (default: 0.2)
+#   WHICHKEY_SHOW_DELAY   - Delay before showing HUD in seconds (default: 0.0)
 #
 ################################################################################
 
@@ -32,9 +32,9 @@ SETTINGS_FILE="${HOME}/.config/hypr/hyprvim/settings.conf"
 STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim"
 PID_FILE="$STATE_DIR/whichkey-listen.pid"
 RENDER_TOKEN_FILE="$STATE_DIR/whichkey-render-token"
-KEYPRESS_PIPE="$STATE_DIR/whichkey-keypress.fifo"
+MONITOR_PID_FILE="$STATE_DIR/whichkey-monitor.pid"
 DEBOUNCE_MS="${DEBOUNCE_MS:-35}"
-WHICHKEY_SHOW_DELAY="${WHICHKEY_SHOW_DELAY:-0.2}"
+WHICHKEY_SHOW_DELAY="${WHICHKEY_SHOW_DELAY:-0.0}"
 
 mkdir -p "$STATE_DIR"
 
@@ -54,7 +54,7 @@ fi
 echo $$ >"$PID_FILE"
 
 # Cleanup on exit
-trap 'exec 3>&- 2>/dev/null; rm -f "$PID_FILE" "$RENDER_TOKEN_FILE" "$KEYPRESS_PIPE"' EXIT
+trap 'kill_keypress_monitor 2>/dev/null || true; rm -f "$PID_FILE" "$RENDER_TOKEN_FILE"' EXIT
 
 ################################################################################
 # Settings and Initialization
@@ -94,41 +94,40 @@ APPLY_THEME="${HOME}/.config/hypr/hyprvim/scripts/apply-theme.sh"
 eww -c "$EWW_DIR" daemon >/dev/null 2>&1 || true
 
 ################################################################################
-# Persistent Keypress Monitor
+# Per-Submap Keypress Monitor
 ################################################################################
-# A single libinput process runs for the lifetime of the daemon. Because it is
-# already running when a submap event arrives, there is zero startup latency and
-# the first keypress after entering any submap is always caught.
-#
-# fd 3 holds the write end of the FIFO open so the reader loop never sees EOF
-# when the libinput pipeline is restarted after an unexpected exit.
+# A one-shot libinput process is started each time a submap is entered. It
+# waits for the first keypress, cancels any pending delayed render, hides the
+# HUD, then exits. The monitor is also killed explicitly when the submap resets
+# or a new submap fires. This way libinput only runs while a submap is active.
 ################################################################################
 
-rm -f "$KEYPRESS_PIPE"
-mkfifo "$KEYPRESS_PIPE"
-exec 3<>"$KEYPRESS_PIPE" # keepalive: prevents reader from getting EOF on libinput restart
+kill_keypress_monitor() {
+  [[ -f "$MONITOR_PID_FILE" ]] || return 0
+  local pid
+  pid=$(cat "$MONITOR_PID_FILE" 2>/dev/null || echo "")
+  rm -f "$MONITOR_PID_FILE"
+  [[ -z "$pid" ]] && return 0
+  pkill -P "$pid" 2>/dev/null || true
+  kill "$pid" 2>/dev/null || true
+}
 
-# Reader: on any keypress, cancel any pending delayed render and hide the HUD.
-# render "hide" is only called when something might actually be visible
-# (token is an integer, meaning a render is pending or the HUD is showing).
-(
-  while IFS= read -r _; do
-    prior=$(cat "$RENDER_TOKEN_FILE" 2>/dev/null || echo "cancelled")
-    [[ "$prior" == "cancelled" ]] && continue
-    echo "cancelled" >"$RENDER_TOKEN_FILE" 2>/dev/null || true
-    "$RENDER" "hide" >/dev/null 2>&1 || true
-  done <"$KEYPRESS_PIPE"
-) &
-
-# Writer: feed libinput keypress events into the FIFO; restart on failure.
-(
-  while true; do
+start_keypress_monitor() {
+  kill_keypress_monitor
+  (
+    _pipe=$(mktemp -u)
+    mkfifo "$_pipe"
+    trap 'rm -f "$_pipe"; pkill -P $BASHPID 2>/dev/null || true' EXIT INT TERM
     stdbuf -oL libinput debug-events 2>&1 |
-      grep --line-buffered -E 'KEYBOARD_KEY.*pressed' \
-        >"$KEYPRESS_PIPE" || true
-    sleep 0.5
-  done
-) &
+      grep --line-buffered -m1 -E 'KEYBOARD_KEY.*pressed' >"$_pipe" &
+    # Only act on a real keypress (read returns 0); EOF from being killed returns 1
+    IFS= read -r _ <"$_pipe" && {
+      echo "cancelled" >"$RENDER_TOKEN_FILE" 2>/dev/null || true
+      "$RENDER" "hide" >/dev/null 2>&1 || true
+    }
+  ) &
+  echo $! >"$MONITOR_PID_FILE"
+}
 
 ################################################################################
 # Main Event Loop
@@ -168,17 +167,19 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     fi
 
     if [[ "$sm" == "NORMAL" ]]; then
-      : # state saved above; no HUD for NORMAL mode
+      kill_keypress_monitor # no HUD for NORMAL mode
     elif [[ -n "$sm" ]]; then
-      # Delay before showing HUD — the persistent keypress monitor will write
-      # "cancelled" to the token file if any key is pressed during the delay
+      # Start monitor before the delayed render so it is already listening
+      # by the time the HUD appears (covers the delay=0 case too)
+      start_keypress_monitor
       (
         sleep "$WHICHKEY_SHOW_DELAY"
         [[ "$(cat "$RENDER_TOKEN_FILE" 2>/dev/null)" == "$_my_token" ]] || exit 0
         "$RENDER" "$sm" "$screen_id" || true
       ) &
     else
-      # Empty submap — immediately hide, no delay needed
+      # Empty submap — kill monitor and immediately hide
+      kill_keypress_monitor
       "$RENDER" "$sm" "$screen_id" || true
     fi
 
