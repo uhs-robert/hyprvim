@@ -245,20 +245,26 @@ WINDOW="whichkey-${POSITION}"
 # Render Window
 ################################################################################
 
-# Close other positions and open the configured one
-for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
-  [[ "whichkey-$pos" != "$WINDOW" ]] && eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
-done
+# Hide first so content resize happens while invisible, preventing the flash
+# of the window visibly changing size between submaps
+eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
 
-eww -c "$EWW_DIR" open --screen "$screen" "$WINDOW" >/dev/null 2>&1 || true
-
-# For center layouts, distribute items across 4 columns
+# Update content while hidden
 if [[ "$POSITION" == *"center"* ]]; then
   col1=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 0) | .value]')
   col2=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 1) | .value]')
   col3=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 2) | .value]')
   col4=$(echo "$items" | jq -c '[to_entries | .[] | select(.key % 4 == 3) | .value]')
-  eww -c "$EWW_DIR" update title="$title" col1="$col1" col2="$col2" col3="$col3" col4="$col4" visible=true
+  eww -c "$EWW_DIR" update title="$title" col1="$col1" col2="$col2" col3="$col3" col4="$col4" >/dev/null 2>&1 || true
 else
-  eww -c "$EWW_DIR" update title="$title" items="$items" visible=true
+  eww -c "$EWW_DIR" update title="$title" items="$items" >/dev/null 2>&1 || true
 fi
+
+# Switch to correct position window if needed
+for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
+  [[ "whichkey-$pos" != "$WINDOW" ]] && eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
+done
+eww -c "$EWW_DIR" open --screen "$screen" "$WINDOW" >/dev/null 2>&1 || true
+
+# Show at the correct size
+eww -c "$EWW_DIR" update visible=true >/dev/null 2>&1 || true
