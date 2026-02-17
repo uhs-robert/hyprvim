@@ -15,6 +15,7 @@
 #   EWW_DIR               - Path to eww configuration directory
 #   RENDER                - Path to whichkey-render.sh
 #   DEBOUNCE_MS           - Debounce delay in milliseconds (default: 35)
+#   WHICHKEY_SHOW_DELAY   - Delay before showing HUD in seconds (default: 0.2)
 #
 ################################################################################
 
@@ -30,8 +31,10 @@ export RENDER="${RENDER:-$HOME/.config/hypr/hyprvim/scripts/whichkey-render.sh}"
 SETTINGS_FILE="${HOME}/.config/hypr/hyprvim/settings.conf"
 STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim"
 PID_FILE="$STATE_DIR/whichkey-listen.pid"
-MONITOR_PID_FILE="$STATE_DIR/whichkey-monitor.pid"
+RENDER_TOKEN_FILE="$STATE_DIR/whichkey-render-token"
+KEYPRESS_PIPE="$STATE_DIR/whichkey-keypress.fifo"
 DEBOUNCE_MS="${DEBOUNCE_MS:-35}"
+WHICHKEY_SHOW_DELAY="${WHICHKEY_SHOW_DELAY:-0.2}"
 
 mkdir -p "$STATE_DIR"
 
@@ -51,7 +54,7 @@ fi
 echo $$ >"$PID_FILE"
 
 # Cleanup on exit
-trap 'rm -f "$PID_FILE" "$MONITOR_PID_FILE"' EXIT
+trap 'exec 3>&- 2>/dev/null; rm -f "$PID_FILE" "$RENDER_TOKEN_FILE" "$KEYPRESS_PIPE"' EXIT
 
 ################################################################################
 # Settings and Initialization
@@ -91,38 +94,49 @@ APPLY_THEME="${HOME}/.config/hypr/hyprvim/scripts/apply-theme.sh"
 eww -c "$EWW_DIR" daemon >/dev/null 2>&1 || true
 
 ################################################################################
-# Keyboard Monitor Function
+# Persistent Keypress Monitor
+################################################################################
+# A single libinput process runs for the lifetime of the daemon. Because it is
+# already running when a submap event arrives, there is zero startup latency and
+# the first keypress after entering any submap is always caught.
+#
+# fd 3 holds the write end of the FIFO open so the reader loop never sees EOF
+# when the libinput pipeline is restarted after an unexpected exit.
 ################################################################################
 
-start_keyboard_monitor() {
-  (
-    PIPE=$(mktemp -u)
-    mkfifo "$PIPE"
-    trap 'rm -f "$PIPE"' EXIT
+rm -f "$KEYPRESS_PIPE"
+mkfifo "$KEYPRESS_PIPE"
+exec 3<>"$KEYPRESS_PIPE" # keepalive: prevents reader from getting EOF on libinput restart
 
-    # Small delay to avoid catching the key that triggered the submap
-    sleep 0.2
+# Reader: on any keypress, cancel any pending delayed render and hide the HUD.
+# render "hide" is only called when something might actually be visible
+# (token is an integer, meaning a render is pending or the HUD is showing).
+(
+  while IFS= read -r _; do
+    prior=$(cat "$RENDER_TOKEN_FILE" 2>/dev/null || echo "cancelled")
+    [[ "$prior" == "cancelled" ]] && continue
+    echo "cancelled" >"$RENDER_TOKEN_FILE" 2>/dev/null || true
+    "$RENDER" "hide" >/dev/null 2>&1 || true
+  done <"$KEYPRESS_PIPE"
+) &
 
-    # Persistent monitor: hide which-key on any keypress
-    (stdbuf -oL libinput debug-events 2>&1 | grep --line-buffered -E 'KEYBOARD_KEY.*pressed' >"$PIPE") &
-    LIBINPUT_PID=$!
-
-    while read -r line <"$PIPE"; do
-      "$RENDER" "hide" >/dev/null 2>&1 || true
-    done
-
-    # Cleanup
-    pkill -P $LIBINPUT_PID 2>/dev/null || true
-    kill $LIBINPUT_PID 2>/dev/null || true
-  ) &
-  echo $! >"$MONITOR_PID_FILE"
-}
+# Writer: feed libinput keypress events into the FIFO; restart on failure.
+(
+  while true; do
+    stdbuf -oL libinput debug-events 2>&1 |
+      grep --line-buffered -E 'KEYBOARD_KEY.*pressed' \
+        >"$KEYPRESS_PIPE" || true
+    sleep 0.5
+  done
+) &
 
 ################################################################################
 # Main Event Loop
 ################################################################################
 
 last="__init__"
+_wk_token=0
+echo "$_wk_token" >"$RENDER_TOKEN_FILE"
 
 socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
   case "$line" in
@@ -140,30 +154,31 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     # Use monitor name (e.g. "eDP-2") because eww --screen accepts names and it's unambiguous
     screen_id="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
 
-    # Kill any existing keyboard monitor
-    if [[ -f "$MONITOR_PID_FILE" ]]; then
-      MONITOR_PID=$(cat "$MONITOR_PID_FILE" 2>/dev/null)
-      if [[ -n "$MONITOR_PID" ]] && kill -0 "$MONITOR_PID" 2>/dev/null; then
-        pkill -P "$MONITOR_PID" 2>/dev/null || true
-        pkill -P "$MONITOR_PID" libinput 2>/dev/null || true
-        kill -TERM "$MONITOR_PID" 2>/dev/null || true
-        sleep 0.05
-        kill -KILL "$MONITOR_PID" 2>/dev/null || true
-      fi
-      rm -f "$MONITOR_PID_FILE"
+    # Advance token — invalidates any in-flight delayed render
+    _wk_token=$((_wk_token + 1))
+    echo "$_wk_token" >"$RENDER_TOKEN_FILE"
+    _my_token="$_wk_token"
+
+    # Track current submap immediately so --info always reflects actual state,
+    # regardless of whether the HUD has rendered yet
+    if [[ -n "$sm" ]]; then
+      echo "$sm" >"$STATE_DIR/current-submap"
+    else
+      rm -f "$STATE_DIR/current-submap"
     fi
 
-    # Handle NORMAL mode: save state but don't auto-render
     if [[ "$sm" == "NORMAL" ]]; then
-      echo "NORMAL" >"$STATE_DIR/current-submap"
-      # Start keyboard monitor anyway (for manual ? triggers)
-      start_keyboard_monitor
+      : # state saved above; no HUD for NORMAL mode
     elif [[ -n "$sm" ]]; then
-      # Render which-key and start monitor for other submaps
-      "$RENDER" "$sm" "$screen_id" || true
-      start_keyboard_monitor
+      # Delay before showing HUD — the persistent keypress monitor will write
+      # "cancelled" to the token file if any key is pressed during the delay
+      (
+        sleep "$WHICHKEY_SHOW_DELAY"
+        [[ "$(cat "$RENDER_TOKEN_FILE" 2>/dev/null)" == "$_my_token" ]] || exit 0
+        "$RENDER" "$sm" "$screen_id" || true
+      ) &
     else
-      # Empty submap - just render (will hide)
+      # Empty submap — immediately hide, no delay needed
       "$RENDER" "$sm" "$screen_id" || true
     fi
 
