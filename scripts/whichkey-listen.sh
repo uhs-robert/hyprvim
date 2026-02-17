@@ -108,7 +108,7 @@ start_keyboard_monitor() {
     LIBINPUT_PID=$!
 
     while read -r line <"$PIPE"; do
-      "$RENDER" "" >/dev/null 2>&1 || true
+      "$RENDER" "hide" >/dev/null 2>&1 || true
     done
 
     # Cleanup

@@ -69,8 +69,8 @@ if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
     pkill -P $LIBINPUT_PID 2>/dev/null || true
     kill $LIBINPUT_PID 2>/dev/null || true
 
-    # Hide which-key
-    "$0" "" >/dev/null 2>&1 || true
+    # Hide which-key (use "hide" to preserve state)
+    "$0" "hide" >/dev/null 2>&1 || true
     rm -f "$MONITOR_PID_FILE"
   ) &
   echo $! >"$MONITOR_PID_FILE"
@@ -85,15 +85,16 @@ fi
 submap="${1:-}"
 
 # Save current submap to state for info command
-if [[ -n "$submap" ]] && [[ "$submap" != "reset" ]] && [[ "$submap" != "GLOBAL" ]]; then
+if [[ -n "$submap" ]] && [[ "$submap" != "reset" ]] && [[ "$submap" != "GLOBAL" ]] && [[ "$submap" != "hide" ]]; then
   echo "$submap" >"$STATE_DIR/current-submap"
 elif [[ -z "$submap" ]] || [[ "$submap" == "reset" ]]; then
-  # Clear state when exiting vim mode
+  # Clear state when exiting vim mode (but not when just hiding)
   rm -f "$STATE_DIR/current-submap"
 fi
 
-# Normalize "reset" to empty
+# Normalize special values to empty for hiding
 [[ "$submap" == "reset" ]] && submap=""
+[[ "$submap" == "hide" ]] && submap=""
 
 # Hide when no submap (but not GLOBAL)
 if [[ -z "$submap" ]]; then
