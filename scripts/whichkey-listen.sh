@@ -148,6 +148,19 @@ is_sticky_submap() {
   return 1
 }
 
+# requires_show_delay <sm> - operator-pending submaps where a delay prevents the HUD from
+# flashing when the user types a motion quickly (e.g. dw, ci", yap, G-prefix, r-char)
+requires_show_delay() {
+  local sm="$1"
+  case "$sm" in
+  D-MOTION | D-I | D-A | D-G | \
+    C-MOTION | C-I | C-A | C-G | \
+    Y-MOTION | Y-I | Y-A | Y-G | \
+    G-MOTION | G-VISUAL | R-CHAR) return 0 ;;
+  esac
+  return 1
+}
+
 # should_auto_show <sm> - applies allow/deny precedence rules
 # 1. DENY list wins over everything (explicit deny)
 # 2. ALLOW list bypasses the built-in sticky check (force-show even if sticky)
@@ -243,9 +256,16 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
       if [[ "$_skip_applies" -eq 0 ]] && should_auto_show "$sm"; then
         # Capture focused monitor now (token already updated)
         screen_id="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
-        # Resolve delay in ms (use one-shot override if set, else global setting)
-        _show_delay_ms="${WHICHKEY_SHOW_DELAY_MS}"
-        [[ -n "$_next_delay" ]] && _show_delay_ms="$_next_delay"
+        # Resolve delay in ms: one-shot override wins; operator-pending submaps use the
+        # global delay to avoid flashing when the user types a motion quickly; everything
+        # else (non-HyprVim submaps, marks, GET-REGISTER) shows instantly.
+        if [[ -n "$_next_delay" ]]; then
+          _show_delay_ms="$_next_delay"
+        elif requires_show_delay "$sm"; then
+          _show_delay_ms="${WHICHKEY_SHOW_DELAY_MS}"
+        else
+          _show_delay_ms="0"
+        fi
         _show_delay=$(awk "BEGIN {printf \"%.3f\", ${_show_delay_ms} / 1000}")
         (
           sleep "$_show_delay"
