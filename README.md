@@ -14,7 +14,7 @@
 
 ## 🌅 Overview
 
-**HyprVim** brings the power of Vim keybindings and motions to your entire Hyprland desktop environment.
+**HyprVim** brings the power of Vim keybindings and motions to your Hyprland GUI desktop environment.
 
 Built on Hyprland’s native submap system, uses standard keyboard shortcut macros to emulate Vim-style navigation and text editing.
 
@@ -54,16 +54,17 @@ To use the extras, refer to their respective documentation.
 
 <!-- extras:start -->
 
-| Tool            | Description                                                               | Extra                                            |
-| --------------- | ------------------------------------------------------------------------- | ------------------------------------------------ |
-| Hyprland Basics | Hyprland keymap kickstart config for HyprVim (Resize, Move, Windows, etc) | [extras/hyprland-basics](extras/hyprland-basics) |
-| Keyd            | System-wide key remaps and tap/hold layers                                | [extras/keyd](extras/keyd)                       |
-| Thunderbird     | Keybinds for Vim driven navigation                                        | [extras/thunderbird](extras/thunderbird)         |
-| Wl-kbptr        | Keyboard-driven mouse cursor control on Wayland                           | [extras/wl-kbptr](extras/wl-kbptr)               |
-| Vimium          | Vim-style navigation for web browsers                                     | [extras/vimium](extras/vimium)                   |
-| Waybar Submap   | Waybar submap visual Indicator                                            | [extras/waybar](extras/waybar)                   |
+| Tool            | Description                                                               | Extra                                                                |
+| --------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Hyprland Basics | Hyprland keymap kickstart config for HyprVim (Resize, Move, Windows, etc) | [extras/hyprland-basics](extras/hyprland-basics)                     |
+| Keyd            | System-wide key remaps and tap/hold layers                                | [extras/keyd](extras/keyd)                                           |
+| Thunderbird     | Keybinds for Vim driven navigation                                        | [extras/thunderbird](extras/thunderbird)                             |
+| Vimium          | Vim-style navigation for web browsers                                     | [extras/vimium](extras/vimium)                                       |
+| Waybar Submap   | Waybar submap visual Indicator                                            | [extras/waybar](extras/waybar)                                       |
+| WhichKey        | WhichKey like display built using `eww` to see keybinds for submaps       | [wiki/whichkey](https://github.com/uhs-robert/hyprvim/wiki/WhichKey) |
+| Wl-kbptr        | Keyboard-driven mouse cursor control on Wayland                           | [extras/wl-kbptr](extras/wl-kbptr)                                   |
 
-If you'd like an extra config added, raise a feature request and I'll put it together.
+If you'd like an extra config added, raise a feature request or put one together and send a pull request.
 
 <!-- extras:end -->
 </details>
@@ -107,7 +108,7 @@ hyprctl reload
 ```
 
 > [!TIP]
-> **Verify installation**: Press `SUPER + ESC` and you should enter NORMAL mode. Press `gh` to view the help viewer.
+> **Verify installation**: Press `SUPER + ESC` and you should enter NORMAL mode. Press `gh` to view help.
 
 ## 🔄 Staying Updated
 
@@ -191,18 +192,7 @@ cd ~/.config/hypr/hyprvim
 cp settings.conf.example settings.conf
 ```
 
-You can customize even more in [the extras](https://github.com/uhs-robert/hyprvim/tree/main/extras):
-
-> [!NOTE]
-> [Waybar Hyprsubmap Indicator](https://github.com/uhs-robert/hyprvim/tree/main/extras/waybar)
->
-> [Keyboard-driven Mouse Control](https://github.com/uhs-robert/hyprvim/tree/main/extras/wl-kbptr)
->
-> [Other Hyprland Submaps](https://github.com/uhs-robert/hyprvim/tree/main/extras/hyprland-basics)
->
-> [Web Browser Vim Navigation](https://github.com/uhs-robert/hyprvim/tree/main/extras/vimium)
->
-> And more...
+> **📖 Learn more:** [Configuration wiki](https://github.com/uhs-robert/hyprvim/wiki/Configuration)
 
 ## 🗑️ Uninstalling
 
@@ -227,6 +217,9 @@ rm -rf ~/.config/hypr/hyprvim
 hyprctl reload
 ```
 
+> [!NOTE]
+> Any temporary files created by HyprVim for state management are automatically cleaned up on reboot.
+
 ## 🤔 Where is the Visual Mode Indicator and WhichKey?
 
 ### Mode Indicator (Waybar)
@@ -237,9 +230,9 @@ This displays the active submap in your status bar.
 
 ### WhichKey
 
-WhichKey requires `eww` to display. It is an optional feature that is included but disabled by default.
+WhichKey requires `eww` to display. It is an optional feature that is **disabled by default**.
 
-We highly recommend using the WhichKey to learn the keybindings, see marks, and help you remember your other submap bindings too.
+We **highly recommend using WhichKey** to learn the keybindings. It also displays active marks and works with your other submaps too.
 
 You can find the demo and setup instructions [in the Wiki for WhichKey](https://github.com/uhs-robert/hyprvim/wiki/WhichKey).
 
@@ -255,7 +248,15 @@ On that note, check out [all the extras too](/extras)! This is just the tip of t
 - Registers/marks are stored in tmpfs (not persistent across reboots)
 - Find operations use interactive prompts and application find dialogs
 - Effectiveness depends on application supporting standard keyboard shortcuts
-- HyprVim is designed for GUI applications first, terminals behave differently and often use a different set of keyboard shortcuts. Your mileage in terminal apps may vary, instead, try using your terminal's native Vim mode.
+
+> [!WARNING]
+> HyprVim is designed for **GUI applications first**, terminals behave differently.
+>
+> Terminals often use [a different set of keyboard shortcuts](https://gist.github.com/tuxfight3r/60051ac67c5f0445efee) so motions may not work as expected.
+>
+> However shells (bash, zsh, etc) usually ship a `vi mode`. Try using that instead.
+>
+> If you must, consider HyprVim for basic movement in the shell but don't be surprised if the fancy stuff doesn't work.
 
 ## 📏 Extending HyprVim
 
