@@ -15,7 +15,7 @@
 # Environment Variables:
 #   EWW_DIR                           - Path to eww configuration directory
 #   RENDER                            - Path to whichkey-render.sh
-#   WHICHKEY_SHOW_DELAY_MS            - Delay before showing HUD in milliseconds (default: 35)
+#   WHICHKEY_SHOW_DELAY_MS            - Delay before showing HUD in milliseconds (default: 200)
 #   HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW  - CSV allowlist: only these submaps auto-show
 #   HYPRVIM_WHICHKEY_AUTO_SHOW_DENY   - CSV denylist: these submaps never auto-show
 #
@@ -35,7 +35,7 @@ STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim"
 PID_FILE="$STATE_DIR/whichkey-listen.pid"
 RENDER_TOKEN_FILE="$STATE_DIR/whichkey-render-token"
 PENDING_RENDER_PID_FILE="$STATE_DIR/whichkey-pending-render.pid"
-WHICHKEY_SHOW_DELAY_MS="${WHICHKEY_SHOW_DELAY_MS:-35}"
+WHICHKEY_SHOW_DELAY_MS="${WHICHKEY_SHOW_DELAY_MS:-200}"
 
 mkdir -p "$STATE_DIR"
 
