@@ -68,7 +68,6 @@ if [[ "${1:-}" == -* ]]; then
       shift
       ;;
     -c | --close)
-      rm -f "$STATE_DIR/whichkey-manual-visible"
       "$0" "hide" >/dev/null 2>&1 || true
       exit 0
       ;;
@@ -86,11 +85,8 @@ fi
 ################################################################################
 
 if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
-  MANUAL_VISIBLE_FILE="$STATE_DIR/whichkey-manual-visible"
-
-  # Toggle off: if already manually visible, hide and clear state
-  if [[ -f "$MANUAL_VISIBLE_FILE" ]]; then
-    rm -f "$MANUAL_VISIBLE_FILE"
+  # Toggle off: if HUD is visible, hide and clear state
+  if [[ -f "$STATE_DIR/whichkey-visible" ]]; then
     "$0" "hide" >/dev/null 2>&1 || true
     exit 0
   fi
@@ -110,8 +106,6 @@ if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
   # Query focused monitor (manually triggered, no race condition)
   info_screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
 
-  # Mark as manually visible before rendering
-  touch "$MANUAL_VISIBLE_FILE"
   "$0" "$target_submap" "$info_screen" || true
   exit 0
 fi
@@ -142,7 +136,7 @@ fi
 
 # Hide when no submap (but not GLOBAL)
 if [[ -z "$submap" ]]; then
-  rm -f "$STATE_DIR/whichkey-manual-visible" "$STATE_DIR/whichkey-visible"
+  rm -f "$STATE_DIR/whichkey-visible"
   eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
   for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
     eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true

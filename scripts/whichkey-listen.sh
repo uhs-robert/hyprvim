@@ -52,7 +52,7 @@ fi
 
 echo $$ >"$PID_FILE"
 
-trap 'kill_pending_render 2>/dev/null || true; rm -f "$PID_FILE" "$RENDER_TOKEN_FILE" "$PENDING_RENDER_PID_FILE" "$STATE_DIR/current-submap" "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target" "$STATE_DIR/whichkey-manual-visible" "$STATE_DIR/whichkey-visible"' EXIT
+trap 'kill_pending_render 2>/dev/null || true; rm -f "$PID_FILE" "$RENDER_TOKEN_FILE" "$PENDING_RENDER_PID_FILE" "$STATE_DIR/current-submap" "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target" "$STATE_DIR/whichkey-visible"' EXIT
 
 ################################################################################
 # Settings and Initialization
@@ -191,9 +191,8 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     write_token "$_wk_token"
     _my_token="$_wk_token"
 
-    # Always hide existing HUD and clear manual-visible state on any submap change.
+    # Always hide existing HUD on any submap change.
     "$RENDER" "hide" >/dev/null 2>&1 || true
-    rm -f "$STATE_DIR/whichkey-manual-visible"
 
     # Track current submap immediately so info/toggle always reflects actual state.
     if [[ -n "$sm" ]]; then
