@@ -144,3 +144,7 @@ QWEN.md
 
 # User customizations (personal submap integrations)
 settings.conf
+theme.conf
+
+# Generated files
+eww/whichkey/_vars.scss

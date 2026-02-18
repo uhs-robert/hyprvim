@@ -1,17 +1,10 @@
-// Semantic color definitions (auto-generated from theme.conf)
-$bg_core: #1a283f;;
-$bg_border: #3b6a87;;
-$fg: #d9e6fa;;
-$primary: #58b8fd;;
-$secondary: #f9a05e;;
-$accent: #FFA0A0;;
-$info: #94d0fe;;
+// Theme variables — auto-generated from theme.conf on init and hyprctl reload
+@import 'vars';
 
-// Font sizing (all sizes scale from base using rem)
-* {
-  font-size: 12px;
-}
+// Root font size set by _vars.scss ($base_font_size from theme.conf)
+* { font-size: $base_font_size; }
 
+// Relative sizing (overrides $base_font_size for use in style properties)
 $title_font_size: 1.08rem;    // ~13px at 12px base
 $base_font_size: 1rem;        // Base size
 $footer_font_size: 0.92rem;   // ~11px at 12px base

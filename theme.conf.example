@@ -1,0 +1,30 @@
+# hypr/.config/hypr/hyprvim/theme.conf
+
+################################################################################
+# HYPRVIM THEME
+################################################################################
+#
+# Controls the colors and font size of the which-key HUD (eww widget).
+#
+# Copy this file to ~/.config/hypr/hyprvim/theme.conf to customize:
+#   cp theme.conf.example theme.conf
+#
+# The ./theme.conf file is ignored by git, so your personal theme stays local.
+# Changes are applied automatically on the next hyprctl reload.
+#
+# Any $variable defined here is automatically passed through to the eww SCSS —
+# add new variables freely without touching any scripts.
+#
+################################################################################
+
+# Theme Colors
+$bg_core: #1a283f;
+$bg_border: #3b6a87;
+$fg: #d9e6fa;
+$primary: #58b8fd;
+$secondary: #f9a05e;
+$accent: #FFA0A0;
+$info: #94d0fe;
+
+# Base font size (all other sizes scale from this)
+$base_font_size = 12px

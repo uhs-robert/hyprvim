@@ -4,82 +4,57 @@
 # apply-theme.sh - Apply theme colors to eww which-key HUD
 ################################################################################
 #
-# Reads color definitions from theme.conf and generates SCSS variables for the
-# eww which-key widget. This ensures the HUD colors match the current theme.
+# Reads all variables from theme.conf and writes them as SCSS variables to
+# eww/whichkey/_vars.scss. Users only need to edit theme.conf. Any $variable
+# defined in theme.conf is automatically included.
 #
 # Usage:
-#   apply-theme.sh    - Read theme.conf and update eww.scss
+#   apply-theme.sh
 #
 # Files:
 #   Input:  ~/.config/hypr/hyprvim/theme.conf
-#   Output: ~/.config/hypr/hyprvim/eww/whichkey/eww.scss
+#   Output: ~/.config/hypr/hyprvim/eww/whichkey/_vars.scss
 #
 ################################################################################
 
 set -euo pipefail
 
-################################################################################
-# Configuration
-################################################################################
-
 THEME_FILE="${HOME}/.config/hypr/hyprvim/theme.conf"
-SCSS_FILE="${HOME}/.config/hypr/hyprvim/eww/whichkey/eww.scss"
+VARS_FILE="${HOME}/.config/hypr/hyprvim/eww/whichkey/_vars.scss"
 
-################################################################################
-# Read Theme Colors
-################################################################################
-
-# Check if theme file exists
 if [[ ! -f "$THEME_FILE" ]]; then
   echo "Warning: theme.conf not found, using defaults" >&2
   exit 0
 fi
 
-# Parse theme.conf and extract colors and font size
-# Colors use ':' separator, font size uses '=' separator
-bg_core=$(grep '^\$bg_core' "$THEME_FILE" | sed 's/.*:\s*\(.*\)\s*$/\1/' | tr -d ' ')
-bg_border=$(grep '^\$bg_border' "$THEME_FILE" | sed 's/.*:\s*\(.*\)\s*$/\1/' | tr -d ' ')
-fg=$(grep '^\$fg' "$THEME_FILE" | sed 's/.*:\s*\(.*\)\s*$/\1/' | tr -d ' ')
-primary=$(grep '^\$primary' "$THEME_FILE" | sed 's/.*:\s*\(.*\)\s*$/\1/' | tr -d ' ')
-secondary=$(grep '^\$secondary' "$THEME_FILE" | sed 's/.*:\s*\(.*\)\s*$/\1/' | tr -d ' ')
-accent=$(grep '^\$accent' "$THEME_FILE" | sed 's/.*:\s*\(.*\)\s*$/\1/' | tr -d ' ')
-info=$(grep '^\$info' "$THEME_FILE" | sed 's/.*:\s*\(.*\)\s*$/\1/' | tr -d ' ')
-base_font_size=$(grep '^\$base_font_size' "$THEME_FILE" | sed 's/.*=\s*\(.*\)\s*$/\1/' | tr -d ' ')
-
-# Default font size if not specified
-[[ -z "$base_font_size" ]] && base_font_size="12px"
-
-################################################################################
-# Generate SCSS File
-################################################################################
-
 TEMP_FILE=$(mktemp)
+trap 'rm -f "$TEMP_FILE"' EXIT
 
-# Write color and font size definitions
-cat >"$TEMP_FILE" <<EOF
-// Semantic color definitions (auto-generated from theme.conf)
-\$bg_core: $bg_core;
-\$bg_border: $bg_border;
-\$fg: $fg;
-\$primary: $primary;
-\$secondary: $secondary;
-\$accent: $accent;
-\$info: $info;
+{
+  echo "// Auto-generated from theme.conf — do not edit directly"
+  echo "// To customize, edit theme.conf and re-run apply-theme.sh"
+  echo ""
 
-// Font sizing (all sizes scale from base using rem)
-* {
-  font-size: $base_font_size;
-}
+  while IFS= read -r line; do
+    # Skip comments and blank lines
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line//[[:space:]]/}" ]] && continue
 
-\$title_font_size: 1.08rem;    // ~13px at 12px base
-\$base_font_size: 1rem;        // Base size
-\$footer_font_size: 0.92rem;   // ~11px at 12px base
-EOF
+    # $name: value;  (color variables — strip trailing semicolon and whitespace)
+    if [[ "$line" =~ ^\$([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*:[[:space:]]*(.*) ]]; then
+      name="${BASH_REMATCH[1]}"
+      value=$(echo "${BASH_REMATCH[2]}" | sed 's/[;[:space:]]*$//')
+      echo "\$$name: $value;"
 
-# Append everything after the color definitions
-sed -n '/^\.whichkey {/,$p' "$SCSS_FILE" >>"$TEMP_FILE"
+    # $name = value  (other settings, e.g. font size)
+    elif [[ "$line" =~ ^\$([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
+      name="${BASH_REMATCH[1]}"
+      value=$(echo "${BASH_REMATCH[2]}" | sed 's/[[:space:]]*$//')
+      echo "\$$name: $value;"
+    fi
+  done <"$THEME_FILE"
+} >"$TEMP_FILE"
 
-# Replace original file
-mv "$TEMP_FILE" "$SCSS_FILE"
+mv "$TEMP_FILE" "$VARS_FILE"
 
 echo "Theme applied successfully"
