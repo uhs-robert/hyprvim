@@ -150,8 +150,11 @@ jump_mark() {
     [ "${#title}" -gt 30 ] && display_title="${display_title}..."
     notify_success "Jumped to '$mark' → $class" "$NOTIFY_ENABLED"
   else
-    # Window closed but workspace switched
-    notify_info "Window has been closed, switched to workspace $workspace" "$NOTIFY_ENABLED"
+    # Window closed - delete stale mark and notify
+    local temp_file="${MARKS_FILE}.tmp"
+    jq --arg mark "$mark" 'del(.[$mark])' "$MARKS_FILE" >"$temp_file"
+    mv "$temp_file" "$MARKS_FILE"
+    notify_info "Mark '$mark' deleted (window no longer exists)" "$NOTIFY_ENABLED"
   fi
   dispatch_to_after_submap "$MARKS_FILE"
 }
