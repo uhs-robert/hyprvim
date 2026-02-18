@@ -23,6 +23,7 @@
 
 - **Which-key HUD**: New eww-based HUD displaying available keybindings per submap, driven by Hyprland events. Opt-in via `$HYPRVIM_WHICHKEY = 1` (requires eww).
 - **Targeted HUD skip support**: Individual submaps can suppress the which-key HUD for specific transitions.
+- **Vim surround**: Add `ys`, `ds`, and `cs` operations to wrap, delete, and change surrounding characters.
 
 ### Bug Fixes
 
