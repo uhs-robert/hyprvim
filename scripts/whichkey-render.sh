@@ -196,8 +196,59 @@ if [[ "$submap" == "JUMP-MARK" || "$submap" == "SET-MARK" || "$submap" == "DELET
   fi
 fi
 
+# For GET-REGISTER submap, build items from live register state
+REGISTERS_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/registers"
+_use_register_items=false
+if [[ "$submap" == "GET-REGISTER" ]] && [[ -d "$REGISTERS_DIR" ]]; then
+  _reg_items=()
+  _dq='"'
+
+  _read_reg() {
+    local file="$1"
+    if [[ -f "$file" && -s "$file" ]]; then
+      head -c 40 "$file" 2>/dev/null | tr '\n\t' '  '
+    fi
+  }
+
+  _add_reg() {
+    local key="$1" prefix="$2" content="$3"
+    [[ -z "$content" ]] && return
+    local desc
+    if [[ -n "$prefix" ]]; then
+      desc="[$prefix] $content"
+    else
+      desc="$content"
+    fi
+    if [[ "${#desc}" -gt 45 ]]; then
+      desc="${desc:0:42}..."
+    fi
+    local part
+    part=$(jq -cn --arg k "$key" --arg d "$desc" '{key:$k,desc:$d,class:""}')
+    _reg_items+=("$part")
+  }
+
+  _add_reg "$_dq" "default" "$(_read_reg "${REGISTERS_DIR}/${_dq}")"
+  _add_reg "0" "yank" "$(_read_reg "$REGISTERS_DIR/0")"
+  for _n in 1 2 3 4 5 6 7 8 9; do
+    _add_reg "$_n" "del" "$(_read_reg "$REGISTERS_DIR/$_n")"
+  done
+  for _c in a b c d e f g h i j k l m n o p q r s t u v w x y z; do
+    _add_reg "$_c" "" "$(_read_reg "$REGISTERS_DIR/$_c")"
+  done
+  _find_state="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/find-state.json"
+  if [[ -f "$_find_state" ]]; then
+    _search_term=$(jq -r '.find_term // ""' "$_find_state" 2>/dev/null || echo "")
+    _add_reg "/" "search" "$_search_term"
+  fi
+
+  if [[ "${#_reg_items[@]}" -gt 0 ]]; then
+    _use_register_items=true
+    items=$(printf '%s\n' "${_reg_items[@]}" | jq -sc '.')
+  fi
+fi
+
 # Query Hyprland bindings and format for eww
-if [[ "$_use_mark_items" == "false" ]]; then
+if [[ "$_use_mark_items" == "false" && "$_use_register_items" == "false" ]]; then
   items="$(
     hyprctl binds -j |
       jq -c --arg sm "$submap" '
