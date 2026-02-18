@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# scripts/whichkey-render.sh
 ################################################################################
 # whichkey-render.sh - Render which-key HUD for active submap
 ################################################################################
@@ -160,87 +161,124 @@ else
   title="$submap"
 fi
 
-# Query Hyprland bindings and format for eww
-items="$(
-  hyprctl binds -j |
-    jq -c --arg sm "$submap" '
-      def normalize_key(key; modmask):
-        # Extract modifiers from modmask bitfield
-        ((modmask % 2) == 1) as $shift |
-        (((modmask / 4 | floor) % 2) == 1) as $ctrl |
-        (((modmask / 8 | floor) % 2) == 1) as $alt |
-        (((modmask / 64 | floor) % 2) == 1) as $super |
-
-        # Replace special key names with symbols
-        (key
-          | gsub("SLASH"; "/") | gsub("BACKSLASH"; "\\\\")
-          | gsub("COMMA"; ",") | gsub("PERIOD"; ".")
-          | gsub("SEMICOLON"; ";") | gsub("APOSTROPHE"; "'\''")
-          | gsub("GRAVE"; "`") | gsub("BRACKETLEFT"; "[") | gsub("BRACKETRIGHT"; "]")
-          | gsub("MINUS"; "-") | gsub("EQUAL"; "=")
-          | gsub("ESCAPE"; "ESC") | gsub("RETURN"; "RET") | gsub("BACKSPACE"; "BS")
-          | gsub("tab"; "TAB")
-        ) as $k |
-
-        # Determine final key representation
-        if (($shift or $ctrl or $alt or $super) | not) then
-          # No modifiers: lowercase single letters
-          if ($k | test("^[a-zA-Z]$")) then ($k | ascii_downcase) else $k end
-        else
-          if $shift and (($ctrl or $alt or $super) | not) then
-            # Only SHIFT: uppercase letters, shift symbols, or S- prefix
-            if ($k | test("^[a-zA-Z]$")) then
-              ($k | ascii_upcase)
-            else
-              # Shift number/symbol translations
-              (($k
-                | gsub("^1$"; "!") | gsub("^2$"; "@") | gsub("^3$"; "#")
-                | gsub("^4$"; "$") | gsub("^5$"; "%") | gsub("^6$"; "^")
-                | gsub("^7$"; "&") | gsub("^8$"; "*") | gsub("^9$"; "(")
-                | gsub("^0$"; ")") | gsub("^-$"; "_") | gsub("^=$"; "+")
-                | gsub("^\\[$"; "{") | gsub("^\\]$"; "}") | gsub("^\\\\$"; "|")
-                | gsub("^;$"; ":") | gsub("^,$"; "<")
-                | gsub("^\\.$"; ">") | gsub("^/$"; "?")
-              ) as $translated
-              | if (($translated | test("^[a-zA-Z0-9]$")) | not) and ($translated == $k) then
-                  ("S-" + $translated)
-                else
-                  $translated
-                end)
-            end
-          else
-            # Has modifiers: prepend prefixes
-            (if $ctrl then "C-" else "" end) +
-            (if $alt then "A-" else "" end) +
-            (if $super then "M-" else "" end) +
-            (if $shift then "S-" else "" end) +
-            $k
+# For mark submaps, build items directly from live mark state and skip the
+# hyprctl binds query. Falls back to hyprctl binds when no marks are set yet.
+MARKS_FILE="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/marks.json"
+_use_mark_items=false
+if [[ "$submap" == "JUMP-MARK" || "$submap" == "SET-MARK" || "$submap" == "DELETE-MARK" ]] &&
+  [[ -f "$MARKS_FILE" ]]; then
+  _mark_count=$(jq '[to_entries[] | select(.value | type == "object")] | length' "$MARKS_FILE" 2>/dev/null || echo 0)
+  if [[ "$_mark_count" -gt 0 ]]; then
+    if _mark_items="$(jq -c '
+      to_entries
+      | map(select(.value | type == "object"))
+      | map({
+          key: .key,
+          desc: (
+            (.value.class // "?") +
+            (if ((.value.title // "") | length) > 0
+             then " \u00b7 " + (.value.title | .[0:20])
+             else "" end) +
+            " [ws:" + (.value.workspace | tostring) + "]"
+          ),
+          class: ""
+        })
+      | sort_by(
+          if (.key | test("^[a-z]$")) then [0, .key]
+          elif (.key | test("^[A-Z]$")) then [1, .key]
+          else [2, .key]
           end
-        end;
+        )
+    ' "$MARKS_FILE" 2>/dev/null)"; then
+      items="$_mark_items"
+      _use_mark_items=true
+    fi
+  fi
+fi
 
-      [ .[]
-        | select(
-            if $sm == "GLOBAL" then
-              (.submap // "") == ""
+# Query Hyprland bindings and format for eww
+if [[ "$_use_mark_items" == "false" ]]; then
+  items="$(
+    hyprctl binds -j |
+      jq -c --arg sm "$submap" '
+        def normalize_key(key; modmask):
+          # Extract modifiers from modmask bitfield
+          ((modmask % 2) == 1) as $shift |
+          (((modmask / 4 | floor) % 2) == 1) as $ctrl |
+          (((modmask / 8 | floor) % 2) == 1) as $alt |
+          (((modmask / 64 | floor) % 2) == 1) as $super |
+
+          # Replace special key names with symbols
+          (key
+            | gsub("SLASH"; "/") | gsub("BACKSLASH"; "\\\\")
+            | gsub("COMMA"; ",") | gsub("PERIOD"; ".")
+            | gsub("SEMICOLON"; ";") | gsub("APOSTROPHE"; "'\''")
+            | gsub("GRAVE"; "`") | gsub("BRACKETLEFT"; "[") | gsub("BRACKETRIGHT"; "]")
+            | gsub("MINUS"; "-") | gsub("EQUAL"; "=")
+            | gsub("ESCAPE"; "ESC") | gsub("RETURN"; "RET") | gsub("BACKSPACE"; "BS")
+            | gsub("tab"; "TAB")
+          ) as $k |
+
+          # Determine final key representation
+          if (($shift or $ctrl or $alt or $super) | not) then
+            # No modifiers: lowercase single letters
+            if ($k | test("^[a-zA-Z]$")) then ($k | ascii_downcase) else $k end
+          else
+            if $shift and (($ctrl or $alt or $super) | not) then
+              # Only SHIFT: uppercase letters, shift symbols, or S- prefix
+              if ($k | test("^[a-zA-Z]$")) then
+                ($k | ascii_upcase)
+              else
+                # Shift number/symbol translations
+                (($k
+                  | gsub("^1$"; "!") | gsub("^2$"; "@") | gsub("^3$"; "#")
+                  | gsub("^4$"; "$") | gsub("^5$"; "%") | gsub("^6$"; "^")
+                  | gsub("^7$"; "&") | gsub("^8$"; "*") | gsub("^9$"; "(")
+                  | gsub("^0$"; ")") | gsub("^-$"; "_") | gsub("^=$"; "+")
+                  | gsub("^\\[$"; "{") | gsub("^\\]$"; "}") | gsub("^\\\\$"; "|")
+                  | gsub("^;$"; ":") | gsub("^,$"; "<")
+                  | gsub("^\\.$"; ">") | gsub("^/$"; "?")
+                ) as $translated
+                | if (($translated | test("^[a-zA-Z0-9]$")) | not) and ($translated == $k) then
+                    ("S-" + $translated)
+                  else
+                    $translated
+                  end)
+              end
             else
-              (.submap // "") == $sm
+              # Has modifiers: prepend prefixes
+              (if $ctrl then "C-" else "" end) +
+              (if $alt then "A-" else "" end) +
+              (if $super then "M-" else "" end) +
+              (if $shift then "S-" else "" end) +
+              $k
             end
-          )
-        | select((.description // "") != "")
-        | {
-            key: (normalize_key(.key // ""; .modmask // 0)),
-            desc: (.description // ""),
-            class: (if (.description // "") | startswith("+") then "is-submap" else "" end)
-          }
-      ]
-      # Sort: letters, special chars, modifiers, ESC
-      | (map(select(.key == "ESC"))) as $esc
-      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-"))))) as $mods
-      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$"))))) as $letters
-      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$") | not)))) as $special
-      | ($letters | sort_by(.key | ascii_downcase)) + ($special | sort_by(.key)) + ($mods | sort_by(.key)) + $esc
-    '
-)"
+          end;
+
+        [ .[]
+          | select(
+              if $sm == "GLOBAL" then
+                (.submap // "") == ""
+              else
+                (.submap // "") == $sm
+              end
+            )
+          | select((.description // "") != "")
+          | {
+              key: (normalize_key(.key // ""; .modmask // 0)),
+              desc: (.description // ""),
+              class: (if (.description // "") | startswith("+") then "is-submap" else "" end)
+            }
+        ]
+        # Sort: letters, special chars, modifiers, ESC
+        | (map(select(.key == "ESC"))) as $esc
+        | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-"))))) as $mods
+        | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$"))))) as $letters
+        | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$") | not)))) as $special
+        | ($letters | sort_by(.key | ascii_downcase)) + ($special | sort_by(.key)) + ($mods | sort_by(.key)) + $esc
+      '
+  )"
+fi
 
 ################################################################################
 # Position and Overflow Detection
