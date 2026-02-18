@@ -38,7 +38,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **🔁 Surround** - Wrap text with pairs (`gs` for word, `S` in visual) - supports `()`, `{}`, `[]`, `<div>`, or custom with spaces
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
-- **🗺️ Which-Key HUD** - Press `?` from any mode to see available keybindings. Auto-shows when entering submaps (requires `eww`)
+- **🗺️ Which-Key HUD** - Press `SPACE` from any mode to see available keybindings. Auto-shows when entering submaps (requires `eww`)
 - **Open Vim/Nvim Anywhere** - Press `SUPER + N` to open selected text in Vim/Nvim for complex editing. Save/close to paste.
 
 > [!WARNING]
@@ -227,11 +227,25 @@ rm -rf ~/.config/hypr/hyprvim
 hyprctl reload
 ```
 
-## 🤔 Where is the Visual Mode Indicator? (Waybar)
+## 🤔 Where is the Visual Mode Indicator and WhichKey?
 
-To see which Vim mode you're currently in, add the [Hyprland submap module](/extras/waybar) to your Waybar configuration. This displays the active submap in your status bar.
+### Mode Indicator (Waybar)
 
-On that note, check out [all the extras too](/extras)! You never know what you might find.
+To see which Vim mode you're currently in, add the [Hyprland submap module](/extras/waybar) to your Waybar configuration.
+
+This displays the active submap in your status bar.
+
+### WhichKey
+
+WhichKey requires `eww` to display. It is an optional feature that is included but disabled by default.
+
+We highly recommend using the WhichKey to learn the keybindings, see marks, and help you remember your other submap bindings too.
+
+You can find the demo and setup instructions [in the Wiki for WhichKey](https://github.com/uhs-robert/hyprvim/wiki/WhichKey).
+
+### More Extras
+
+On that note, check out [all the extras too](/extras)! This is just the tip of the iceberg, you never know what you might find.
 
 ## ⚠️ Known Limitations
 
