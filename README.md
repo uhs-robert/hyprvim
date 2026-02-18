@@ -20,7 +20,7 @@ Built on Hyprland’s native submap system, uses standard keyboard shortcut macr
 
 <https://github.com/user-attachments/assets/1a9c9459-2bfa-4d1d-bf05-24d5174431a9>
 
-<p> align=center<i>Think of it as a lightweight, system-wide Vim mode for all of your GUI applications.</i></p>
+<p align=center><i>Think of it as a lightweight, system-wide Vim mode for all of your GUI applications.</i></p>
 
 ## ✨ Features
 
