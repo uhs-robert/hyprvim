@@ -21,12 +21,11 @@
 
 ### New Features
 
-- **Event-driven which-key**: Replaced the polling keypress monitor with a Hyprland event-driven system for more reliable and efficient HUD triggering.
+- **Which-key HUD**: New eww-based HUD displaying available keybindings per submap, driven by Hyprland events. Opt-in via `$HYPRVIM_WHICHKEY = 1` (requires eww).
 - **Targeted HUD skip support**: Individual submaps can suppress the which-key HUD for specific transitions.
 
 ### Bug Fixes
 
-- Which-key is now opt-in (`$HYPRVIM_WHICHKEY = 1`) since eww is an optional dependency — no more errors on systems without it.
 - Quoted all `send_shortcut` arguments in `vim-find.sh` and `vim-line-motion.sh`, fixing broken search, word operations, and line motions.
 - Eliminated stale which-key HUD using hard PID-based cancellation.
 - Fixed HUD appearing on the wrong monitor.
