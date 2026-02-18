@@ -137,7 +137,7 @@ Stay informed about new releases:
 
 ## 🚀 Usage
 
-> **📚 Full Reference:** For a complete reference of configuration, keybindings, and commands... visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
+> **📚 Full Reference:** For a complete usage guide, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
 
 ### Quick Start
 
@@ -175,7 +175,7 @@ Press `:` in NORMAL mode to execute Vim-style commands. Common commands: `:w` (s
 
 HyprVim includes pragmatic pass-through bindings in NORMAL mode for better GUI interaction: `TAB`, `RETURN`, `CTRL+V/X/A/S/W/Z`.
 
-This enables seamless dialog navigation and clipboard operations without constantly switching to INSERT mode.
+This enables dialog navigation and clipboard operations without constantly switching to INSERT mode.
 
 > [!WARNING]
 > These may trigger unwanted actions in text editors. Use `i` to enter INSERT mode when editing text, or create override bindings by sourcing a custom config after HyprVim.
