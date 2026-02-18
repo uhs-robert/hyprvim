@@ -8,9 +8,10 @@
 #   whichkey-render.sh <submap> [screen] [token]  - Render which-key for given submap
 #   whichkey-render.sh ""                          - Hide which-key
 #   whichkey-render.sh info                        - Re-show which-key for current submap
-#   whichkey-render.sh [-s] [-d <ms>]              - Set one-shot opts for next submap entry
-#     -s, --skip         Skip showing HUD for the next submap entry
-#     -d, --delay <ms>   Override show delay (ms) for the next submap entry
+#   whichkey-render.sh [-s [TARGET]] [-d <ms>]      - Set one-shot opts for next submap entry
+#     -s, --skip [TARGET]   Skip showing HUD for next submap entry (or TARGET-named submap only)
+#     --skip=TARGET         Same as --skip TARGET
+#     -d, --delay <ms>      Override show delay (ms) for the next submap entry
 #
 # Environment Variables:
 #   EWW_DIR                       - Path to eww configuration directory
@@ -39,17 +40,28 @@ mkdir -p "$STATE_DIR"
 
 if [[ "${1:-}" == -* ]]; then
   _write_skip=0
+  _write_skip_target=""
   _write_delay=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -s|--skip) _write_skip=1; shift ;;
+      -s|--skip)
+        _write_skip=1
+        if [[ -n "${2:-}" && "${2:-}" != -* ]]; then
+          _write_skip_target="$2"
+          shift 2
+        else
+          shift
+        fi
+        ;;
+      --skip=*) _write_skip=1; _write_skip_target="${1#*=}"; shift ;;
       -d|--delay) _write_delay="$2"; shift 2 ;;
       --delay=*) _write_delay="${1#*=}"; shift ;;
       *) break ;;
     esac
   done
   [[ "$_write_skip" -eq 1 ]] && touch "$STATE_DIR/whichkey-skip-next"
-  [[ -n "$_write_delay" ]] && echo "$_write_delay" >"$STATE_DIR/whichkey-next-delay"
+  [[ -n "${_write_skip_target:-}" ]] && printf '%s\n' "$_write_skip_target" >"$STATE_DIR/whichkey-skip-target"
+  [[ -n "$_write_delay" ]] && printf '%s\n' "$_write_delay" >"$STATE_DIR/whichkey-next-delay"
   exit 0
 fi
 
