@@ -1,5 +1,24 @@
 # HyprVim Release Notes
 
+## [v1.2.2](https://github.com/uhs-robert/hyprvim/releases/tag/v1.2.2) — 2026-02-18
+
+### New Features
+
+- **Instant which-key for mark submaps**: The which-key HUD now appears immediately (no delay) when entering mark-related submaps, since they are transient and benefit from instant feedback.
+
+### Bug Fixes
+
+- Stale marks are now auto-deleted when their target window is closed, preventing jumps to dead windows.
+- The which-key HUD is now auto-hidden when a new window opens, avoiding a stale overlay on window changes.
+- Which-key binding is now placed before the `catchall` in all submaps, fixing cases where the trigger was swallowed.
+- Fixed which-key rendering for mark submaps.
+
+### Improvements
+
+- Which-key trigger changed from `?` to `SPACE` across all submaps for faster, more natural access.
+
+---
+
 ## [v1.2.1](https://github.com/uhs-robert/hyprvim/releases/tag/v1.2.1) — 2026-02-18
 
 ### New Features
