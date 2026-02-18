@@ -1,6 +1,6 @@
 # HyprVim Release Notes
 
-## v1.2.1 — 2026-02-18
+## [v1.2.1](https://github.com/uhs-robert/hyprvim/releases/tag/v1.2.1) — 2026-02-18
 
 ### New Features
 
@@ -17,7 +17,7 @@
 
 ---
 
-## v1.2.0 — 2026-02-13
+## [v1.2.0](https://github.com/uhs-robert/hyprvim/releases/tag/v1.2.0) — 2026-02-13
 
 ### New Features
 
