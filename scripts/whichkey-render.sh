@@ -5,11 +5,10 @@
 ################################################################################
 #
 # Usage:
-#   whichkey-render.sh <submap> [screen] [token]  - Render which-key for given submap
+#   whichkey-render.sh <submap> [screen] [token]   - Render which-key for given submap
 #   whichkey-render.sh ""                          - Hide which-key
 #   whichkey-render.sh info                        - Toggle which-key for current submap
 #   whichkey-render.sh -c, --close                 - Dismiss which-key if open
-#   whichkey-render.sh --escape                     - Dismiss which-key if open, else reset submap
 #   whichkey-render.sh [-s [TARGET]] [-d <ms>]     - Set one-shot opts for next submap entry
 #     -s, --skip [TARGET]   Skip showing HUD for next submap entry (or TARGET-named submap only)
 #     --skip=TARGET         Same as --skip TARGET
@@ -46,32 +45,34 @@ if [[ "${1:-}" == -* ]]; then
   _write_delay=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -s|--skip)
-        _write_skip=1
-        if [[ -n "${2:-}" && "${2:-}" != -* ]]; then
-          _write_skip_target="$2"
-          shift 2
-        else
-          shift
-        fi
-        ;;
-      --skip=*) _write_skip=1; _write_skip_target="${1#*=}"; shift ;;
-      -d|--delay) _write_delay="$2"; shift 2 ;;
-      --delay=*) _write_delay="${1#*=}"; shift ;;
-      -c|--close)
-        rm -f "$STATE_DIR/whichkey-manual-visible"
-        "$0" "hide" >/dev/null 2>&1 || true
-        exit 0
-        ;;
-      --escape)
-        if [[ -f "$STATE_DIR/whichkey-visible" ]]; then
-          "$0" "hide" >/dev/null 2>&1 || true
-        else
-          hyprctl dispatch submap reset >/dev/null 2>&1 || true
-        fi
-        exit 0
-        ;;
-      *) break ;;
+    -s | --skip)
+      _write_skip=1
+      if [[ -n "${2:-}" && "${2:-}" != -* ]]; then
+        _write_skip_target="$2"
+        shift 2
+      else
+        shift
+      fi
+      ;;
+    --skip=*)
+      _write_skip=1
+      _write_skip_target="${1#*=}"
+      shift
+      ;;
+    -d | --delay)
+      _write_delay="$2"
+      shift 2
+      ;;
+    --delay=*)
+      _write_delay="${1#*=}"
+      shift
+      ;;
+    -c | --close)
+      rm -f "$STATE_DIR/whichkey-manual-visible"
+      "$0" "hide" >/dev/null 2>&1 || true
+      exit 0
+      ;;
+    *) break ;;
     esac
   done
   [[ "$_write_skip" -eq 1 ]] && touch "$STATE_DIR/whichkey-skip-next"
