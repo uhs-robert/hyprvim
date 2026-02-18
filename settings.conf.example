@@ -79,5 +79,17 @@ $HYPRVIM_DEBUG =
 $HYPRVIM_WHICH_KEY_ENABLED = 1
 $HYPRVIM_WHICH_KEY_POSITION = bottom-right
 
-## Press ? to view which-key on any submap after dismall (pressing any key dismisses)
+# Auto-show policy (optional)
+# By default the HUD auto-shows for all submaps except sticky/movement ones
+# (NORMAL, VISUAL, V-LINE, Cursor, and any submap matching *MOVE*, *RESIZE*, *WINDOW*, etc.)
+#
+# DENY:  these submaps never auto-show (highest priority)
+#        Extend to suppress additional submaps beyond the built-in sticky defaults.
+# ALLOW: these submaps always auto-show, bypassing the built-in sticky check.
+#        Use to force-show a submap that would otherwise be suppressed.
+
+$HYPRVIM_WHICHKEY_AUTO_SHOW_DENY  = NORMAL,VISUAL,V-LINE,Cursor
+$HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW =
+
+## Press ? to toggle which-key on any submap (press ? again to dismiss)
 bindun = SHIFT, SLASH, exec, $HYPRVIM_WHICH_KEY info

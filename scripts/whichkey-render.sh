@@ -7,8 +7,10 @@
 # Usage:
 #   whichkey-render.sh <submap> [screen] [token]  - Render which-key for given submap
 #   whichkey-render.sh ""                          - Hide which-key
-#   whichkey-render.sh info                        - Re-show which-key for current submap
-#   whichkey-render.sh [-s [TARGET]] [-d <ms>]      - Set one-shot opts for next submap entry
+#   whichkey-render.sh info                        - Toggle which-key for current submap
+#   whichkey-render.sh -c, --close                 - Dismiss which-key if open
+#   whichkey-render.sh --escape                     - Dismiss which-key if open, else reset submap
+#   whichkey-render.sh [-s [TARGET]] [-d <ms>]     - Set one-shot opts for next submap entry
 #     -s, --skip [TARGET]   Skip showing HUD for next submap entry (or TARGET-named submap only)
 #     --skip=TARGET         Same as --skip TARGET
 #     -d, --delay <ms>      Override show delay (ms) for the next submap entry
@@ -56,6 +58,19 @@ if [[ "${1:-}" == -* ]]; then
       --skip=*) _write_skip=1; _write_skip_target="${1#*=}"; shift ;;
       -d|--delay) _write_delay="$2"; shift 2 ;;
       --delay=*) _write_delay="${1#*=}"; shift ;;
+      -c|--close)
+        rm -f "$STATE_DIR/whichkey-manual-visible"
+        "$0" "hide" >/dev/null 2>&1 || true
+        exit 0
+        ;;
+      --escape)
+        if [[ -f "$STATE_DIR/whichkey-visible" ]]; then
+          "$0" "hide" >/dev/null 2>&1 || true
+        else
+          hyprctl dispatch submap reset >/dev/null 2>&1 || true
+        fi
+        exit 0
+        ;;
       *) break ;;
     esac
   done
@@ -66,56 +81,37 @@ if [[ "${1:-}" == -* ]]; then
 fi
 
 ################################################################################
-# Info Command - Re-show Current Submap
+# Info Command - Manual Toggle for Current Submap
 ################################################################################
 
 if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
-  # Try to get current submap from state file
+  MANUAL_VISIBLE_FILE="$STATE_DIR/whichkey-manual-visible"
+
+  # Toggle off: if already manually visible, hide and clear state
+  if [[ -f "$MANUAL_VISIBLE_FILE" ]]; then
+    rm -f "$MANUAL_VISIBLE_FILE"
+    "$0" "hide" >/dev/null 2>&1 || true
+    exit 0
+  fi
+
+  # Toggle on: determine target submap
   current_submap=""
   if [[ -f "$STATE_DIR/current-submap" ]]; then
     current_submap=$(cat "$STATE_DIR/current-submap" 2>/dev/null || echo "")
   fi
 
-  # Determine which submap to show
   if [[ -n "$current_submap" ]] && [[ "$current_submap" != "reset" ]]; then
     target_submap="$current_submap"
   else
     target_submap="GLOBAL"
   fi
 
-  # Query focused monitor here (info is manually triggered, no race condition)
+  # Query focused monitor (manually triggered, no race condition)
   info_screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
 
-  # Render the submap
+  # Mark as manually visible before rendering
+  touch "$MANUAL_VISIBLE_FILE"
   "$0" "$target_submap" "$info_screen" || true
-
-  # Start keyboard monitor to auto-dismiss on any keypress
-  MONITOR_PID_FILE="$STATE_DIR/whichkey-info-monitor.pid"
-  (
-    # Create named pipe
-    PIPE=$(mktemp -u)
-    mkfifo "$PIPE"
-    trap 'rm -f "$PIPE"' EXIT
-
-    sleep 0.2
-
-    # Start libinput and wait for one keypress
-    (stdbuf -oL libinput debug-events 2>&1 | grep --line-buffered -E 'KEYBOARD_KEY.*pressed' >"$PIPE") &
-    LIBINPUT_PID=$!
-
-    # Read one keypress
-    read -r line <"$PIPE"
-
-    # Kill libinput
-    pkill -P $LIBINPUT_PID 2>/dev/null || true
-    kill $LIBINPUT_PID 2>/dev/null || true
-
-    # Hide which-key (use "hide" to preserve state)
-    "$0" "hide" >/dev/null 2>&1 || true
-    rm -f "$MONITOR_PID_FILE"
-  ) &
-  echo $! >"$MONITOR_PID_FILE"
-
   exit 0
 fi
 
@@ -145,6 +141,7 @@ fi
 
 # Hide when no submap (but not GLOBAL)
 if [[ -z "$submap" ]]; then
+  rm -f "$STATE_DIR/whichkey-manual-visible" "$STATE_DIR/whichkey-visible"
   eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
   for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
     eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
@@ -325,4 +322,5 @@ if [[ -n "$render_token" ]]; then
 fi
 
 # Show at the correct size
+touch "$STATE_DIR/whichkey-visible"
 eww -c "$EWW_DIR" update visible=true >/dev/null 2>&1 || true
