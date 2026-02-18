@@ -118,17 +118,17 @@ execute_find() {
   fi
 
   # Open find dialog
-  send_shortcut_sleep 0.15 CTRL, F
+  send_shortcut_sleep 0.15 "CTRL, F"
 
   # Paste search term
-  send_shortcut_sleep 0.05 CTRL, V
+  send_shortcut_sleep 0.05 "CTRL, V"
 
   # Dismiss autocomplete by adding then removing a space
-  send_shortcut_sleep 0.05 , SPACE
-  send_shortcut_sleep 0.05 , BACKSPACE
+  send_shortcut_sleep 0.05 ", SPACE"
+  send_shortcut_sleep 0.05 ", BACKSPACE"
 
   # Execute search
-  send_shortcut_sleep 0.05 , Return
+  send_shortcut_sleep 0.05 ", Return"
 
   # Return to NORMAL mode
   return_to_normal
@@ -238,11 +238,11 @@ word_under_cursor() {
   require_cmd wl-copy wl-paste
 
   # Select word under cursor (inner word: CTRL+RIGHT, then CTRL+SHIFT+LEFT)
-  send_shortcut_sleep 0.1 CTRL, RIGHT
-  send_shortcut_sleep 0.15 CTRL SHIFT, LEFT
+  send_shortcut_sleep 0.1 "CTRL, RIGHT"
+  send_shortcut_sleep 0.15 "CTRL SHIFT, LEFT"
 
   # Copy selected word to clipboard
-  send_shortcut_sleep 0.2 CTRL, C
+  send_shortcut_sleep 0.2 "CTRL, C"
 
   # Read clipboard after copy
   local search_term

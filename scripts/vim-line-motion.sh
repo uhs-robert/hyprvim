@@ -116,7 +116,7 @@ motion_paragraph_down() {
 # Go to document start (gg)
 motion_goto_start() {
   if [[ -f "$FIRST_MOTION_FLAG" ]]; then
-    send_shortcuts , END
+    send_shortcuts ", END"
     reset_state
   fi
   send_shortcut "CTRL SHIFT, HOME"
