@@ -145,6 +145,181 @@ if [[ -z "$submap" ]]; then
 fi
 
 ################################################################################
+# Item Builders
+################################################################################
+
+# build_mark_items <submap>
+# Outputs a JSON items array from live mark state for mark submaps.
+# Returns 0 (and prints items) if applicable and marks exist; 1 otherwise.
+build_mark_items() {
+  local sm="$1"
+  local marks_file="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/marks.json"
+
+  [[ "$sm" == "JUMP-MARK" || "$sm" == "SET-MARK" || "$sm" == "DELETE-MARK" ]] || return 1
+  [[ -f "$marks_file" ]] || return 1
+
+  local mark_count
+  mark_count=$(jq '[to_entries[] | select(.value | type == "object")] | length' "$marks_file" 2>/dev/null || echo 0)
+  [[ "$mark_count" -gt 0 ]] || return 1
+
+  jq -c '
+    to_entries
+    | map(select(.value | type == "object"))
+    | map({
+        key: .key,
+        desc: (
+          (.value.class // "?") +
+          (if ((.value.title // "") | length) > 0
+           then " \u00b7 " + (.value.title | .[0:20])
+           else "" end) +
+          " [ws:" + (.value.workspace | tostring) + "]"
+        ),
+        class: ""
+      })
+    | sort_by(
+        if (.key | test("^[a-z]$")) then [0, .key]
+        elif (.key | test("^[A-Z]$")) then [1, .key]
+        else [2, .key]
+        end
+      )
+  ' "$marks_file" 2>/dev/null
+}
+
+# build_register_items <submap>
+# Outputs a JSON items array from live register state for GET-REGISTER submap.
+# Returns 0 (and prints items) if applicable and registers have content; 1 otherwise.
+build_register_items() {
+  local sm="$1"
+  local registers_dir="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/registers"
+  local find_state="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/find-state.json"
+  local dq='"'
+
+  [[ "$sm" == "GET-REGISTER" ]] || return 1
+  [[ -d "$registers_dir" ]] || return 1
+
+  _reg_read() {
+    local f="$1"
+    [[ -f "$f" && -s "$f" ]] && head -c 40 "$f" 2>/dev/null | tr '\n\t' '  '
+  }
+
+  _reg_item() {
+    local key="$1" prefix="$2" content="$3"
+    local desc part
+    [[ -z "$content" ]] && return 0
+    if [[ -n "$prefix" ]]; then
+      desc="[$prefix] $content"
+    else
+      desc="$content"
+    fi
+    [[ "${#desc}" -gt 45 ]] && desc="${desc:0:42}..."
+    part=$(jq -cn --arg k "$key" --arg d "$desc" '{key:$k,desc:$d,class:""}')
+    items_json+=("$part")
+  }
+
+  local items_json=()
+  local n c search_term
+  _reg_item "$dq" "default" "$(_reg_read "${registers_dir}/${dq}")"
+  _reg_item "0" "yank" "$(_reg_read "$registers_dir/0")"
+  for n in 1 2 3 4 5 6 7 8 9; do
+    _reg_item "$n" "del" "$(_reg_read "$registers_dir/$n")"
+  done
+  for c in a b c d e f g h i j k l m n o p q r s t u v w x y z; do
+    _reg_item "$c" "" "$(_reg_read "$registers_dir/$c")"
+  done
+  if [[ -f "$find_state" ]]; then
+    search_term=$(jq -r '.find_term // ""' "$find_state" 2>/dev/null || echo "")
+    _reg_item "/" "search" "$search_term"
+  fi
+
+  [[ "${#items_json[@]}" -gt 0 ]] || return 1
+  printf '%s\n' "${items_json[@]}" | jq -sc '.'
+}
+
+# build_hyprctl_items <submap>
+# Outputs a JSON items array from hyprctl binds. Used as the final fallback.
+build_hyprctl_items() {
+  local sm="$1"
+  hyprctl binds -j |
+    jq -c --arg sm "$sm" '
+      def normalize_key(key; modmask):
+        # Extract modifiers from modmask bitfield
+        ((modmask % 2) == 1) as $shift |
+        (((modmask / 4 | floor) % 2) == 1) as $ctrl |
+        (((modmask / 8 | floor) % 2) == 1) as $alt |
+        (((modmask / 64 | floor) % 2) == 1) as $super |
+
+        # Replace special key names with symbols
+        (key
+          | gsub("SLASH"; "/") | gsub("BACKSLASH"; "\\\\")
+          | gsub("COMMA"; ",") | gsub("PERIOD"; ".")
+          | gsub("SEMICOLON"; ";") | gsub("APOSTROPHE"; "'\''")
+          | gsub("GRAVE"; "`") | gsub("BRACKETLEFT"; "[") | gsub("BRACKETRIGHT"; "]")
+          | gsub("MINUS"; "-") | gsub("EQUAL"; "=")
+          | gsub("ESCAPE"; "ESC") | gsub("RETURN"; "RET") | gsub("BACKSPACE"; "BS")
+          | gsub("tab"; "TAB")
+        ) as $k |
+
+        # Determine final key representation
+        if (($shift or $ctrl or $alt or $super) | not) then
+          # No modifiers: lowercase single letters
+          if ($k | test("^[a-zA-Z]$")) then ($k | ascii_downcase) else $k end
+        else
+          if $shift and (($ctrl or $alt or $super) | not) then
+            # Only SHIFT: uppercase letters, shift symbols, or S- prefix
+            if ($k | test("^[a-zA-Z]$")) then
+              ($k | ascii_upcase)
+            else
+              # Shift number/symbol translations
+              (($k
+                | gsub("^1$"; "!") | gsub("^2$"; "@") | gsub("^3$"; "#")
+                | gsub("^4$"; "$") | gsub("^5$"; "%") | gsub("^6$"; "^")
+                | gsub("^7$"; "&") | gsub("^8$"; "*") | gsub("^9$"; "(")
+                | gsub("^0$"; ")") | gsub("^-$"; "_") | gsub("^=$"; "+")
+                | gsub("^\\[$"; "{") | gsub("^\\]$"; "}") | gsub("^\\\\$"; "|")
+                | gsub("^;$"; ":") | gsub("^,$"; "<")
+                | gsub("^\\.$"; ">") | gsub("^/$"; "?")
+              ) as $translated
+              | if (($translated | test("^[a-zA-Z0-9]$")) | not) and ($translated == $k) then
+                  ("S-" + $translated)
+                else
+                  $translated
+                end)
+            end
+          else
+            # Has modifiers: prepend prefixes
+            (if $ctrl then "C-" else "" end) +
+            (if $alt then "A-" else "" end) +
+            (if $super then "M-" else "" end) +
+            (if $shift then "S-" else "" end) +
+            $k
+          end
+        end;
+
+      [ .[]
+        | select(
+            if $sm == "GLOBAL" then
+              (.submap // "") == ""
+            else
+              (.submap // "") == $sm
+            end
+          )
+        | select((.description // "") != "")
+        | {
+            key: (normalize_key(.key // ""; .modmask // 0)),
+            desc: (.description // ""),
+            class: (if (.description // "") | startswith("+") then "is-submap" else "" end)
+          }
+      ]
+      # Sort: letters, special chars, modifiers, ESC
+      | (map(select(.key == "ESC"))) as $esc
+      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-"))))) as $mods
+      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$"))))) as $letters
+      | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$") | not)))) as $special
+      | ($letters | sort_by(.key | ascii_downcase)) + ($special | sort_by(.key)) + ($mods | sort_by(.key)) + $esc
+    '
+}
+
+################################################################################
 # Build Key Bindings JSON
 ################################################################################
 
@@ -161,175 +336,10 @@ else
   title="$submap"
 fi
 
-# For mark submaps, build items directly from live mark state and skip the
-# hyprctl binds query. Falls back to hyprctl binds when no marks are set yet.
-MARKS_FILE="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/marks.json"
-_use_mark_items=false
-if [[ "$submap" == "JUMP-MARK" || "$submap" == "SET-MARK" || "$submap" == "DELETE-MARK" ]] &&
-  [[ -f "$MARKS_FILE" ]]; then
-  _mark_count=$(jq '[to_entries[] | select(.value | type == "object")] | length' "$MARKS_FILE" 2>/dev/null || echo 0)
-  if [[ "$_mark_count" -gt 0 ]]; then
-    if _mark_items="$(jq -c '
-      to_entries
-      | map(select(.value | type == "object"))
-      | map({
-          key: .key,
-          desc: (
-            (.value.class // "?") +
-            (if ((.value.title // "") | length) > 0
-             then " \u00b7 " + (.value.title | .[0:20])
-             else "" end) +
-            " [ws:" + (.value.workspace | tostring) + "]"
-          ),
-          class: ""
-        })
-      | sort_by(
-          if (.key | test("^[a-z]$")) then [0, .key]
-          elif (.key | test("^[A-Z]$")) then [1, .key]
-          else [2, .key]
-          end
-        )
-    ' "$MARKS_FILE" 2>/dev/null)"; then
-      items="$_mark_items"
-      _use_mark_items=true
-    fi
-  fi
-fi
-
-# For GET-REGISTER submap, build items from live register state
-REGISTERS_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/registers"
-_use_register_items=false
-if [[ "$submap" == "GET-REGISTER" ]] && [[ -d "$REGISTERS_DIR" ]]; then
-  _reg_items=()
-  _dq='"'
-
-  _read_reg() {
-    local file="$1"
-    if [[ -f "$file" && -s "$file" ]]; then
-      head -c 40 "$file" 2>/dev/null | tr '\n\t' '  '
-    fi
-  }
-
-  _add_reg() {
-    local key="$1" prefix="$2" content="$3"
-    [[ -z "$content" ]] && return
-    local desc
-    if [[ -n "$prefix" ]]; then
-      desc="[$prefix] $content"
-    else
-      desc="$content"
-    fi
-    if [[ "${#desc}" -gt 45 ]]; then
-      desc="${desc:0:42}..."
-    fi
-    local part
-    part=$(jq -cn --arg k "$key" --arg d "$desc" '{key:$k,desc:$d,class:""}')
-    _reg_items+=("$part")
-  }
-
-  _add_reg "$_dq" "default" "$(_read_reg "${REGISTERS_DIR}/${_dq}")"
-  _add_reg "0" "yank" "$(_read_reg "$REGISTERS_DIR/0")"
-  for _n in 1 2 3 4 5 6 7 8 9; do
-    _add_reg "$_n" "del" "$(_read_reg "$REGISTERS_DIR/$_n")"
-  done
-  for _c in a b c d e f g h i j k l m n o p q r s t u v w x y z; do
-    _add_reg "$_c" "" "$(_read_reg "$REGISTERS_DIR/$_c")"
-  done
-  _find_state="${XDG_RUNTIME_DIR:-/tmp}/hyprvim/find-state.json"
-  if [[ -f "$_find_state" ]]; then
-    _search_term=$(jq -r '.find_term // ""' "$_find_state" 2>/dev/null || echo "")
-    _add_reg "/" "search" "$_search_term"
-  fi
-
-  if [[ "${#_reg_items[@]}" -gt 0 ]]; then
-    _use_register_items=true
-    items=$(printf '%s\n' "${_reg_items[@]}" | jq -sc '.')
-  fi
-fi
-
-# Query Hyprland bindings and format for eww
-if [[ "$_use_mark_items" == "false" && "$_use_register_items" == "false" ]]; then
-  items="$(
-    hyprctl binds -j |
-      jq -c --arg sm "$submap" '
-        def normalize_key(key; modmask):
-          # Extract modifiers from modmask bitfield
-          ((modmask % 2) == 1) as $shift |
-          (((modmask / 4 | floor) % 2) == 1) as $ctrl |
-          (((modmask / 8 | floor) % 2) == 1) as $alt |
-          (((modmask / 64 | floor) % 2) == 1) as $super |
-
-          # Replace special key names with symbols
-          (key
-            | gsub("SLASH"; "/") | gsub("BACKSLASH"; "\\\\")
-            | gsub("COMMA"; ",") | gsub("PERIOD"; ".")
-            | gsub("SEMICOLON"; ";") | gsub("APOSTROPHE"; "'\''")
-            | gsub("GRAVE"; "`") | gsub("BRACKETLEFT"; "[") | gsub("BRACKETRIGHT"; "]")
-            | gsub("MINUS"; "-") | gsub("EQUAL"; "=")
-            | gsub("ESCAPE"; "ESC") | gsub("RETURN"; "RET") | gsub("BACKSPACE"; "BS")
-            | gsub("tab"; "TAB")
-          ) as $k |
-
-          # Determine final key representation
-          if (($shift or $ctrl or $alt or $super) | not) then
-            # No modifiers: lowercase single letters
-            if ($k | test("^[a-zA-Z]$")) then ($k | ascii_downcase) else $k end
-          else
-            if $shift and (($ctrl or $alt or $super) | not) then
-              # Only SHIFT: uppercase letters, shift symbols, or S- prefix
-              if ($k | test("^[a-zA-Z]$")) then
-                ($k | ascii_upcase)
-              else
-                # Shift number/symbol translations
-                (($k
-                  | gsub("^1$"; "!") | gsub("^2$"; "@") | gsub("^3$"; "#")
-                  | gsub("^4$"; "$") | gsub("^5$"; "%") | gsub("^6$"; "^")
-                  | gsub("^7$"; "&") | gsub("^8$"; "*") | gsub("^9$"; "(")
-                  | gsub("^0$"; ")") | gsub("^-$"; "_") | gsub("^=$"; "+")
-                  | gsub("^\\[$"; "{") | gsub("^\\]$"; "}") | gsub("^\\\\$"; "|")
-                  | gsub("^;$"; ":") | gsub("^,$"; "<")
-                  | gsub("^\\.$"; ">") | gsub("^/$"; "?")
-                ) as $translated
-                | if (($translated | test("^[a-zA-Z0-9]$")) | not) and ($translated == $k) then
-                    ("S-" + $translated)
-                  else
-                    $translated
-                  end)
-              end
-            else
-              # Has modifiers: prepend prefixes
-              (if $ctrl then "C-" else "" end) +
-              (if $alt then "A-" else "" end) +
-              (if $super then "M-" else "" end) +
-              (if $shift then "S-" else "" end) +
-              $k
-            end
-          end;
-
-        [ .[]
-          | select(
-              if $sm == "GLOBAL" then
-                (.submap // "") == ""
-              else
-                (.submap // "") == $sm
-              end
-            )
-          | select((.description // "") != "")
-          | {
-              key: (normalize_key(.key // ""; .modmask // 0)),
-              desc: (.description // ""),
-              class: (if (.description // "") | startswith("+") then "is-submap" else "" end)
-            }
-        ]
-        # Sort: letters, special chars, modifiers, ESC
-        | (map(select(.key == "ESC"))) as $esc
-        | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-"))))) as $mods
-        | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$"))))) as $letters
-        | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$") | not)))) as $special
-        | ($letters | sort_by(.key | ascii_downcase)) + ($special | sort_by(.key)) + ($mods | sort_by(.key)) + $esc
-      '
-  )"
-fi
+# Get items
+items=$(build_mark_items "$submap") ||
+  items=$(build_register_items "$submap") ||
+  items=$(build_hyprctl_items "$submap")
 
 ################################################################################
 # Position and Overflow Detection
