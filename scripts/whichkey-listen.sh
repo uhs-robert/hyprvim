@@ -260,5 +260,12 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     fi
 
     ;;
+  openwindow\>\>*)
+    # Auto-hide the HUD when a new window opens so it doesn't block focus
+    if [[ -f "$STATE_DIR/whichkey-visible" ]]; then
+      kill_pending_render
+      "$RENDER" "hide" >/dev/null 2>&1 || true
+    fi
+    ;;
   esac
 done

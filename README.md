@@ -38,7 +38,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **🔁 Surround** - Wrap text with pairs (`gs` for word, `S` in visual) - supports `()`, `{}`, `[]`, `<div>`, or custom with spaces
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
-- **🗺️ Which-Key HUD** - Press `SPACE` from any mode to see available keybindings. Auto-shows when entering submaps (requires `eww`)
+- **🗺️ Which-Key HUD** - Shows all keybinds with descriptions for submaps. Press `SPACE` to toggle (requires `eww`)
 - **Open Vim/Nvim Anywhere** - Press `SUPER + N` to open selected text in Vim/Nvim for complex editing. Save/close to paste.
 
 > [!WARNING]
