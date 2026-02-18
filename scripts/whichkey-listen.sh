@@ -15,7 +15,7 @@
 # Environment Variables:
 #   EWW_DIR                           - Path to eww configuration directory
 #   RENDER                            - Path to whichkey-render.sh
-#   WHICHKEY_SHOW_DELAY_MS            - Delay before showing HUD in milliseconds (default: 100)
+#   WHICHKEY_SHOW_DELAY_MS            - Delay before showing HUD in milliseconds (default: 35)
 #   HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW  - CSV allowlist: only these submaps auto-show
 #   HYPRVIM_WHICHKEY_AUTO_SHOW_DENY   - CSV denylist: these submaps never auto-show
 #
@@ -35,7 +35,7 @@ STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim"
 PID_FILE="$STATE_DIR/whichkey-listen.pid"
 RENDER_TOKEN_FILE="$STATE_DIR/whichkey-render-token"
 PENDING_RENDER_PID_FILE="$STATE_DIR/whichkey-pending-render.pid"
-WHICHKEY_SHOW_DELAY_MS="${WHICHKEY_SHOW_DELAY_MS:-100}"
+WHICHKEY_SHOW_DELAY_MS="${WHICHKEY_SHOW_DELAY_MS:-35}"
 
 mkdir -p "$STATE_DIR"
 
@@ -58,12 +58,15 @@ trap 'kill_pending_render 2>/dev/null || true; rm -f "$PID_FILE" "$RENDER_TOKEN_
 # Settings and Initialization
 ################################################################################
 
+# Exit early if which-key is disabled
 if [[ -f "$SETTINGS_FILE" ]]; then
   ENABLED=$(grep -E '^\$HYPRVIM_WHICH_KEY_ENABLED\s*=' "$SETTINGS_FILE" 2>/dev/null | sed 's/.*=\s*\(.*\)\s*$/\1/' | tr -d ' ' || echo "")
   [[ "$ENABLED" != "1" ]] && exit 0
 fi
 
+# Position defaults to env var
 export HYPRVIM_WHICH_KEY_POSITION="${HYPRVIM_WHICH_KEY_POSITION:-bottom-right}"
+
 # ALLOW/DENY arrive as env vars injected by Hyprland via $HYPRVIM_WHICH_KEY_LISTENER in init.conf
 HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW="${HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW:-}"
 HYPRVIM_WHICHKEY_AUTO_SHOW_DENY="${HYPRVIM_WHICHKEY_AUTO_SHOW_DENY:-}"
@@ -72,8 +75,10 @@ if [[ -f "$SETTINGS_FILE" ]]; then
   [[ -n "$POSITION" ]] && export HYPRVIM_WHICH_KEY_POSITION="$POSITION"
 fi
 
+# Fallback for environments where XDG_RUNTIME_DIR is unset
 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
+# Auto-detect the running Hyprland instance if not already in the environment
 if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
   HYPRLAND_INSTANCE_SIGNATURE=$(hyprctl instances -j 2>/dev/null | jq -r '.[0].instance' 2>/dev/null || echo "")
   if [[ -z "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
@@ -82,17 +87,21 @@ if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
   fi
 fi
 
+# socket2 emits compositor events (submap changes, window focus, etc.)
 SOCK="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
+# Apply theme on daemon start so eww picks up current colors
 APPLY_THEME="${HOME}/.config/hypr/hyprvim/scripts/apply-theme.sh"
 [[ -x "$APPLY_THEME" ]] && "$APPLY_THEME" >/dev/null 2>&1 || true
 
+# Ensure eww daemon is running before we try to open any windows
 eww -c "$EWW_DIR" daemon >/dev/null 2>&1 || true
 
 ################################################################################
 # Pending Render Management
 ################################################################################
 
+# Cancel any in-flight delayed render by killing the background subshell and its sleep child
 kill_pending_render() {
   [[ -f "$PENDING_RENDER_PID_FILE" ]] || return 0
   local pid
@@ -103,13 +112,13 @@ kill_pending_render() {
   kill "$pid" 2>/dev/null || true
 }
 
-# Atomic token write: write to a temp file then rename (mv is atomic on the
-# same filesystem). This avoids any partial-read window during truncate+write.
+# Atomic token write: write to a temp file then rename
 write_token() {
   local tmp="$RENDER_TOKEN_FILE.$$.$RANDOM"
   printf '%s\n' "$1" >"$tmp" && mv -f "$tmp" "$RENDER_TOKEN_FILE"
 }
 
+# Read the current render token else default to 0
 read_token() {
   cat "$RENDER_TOKEN_FILE" 2>/dev/null || echo 0
 }
@@ -118,7 +127,7 @@ read_token() {
 # Auto-Show Policy
 ################################################################################
 
-# is_in_csv <value> <csv>  — returns 0 if value is an exact match in the CSV list
+# is_in_csv <value> <csv> - returns 0 if value is an exact match in the CSV list
 is_in_csv() {
   local val="$1" csv="$2" entry
   IFS=',' read -ra _entries <<<"$csv"
@@ -129,7 +138,7 @@ is_in_csv() {
   return 1
 }
 
-# is_sticky_submap <sm> — built-in deny list for movement/sticky submaps
+# is_sticky_submap <sm> - built-in deny list for movement/sticky submaps
 is_sticky_submap() {
   local sm="${1,,}"
   case "$sm" in
@@ -138,7 +147,7 @@ is_sticky_submap() {
   return 1
 }
 
-# should_auto_show <sm>  — applies allow/deny precedence rules
+# should_auto_show <sm> - applies allow/deny precedence rules
 # 1. DENY list wins over everything (explicit deny)
 # 2. ALLOW list bypasses the built-in sticky check (force-show even if sticky)
 # 3. Fallback: built-in sticky matcher (sticky = no auto-show)
@@ -174,27 +183,25 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
     # Normalize reset-ish values
     [[ "$sm" == "reset" || -z "$sm" ]] && sm=""
 
-    # Skip redundant updates — cancel any pending render but do NOT actively hide.
-    # Repeated same-submap events (e.g. NORMAL catchall re-dispatching submap NORMAL
-    # on every unbound keypress) must not dismiss a manually-toggled HUD.
+    # Skip redundant updates - cancel any pending render but do NOT actively hide
     if [[ "$sm" == "$last" ]]; then
       kill_pending_render
       continue
     fi
     last="$sm"
 
-    # Hard-cancel any in-flight delayed render job from the previous submap.
+    # Hard-cancel any in-flight delayed render job from the previous submap
     kill_pending_render
 
-    # Advance token IMMEDIATELY — must happen before any IPC calls.
+    # Advance token IMMEDIATELY - must happen before any IPC calls
     _wk_token=$((_wk_token + 1))
     write_token "$_wk_token"
     _my_token="$_wk_token"
 
-    # Always hide existing HUD on any submap change.
+    # Always hide existing HUD on any submap change
     "$RENDER" "hide" >/dev/null 2>&1 || true
 
-    # Track current submap immediately so info/toggle always reflects actual state.
+    # Track current submap immediately so info/toggle always reflects actual state
     if [[ -n "$sm" ]]; then
       echo "$sm" >"$STATE_DIR/current-submap"
     else
@@ -233,8 +240,7 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
         fi
       fi
       if [[ "$_skip_applies" -eq 0 ]] && should_auto_show "$sm"; then
-        # Capture focused monitor now (token already updated; this is still well before
-        # the render delay fires, so focus shouldn't have changed)
+        # Capture focused monitor now (token already updated)
         screen_id="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
         # Resolve delay in ms (use one-shot override if set, else global setting)
         _show_delay_ms="${WHICHKEY_SHOW_DELAY_MS}"
@@ -248,7 +254,7 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
         echo $! >"$PENDING_RENDER_PID_FILE"
       fi
     else
-      # Empty submap — hide already done above
+      # Empty submap - hide already done above
       rm -f "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target"
     fi
 

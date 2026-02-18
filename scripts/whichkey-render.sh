@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# hypr/.config/hypr/hyprvim/scripts/whichkey-render.sh
 ################################################################################
 # whichkey-render.sh - Render which-key HUD for active submap
 ################################################################################
@@ -97,13 +96,14 @@ if [[ "${1:-}" == "--info" ]] || [[ "${1:-}" == "info" ]]; then
     current_submap=$(cat "$STATE_DIR/current-submap" 2>/dev/null || echo "")
   fi
 
+  # Is global or submap
   if [[ -n "$current_submap" ]] && [[ "$current_submap" != "reset" ]]; then
     target_submap="$current_submap"
   else
     target_submap="GLOBAL"
   fi
 
-  # Query focused monitor (manually triggered, no race condition)
+  # Query focused monitor
   info_screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
 
   "$0" "$target_submap" "$info_screen" || true
@@ -116,7 +116,7 @@ fi
 
 submap="${1:-}"
 # Monitor name passed from listener (captured at event time to avoid race conditions).
-# Falls back to querying focused monitor when called directly (e.g. from info path).
+# Falls back to querying focused monitor when called directly.
 screen="${2:-}"
 # Render token passed from listener background subshell; re-checked before final show
 # to abort stale renders that were already in-flight when the submap changed.
@@ -126,7 +126,6 @@ render_token="${3:-}"
 if [[ -n "$submap" ]] && [[ "$submap" != "reset" ]] && [[ "$submap" != "GLOBAL" ]] && [[ "$submap" != "hide" ]]; then
   echo "$submap" >"$STATE_DIR/current-submap"
 elif [[ -z "$submap" ]] || [[ "$submap" == "reset" ]]; then
-  # Clear state when exiting vim mode (but not when just hiding)
   rm -f "$STATE_DIR/current-submap"
 fi
 
@@ -148,7 +147,7 @@ fi
 # Build Key Bindings JSON
 ################################################################################
 
-# Resolve monitor name: use value passed from listener (race-free), or query now as fallback
+# Resolve monitor name: use value passed from listener, or query now as fallback
 # Monitor name (e.g. "eDP-2", "DP-11") is more reliable than array index for eww --screen
 if [[ -z "$screen" ]]; then
   screen="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
@@ -285,8 +284,7 @@ WINDOW="whichkey-${POSITION}"
 # Render Window
 ################################################################################
 
-# Hide first so content resize happens while invisible, preventing the flash
-# of the window visibly changing size between submaps
+# Hide first so content resize happens while invisible
 eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
 
 # Update content while hidden
