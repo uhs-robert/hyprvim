@@ -20,7 +20,7 @@ Built on Hyprland’s native submap system, uses standard keyboard shortcut macr
 
 Navigate text, manage selections, and perform text operations using familiar Vim motions without leaving your current application. Think of it as a lightweight, system-wide Vim mode for all of your GUI applications.
 
-<https://github.com/user-attachments/assets/735c4930-a527-4f3a-9f1a-308a9c047332>
+<https://github.com/user-attachments/assets/1a9c9459-2bfa-4d1d-bf05-24d5174431a9>
 
 ## ✨ Features
 
