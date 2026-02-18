@@ -91,6 +91,3 @@ $HYPRVIM_WHICH_KEY_POSITION = bottom-right
 
 $HYPRVIM_WHICHKEY_AUTO_SHOW_DENY  = NORMAL,VISUAL,V-LINE,Cursor
 $HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW =
-
-## Press ? to toggle which-key on any submap (press ? again to dismiss)
-bindun = SHIFT, SLASH, exec, $HYPRVIM_WHICH_KEY info
