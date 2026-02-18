@@ -25,6 +25,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 ## ✨ Features
 
 > **📚 Full Reference:** For a complete, searchable reference of all features, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
+> **📰 Latest News:** For the latest release information, visit the [News](./NEWS.md).
 
 - **🚦 Vim Modes** - `NORMAL`, `INSERT`, `VISUAL`, `V-LINE`, and `COMMAND` modes
 - **🧭 Navigation** - Character (`hjkl`), word (`w/b/e`), line (`0/$`), paragraph (`{}`), page (`Ctrl+d/u`), document (`gg/G`)
@@ -130,11 +131,12 @@ Stay informed about new releases:
 2. **Check the releases page** - View all releases at <https://github.com/uhs-robert/hyprvim/releases>
 3. **RSS Feed** - Subscribe to releases: `https://github.com/uhs-robert/hyprvim/releases.atom`
 
-Each release includes a detailed changelog with new features, improvements, and bug fixes.
+> [!NOTE]
+> Each release includes a detailed changelog with new features, improvements, and bug fixes.
 
 ## 🚀 Usage
 
-> **📚 Full Reference:** For a complete reference of all keybindings and commands, visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
+> **📚 Full Reference:** For a complete reference of configuration, keybindings, and commands... visit the [Wiki](https://github.com/uhs-robert/hyprvim/wiki).
 
 ### Quick Start
 
@@ -170,14 +172,16 @@ Press `:` in NORMAL mode to execute Vim-style commands. Common commands: `:w` (s
 
 ### Access to Common Keyboard Shortcuts Too
 
-HyprVim includes pragmatic pass-through bindings in NORMAL mode for better GUI interaction: `TAB`, `RETURN`, `CTRL+V/X/A/S/W/Z`. This enables seamless dialog navigation and clipboard operations without constantly switching to INSERT mode.
+HyprVim includes pragmatic pass-through bindings in NORMAL mode for better GUI interaction: `TAB`, `RETURN`, `CTRL+V/X/A/S/W/Z`.
+
+This enables seamless dialog navigation and clipboard operations without constantly switching to INSERT mode.
 
 > [!WARNING]
 > These may trigger unwanted actions in text editors. Use `i` to enter INSERT mode when editing text, or create override bindings by sourcing a custom config after HyprVim.
 
 ## ⚙️ Configuration
 
-HyprVim sets a few defaults in `./init.conf`.
+HyprVim sets a few global defaults in `./init.conf`.
 
 You can override any of these settings by creating your own `./settings.conf` in the `hyprvim` directory:
 
@@ -250,13 +254,13 @@ On that note, check out [all the extras too](/extras)! This is just the tip of t
 - Effectiveness depends on application supporting standard keyboard shortcuts
 
 > [!WARNING]
-> HyprVim is designed for **GUI applications first**, terminals behave differently.
+> HyprVim is designed for **GUI applications first**. Terminals behave differently.
 >
 > Terminals often use [a different set of keyboard shortcuts](https://gist.github.com/tuxfight3r/60051ac67c5f0445efee) so motions may not work as expected.
 >
 > However shells (bash, zsh, etc) usually ship a `vi mode`. Try using that instead.
 >
-> If you must, consider HyprVim for basic movement in the shell but don't be surprised if the fancy stuff doesn't work.
+> If you must use it in the shell, some actions _may_ work but your mileage will vary.
 
 ## 📏 Extending HyprVim
 
