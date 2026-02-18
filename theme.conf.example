@@ -18,13 +18,13 @@
 ################################################################################
 
 # Theme Colors
-$bg_core: #1a283f;
-$bg_border: #3b6a87;
-$fg: #d9e6fa;
-$primary: #58b8fd;
-$secondary: #f9a05e;
-$accent: #FFA0A0;
-$info: #94d0fe;
+$bg_core:   #1a283f;   # Panel background
+$bg_border: #3b6a87;   # Border and separator color
+$fg:        #d9e6fa;   # Default text
+$primary:   #58b8fd;   # Title and footer key color
+$secondary: #f9a05e;   # Key label color
+$accent:    #FFA0A0;   # Submap entry color (descriptions starting with +)
+$info:      #94d0fe;   # Description text color
 
-# Base font size (all other sizes scale from this)
+# Root font size — all other sizes scale from this
 $base_font_size = 12px

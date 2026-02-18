@@ -137,3 +137,7 @@ label {
   font-weight: 400;
   color: $bg_border;
 }
+
+// User style overrides — copy whichkey.scss.example to whichkey.scss (hyprvim root) to customize
+// whichkey.scss is gitignored so your changes won't conflict with upstream updates
+@import '../../whichkey';

@@ -14,6 +14,7 @@
 # Files:
 #   Input:  ~/.config/hypr/hyprvim/theme.conf
 #   Output: ~/.config/hypr/hyprvim/eww/whichkey/_vars.scss
+#           ~/.config/hypr/hyprvim/whichkey.scss  (created if missing)
 #
 ################################################################################
 
@@ -21,6 +22,7 @@ set -euo pipefail
 
 THEME_FILE="${HOME}/.config/hypr/hyprvim/theme.conf"
 VARS_FILE="${HOME}/.config/hypr/hyprvim/eww/whichkey/_vars.scss"
+USER_SCSS="${HOME}/.config/hypr/hyprvim/whichkey.scss"
 
 if [[ ! -f "$THEME_FILE" ]]; then
   echo "Warning: theme.conf not found, using defaults" >&2
@@ -56,5 +58,11 @@ trap 'rm -f "$TEMP_FILE"' EXIT
 } >"$TEMP_FILE"
 
 mv "$TEMP_FILE" "$VARS_FILE"
+
+# Create whichkey.scss if it doesn't exist so the eww SCSS import succeeds
+# Users copy whichkey.scss.example to this file to add style overrides
+if [[ ! -f "$USER_SCSS" ]]; then
+  echo "// User style overrides — see whichkey.scss.example for usage" > "$USER_SCSS"
+fi
 
 echo "Theme applied successfully"

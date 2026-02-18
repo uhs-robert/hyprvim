@@ -148,3 +148,6 @@ theme.conf
 
 # Generated files
 eww/whichkey/_vars.scss
+
+# User style overrides
+whichkey.scss
