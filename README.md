@@ -38,6 +38,7 @@ Navigate text, manage selections, and perform text operations using familiar Vim
 - **🔁 Surround** - Wrap text with pairs (`gs` for word, `S` in visual) - supports `()`, `{}`, `[]`, `<div>`, or custom with spaces
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
+- **🗺️ Which-Key HUD** - Press `?` from any mode to see available keybindings. Auto-shows when entering submaps (requires `eww`)
 - **Open Vim/Nvim Anywhere** - Press `SUPER + N` to open selected text in Vim/Nvim for complex editing. Save/close to paste.
 
 > [!WARNING]
@@ -79,6 +80,8 @@ If you'd like an extra config added, raise a feature request and I'll put it tog
 | `jq`                                           | JSON processor for parsing hyprctl output                                 |
 | A terminal emulator                            | For the `gh` help viewer                                                  |
 | A prompt tool                                  | One of: `rofi`, `wofi`, `tofi`, `fuzzel`, `dmenu`, `zenity`, or `kdialog` |
+| `eww` _(optional)_                             | Widget system for the which-key HUD                                       |
+| `socat` _(optional)_                           | Required by the which-key daemon to listen on Hyprland's event socket     |
 
 ### Quick Install
 

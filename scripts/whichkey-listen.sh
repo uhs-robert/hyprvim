@@ -58,11 +58,12 @@ trap 'kill_pending_render 2>/dev/null || true; rm -f "$PID_FILE" "$RENDER_TOKEN_
 # Settings and Initialization
 ################################################################################
 
-# Exit early if which-key is disabled
+# Require explicit opt-in ($HYPRVIM_WHICH_KEY_ENABLED = 1 in settings.conf) since eww is an optional dependency.
+ENABLED=""
 if [[ -f "$SETTINGS_FILE" ]]; then
   ENABLED=$(grep -E '^\$HYPRVIM_WHICH_KEY_ENABLED\s*=' "$SETTINGS_FILE" 2>/dev/null | sed 's/.*=\s*\(.*\)\s*$/\1/' | tr -d ' ' || echo "")
-  [[ "$ENABLED" != "1" ]] && exit 0
 fi
+[[ "$ENABLED" != "1" ]] && exit 0
 
 # Position defaults to env var
 export HYPRVIM_WHICH_KEY_POSITION="${HYPRVIM_WHICH_KEY_POSITION:-bottom-right}"

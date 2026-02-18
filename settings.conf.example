@@ -72,8 +72,9 @@ $HYPRVIM_DEBUG =
 # ----------
 # WHICH-KEY
 # ----------
-# Show which-key style HUD when entering a submap to see all keybindings (1 = enable, empty = disable)
+# Show which-key style HUD when entering a submap to see all keybindings (requires eww + socat)
 # The HUD will only display keys that have a description field
+# Set to 1 to enable, leave empty or omit to disable
 # Position Options: bottom-right, bottom-center, top-center, bottom-left, top-right, top-left
 
 $HYPRVIM_WHICH_KEY_ENABLED = 1
