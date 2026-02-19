@@ -34,7 +34,7 @@ SETTINGS_FILE="${HOME}/.config/hypr/hyprvim/settings.conf"
 STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/hyprvim"
 PID_FILE="$STATE_DIR/whichkey-listen.pid"
 RENDER_TOKEN_FILE="$STATE_DIR/whichkey-render-token"
-PENDING_RENDER_PID_FILE="$STATE_DIR/whichkey-pending-render.pid"
+FOCUSED_MON_FILE="$STATE_DIR/focused-monitor"
 WHICHKEY_SHOW_DELAY_MS="${WHICHKEY_SHOW_DELAY_MS:-200}"
 
 mkdir -p "$STATE_DIR"
@@ -52,7 +52,7 @@ fi
 
 echo $$ >"$PID_FILE"
 
-trap 'kill_pending_render 2>/dev/null || true; rm -f "$PID_FILE" "$RENDER_TOKEN_FILE" "$PENDING_RENDER_PID_FILE" "$STATE_DIR/current-submap" "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target" "$STATE_DIR/whichkey-visible"' EXIT
+trap 'rm -f "$PID_FILE" "$RENDER_TOKEN_FILE" "$FOCUSED_MON_FILE" "$STATE_DIR/current-submap" "$STATE_DIR/whichkey-current-window" "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target" "$STATE_DIR/whichkey-visible"' EXIT
 
 ################################################################################
 # Settings and Initialization
@@ -98,20 +98,14 @@ APPLY_THEME="${HOME}/.config/hypr/hyprvim/scripts/apply-theme.sh"
 # Ensure eww daemon is running before we try to open any windows
 eww -c "$EWW_DIR" daemon >/dev/null 2>&1 || true
 
+# Seed focused-monitor cache so the first render doesn't get an empty screen
+hyprctl -j monitors 2>/dev/null |
+  jq -r '.[] | select(.focused) | .name' 2>/dev/null |
+  head -1 >"$FOCUSED_MON_FILE" || true
+
 ################################################################################
 # Pending Render Management
 ################################################################################
-
-# Cancel any in-flight delayed render by killing the background subshell and its sleep child
-kill_pending_render() {
-  [[ -f "$PENDING_RENDER_PID_FILE" ]] || return 0
-  local pid
-  pid="$(cat "$PENDING_RENDER_PID_FILE" 2>/dev/null || echo "")"
-  rm -f "$PENDING_RENDER_PID_FILE"
-  [[ -z "$pid" ]] && return 0
-  pkill -P "$pid" 2>/dev/null || true
-  kill "$pid" 2>/dev/null || true
-}
 
 # Atomic token write: write to a temp file then rename
 write_token() {
@@ -186,34 +180,44 @@ should_auto_show() {
 ################################################################################
 
 last="__init__"
+prev_sm=""
 _wk_token=0
 write_token "$_wk_token"
 
 socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
   case "$line" in
+  focusedmon\>\>*)
+    # focusedmon>>MONITOR,WORKSPACE - keep cache current
+    mon="${line#focusedmon>>}"
+    mon="${mon%%,*}"
+    [[ -n "$mon" ]] && printf '%s\n' "$mon" >"$FOCUSED_MON_FILE"
+    ;;
   submap\>\>*)
     sm="${line#submap>>}"
 
     # Normalize reset-ish values
     [[ "$sm" == "reset" || -z "$sm" ]] && sm=""
 
-    # Skip redundant updates - cancel any pending render but do NOT actively hide
+    # Skip redundant updates. Duplicate submap event is a no-op.
     if [[ "$sm" == "$last" ]]; then
-      kill_pending_render
       continue
     fi
+    prev_sm="$last"
     last="$sm"
-
-    # Hard-cancel any in-flight delayed render job from the previous submap
-    kill_pending_render
 
     # Advance token IMMEDIATELY - must happen before any IPC calls
     _wk_token=$((_wk_token + 1))
     write_token "$_wk_token"
     _my_token="$_wk_token"
 
-    # Always hide existing HUD on any submap change
-    "$RENDER" "hide" >/dev/null 2>&1 || true
+    # Close only the currently open window
+    rm -f "$STATE_DIR/whichkey-visible"
+    _cur_win="$(cat "$STATE_DIR/whichkey-current-window" 2>/dev/null || echo "")"
+    if [[ -n "$_cur_win" ]]; then
+      eww -c "$EWW_DIR" close "$_cur_win" >/dev/null 2>&1 || true
+    else
+      eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
+    fi
 
     # Track current submap immediately so info/toggle always reflects actual state
     if [[ -n "$sm" ]]; then
@@ -254,8 +258,6 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
         fi
       fi
       if [[ "$_skip_applies" -eq 0 ]] && should_auto_show "$sm"; then
-        # Capture focused monitor now (token already updated)
-        screen_id="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo "")"
         # Resolve delay in ms: one-shot override wins; operator-pending submaps use the
         # global delay to avoid flashing when the user types a motion quickly; everything
         # else (non-HyprVim submaps, marks, GET-REGISTER) shows instantly.
@@ -263,6 +265,11 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
           _show_delay_ms="$_next_delay"
         elif requires_show_delay "$sm"; then
           _show_delay_ms="${WHICHKEY_SHOW_DELAY_MS}"
+          # Chained operator-pending (e.g. C-MOTION -> C-I): the initial delay
+          # already guarded against accidental display; show the second hop immediately.
+          if [[ -n "$prev_sm" ]] && requires_show_delay "$prev_sm"; then
+            _show_delay_ms="0"
+          fi
         else
           _show_delay_ms="0"
         fi
@@ -270,9 +277,9 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
         (
           sleep "$_show_delay"
           [[ "$(read_token)" == "$_my_token" ]] || exit 0
-          "$RENDER" "$sm" "$screen_id" "$_my_token" || true
+          _screen="$(cat "$FOCUSED_MON_FILE" 2>/dev/null || echo "")"
+          "$RENDER" "$sm" "$_screen" "$_my_token" || true
         ) &
-        echo $! >"$PENDING_RENDER_PID_FILE"
       fi
     else
       # Empty submap - hide already done above
@@ -283,8 +290,13 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
   openwindow\>\>*)
     # Auto-hide the HUD when a new window opens so it doesn't block focus
     if [[ -f "$STATE_DIR/whichkey-visible" ]]; then
-      kill_pending_render
-      "$RENDER" "hide" >/dev/null 2>&1 || true
+      rm -f "$STATE_DIR/whichkey-visible"
+      _cur_win="$(cat "$STATE_DIR/whichkey-current-window" 2>/dev/null || echo "")"
+      if [[ -n "$_cur_win" ]]; then
+        eww -c "$EWW_DIR" close "$_cur_win" >/dev/null 2>&1 || true
+      else
+        eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
+      fi
     fi
     ;;
   esac

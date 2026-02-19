@@ -239,8 +239,9 @@ build_register_items() {
 # Outputs a JSON items array from hyprctl binds. Used as the final fallback.
 build_hyprctl_items() {
   local sm="$1"
-  hyprctl binds -j |
-    jq -c --arg sm "$sm" '
+  local _binds_json
+  _binds_json=$(hyprctl binds -j 2>/dev/null) || return 1
+  echo "$_binds_json" | jq -c --arg sm "$sm" '
       def normalize_key(key; modmask):
         # Extract modifiers from modmask bitfield
         ((modmask % 2) == 1) as $shift |
@@ -316,7 +317,7 @@ build_hyprctl_items() {
       | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$"))))) as $letters
       | (map(select(.key != "ESC" and (.key | test("C-|A-|M-|S-") | not) and (.key | test("^[a-zA-Z]$") | not)))) as $special
       | ($letters | sort_by(.key | ascii_downcase)) + ($special | sort_by(.key)) + ($mods | sort_by(.key)) + $esc
-    '
+    ' || return 1
 }
 
 ################################################################################
@@ -336,16 +337,34 @@ else
   title="$submap"
 fi
 
-# Get items
+# Get items (|| true so a jq parse error on malformed hyprctl output doesn't exit the script)
 items=$(build_mark_items "$submap") ||
   items=$(build_register_items "$submap") ||
-  items=$(build_hyprctl_items "$submap")
+  items=$(build_hyprctl_items "$submap") ||
+  items="[]"
 
 ################################################################################
 # Position and Overflow Detection
 ################################################################################
 
-num_items=$(echo "$items" | jq 'length')
+# Retry once if items are empty: hyprctl binds may lag behind submap transitions
+_retry=0
+while :; do
+  num_items=$(echo "$items" | jq 'length' 2>/dev/null || echo 0)
+  [[ "$num_items" -gt 0 ]] && break
+  [[ "$_retry" -ge 1 ]] && break
+  _retry=$((_retry + 1))
+  # Bail early if this render is already stale
+  if [[ -n "$render_token" ]]; then
+    _cur_tok=$(cat "$STATE_DIR/whichkey-render-token" 2>/dev/null || echo "")
+    [[ "$_cur_tok" == "$render_token" ]] || exit 0
+  fi
+  sleep 0.02
+  items=$(build_mark_items "$submap") ||
+    items=$(build_register_items "$submap") ||
+    items=$(build_hyprctl_items "$submap") ||
+    items="[]"
+done
 
 # Hide if no bindings to show
 if [[ "$num_items" -eq 0 ]]; then
@@ -398,21 +417,34 @@ else
   eww -c "$EWW_DIR" update title="$title" items="$items" >/dev/null 2>&1 || true
 fi
 
-# Switch to correct position window if needed
-for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
-  [[ "whichkey-$pos" != "$WINDOW" ]] && eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
-done
-eww -c "$EWW_DIR" open --screen "$screen" "$WINDOW" >/dev/null 2>&1 || true
+# Ensure daemon is running
+eww -c "$EWW_DIR" daemon >/dev/null 2>&1 || true
 
-# Re-validate token before making visible: if the submap changed while this
-# render was running (hyprctl + jq take ~100ms), bail out instead of flashing
-# a stale HUD on screen.
+# Re-validate token BEFORE opening: if stale, bail early
 if [[ -n "$render_token" ]]; then
   RENDER_TOKEN_FILE="${STATE_DIR}/whichkey-render-token"
   _cur_tok=$(cat "$RENDER_TOKEN_FILE" 2>/dev/null || echo "")
   [[ "$_cur_tok" == "$render_token" ]] || exit 0
 fi
 
-# Show at the correct size
+# Switch to correct position window if needed
+for pos in bottom-right bottom-center top-center bottom-left top-right top-left center; do
+  [[ "whichkey-$pos" != "$WINDOW" ]] && eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
+done
+
+# Open (screen is best-effort) and only continue if open succeeds
+_open_ok=0
+if [[ -n "${screen:-}" ]]; then
+  eww -c "$EWW_DIR" open --screen "$screen" "$WINDOW" >/dev/null 2>&1 && _open_ok=1
+fi
+if [[ "$_open_ok" -eq 0 ]]; then
+  eww -c "$EWW_DIR" open "$WINDOW" >/dev/null 2>&1 && _open_ok=1
+fi
+[[ "$_open_ok" -eq 1 ]] || exit 0
+
+# Record which window is open so the listener can close just this one on hide
+echo "$WINDOW" >"$STATE_DIR/whichkey-current-window"
+
+# Mark visible only after a successful open
 touch "$STATE_DIR/whichkey-visible"
 eww -c "$EWW_DIR" update visible=true >/dev/null 2>&1 || true
