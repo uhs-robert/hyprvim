@@ -448,3 +448,24 @@ echo "$WINDOW" >"$STATE_DIR/whichkey-current-window"
 # Mark visible only after a successful open
 touch "$STATE_DIR/whichkey-visible"
 eww -c "$EWW_DIR" update visible=true >/dev/null 2>&1 || true
+
+# Stale-close watchdog: if the token advanced while we were rendering, close after a short
+# grace period. Guards against briefly flashing a HUD for a submap already left.
+STALE_MS="${WHICHKEY_STALE_CLOSE_MS:-40}"
+if [[ -n "${render_token:-}" && "$STALE_MS" -gt 0 ]]; then
+  (
+    sleep "$(awk "BEGIN {printf \"%.3f\", ${STALE_MS} / 1000}")"
+
+    # If the token hasn't changed we're still the current render
+    cur_tok="$(cat "$STATE_DIR/whichkey-render-token" 2>/dev/null || echo "")"
+    [[ "$cur_tok" == "$render_token" ]] && exit 0
+
+    # Only close if we're still the window that's open (don't kill a newer HUD).
+    cur_win="$(cat "$STATE_DIR/whichkey-current-window" 2>/dev/null || echo "")"
+    [[ "$cur_win" == "$WINDOW" ]] || exit 0
+
+    rm -f "$STATE_DIR/whichkey-visible"
+    eww -c "$EWW_DIR" close "$WINDOW" >/dev/null 2>&1 || true
+    eww -c "$EWW_DIR" update visible=false >/dev/null 2>&1 || true
+  ) &
+fi
