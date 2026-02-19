@@ -32,6 +32,17 @@ POSITION="${HYPRVIM_WHICH_KEY_POSITION:-bottom-right}"
 
 mkdir -p "$STATE_DIR"
 
+open_window() {
+  local _ok=0
+  if [[ -n "${screen:-}" ]]; then
+    eww -c "$EWW_DIR" open --screen "$screen" "$WINDOW" >/dev/null 2>&1 && _ok=1
+  fi
+  if [[ "$_ok" -eq 0 ]]; then
+    eww -c "$EWW_DIR" open "$WINDOW" >/dev/null 2>&1 && _ok=1
+  fi
+  return $((_ok == 0 ? 1 : 0))
+}
+
 ################################################################################
 # One-Shot Next-Submap Options
 ################################################################################
@@ -432,15 +443,7 @@ for pos in bottom-right bottom-center top-center bottom-left top-right top-left 
   [[ "whichkey-$pos" != "$WINDOW" ]] && eww -c "$EWW_DIR" close "whichkey-$pos" >/dev/null 2>&1 || true
 done
 
-# Open (screen is best-effort) and only continue if open succeeds
-_open_ok=0
-if [[ -n "${screen:-}" ]]; then
-  eww -c "$EWW_DIR" open --screen "$screen" "$WINDOW" >/dev/null 2>&1 && _open_ok=1
-fi
-if [[ "$_open_ok" -eq 0 ]]; then
-  eww -c "$EWW_DIR" open "$WINDOW" >/dev/null 2>&1 && _open_ok=1
-fi
-[[ "$_open_ok" -eq 1 ]] || exit 0
+open_window || exit 0
 
 # Record which window is open so the listener can close just this one on hide
 echo "$WINDOW" >"$STATE_DIR/whichkey-current-window"
