@@ -1,5 +1,20 @@
 # HyprVim Release Notes
 
+## [v1.2.3](https://github.com/uhs-robert/hyprvim/releases/tag/v1.2.3) — 2026-02-18
+
+### New Features
+
+- **Live register contents in which-key HUD**: The `GET-REGISTER` submap now shows live previews of all named, numbered, default, yank, and search registers (truncated to 40 chars).
+- **Stale-close watchdog for which-key render**: A 40ms watchdog closes a stale HUD if the render token has advanced and the window has not changed, eliminating wrong-submap flashes.
+
+### Bug Fixes
+
+- Fixed which-key HUD disappearing during rapid submap transitions. Replaced PID-based cancellation with a token-based self-cancellation model; added a retry loop for empty binds, focused-monitor caching, and earlier token validation.
+- Removed which-key trigger from mark operations (`M`, `Ctrl+M`, `'`, `` ` ``); which-key is now limited to operator-pending submaps only.
+- Which-key show delay is now applied only to operator-pending submaps (`D-MOTION`, `C-MOTION`, `Y-MOTION`, `G-MOTION`, `R-CHAR`); all other submaps show instantly.
+
+---
+
 ## [v1.2.2](https://github.com/uhs-robert/hyprvim/releases/tag/v1.2.2) — 2026-02-18
 
 ### New Features
