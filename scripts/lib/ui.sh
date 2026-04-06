@@ -1,4 +1,5 @@
 #!/bin/bash
+# scripts/lib/ui.sh
 # hypr/.config/hypr/hyprvim/scripts/lib/ui.sh
 ################################################################################
 # User interface functions for HyprVim scripts
@@ -67,11 +68,15 @@ get_user_input() {
   rofi)
     local rofi_args=(
       -dmenu -p "$prompt" -lines 0
-      -theme-str 'window { location: north; anchor: north; y-offset: 10%; x-offset: 0%; width: 600px; height: 40px; border: 1px; }'
-      -theme-str 'mainbox { children: [inputbar]; padding: 0px; spacing: 0px; border: 0px; }'
-      -theme-str 'inputbar { padding: 8px 12px; children: [prompt,entry]; border: 0px; orientation: horizontal; }'
-      -theme-str 'prompt { padding: 0px 0px 0px 0px; vertical-align: 0.5; }'
+      -theme-str 'window { location: north; anchor: north; y-offset: 10%; x-offset: 0%; width: 600px; height: 0px; border: 1px; padding: 0px; margin: 0px; }'
+      -theme-str 'mainbox { children: [inputbar]; padding: 0px; margin: 0px; spacing: 0px; border: 0px; }'
+      -theme-str 'inputbar { padding: 8px 12px; margin: 0px;  children: [prompt,entry]; border: 0px; orientation: horizontal; }'
+      -theme-str 'prompt { padding: 0px; margin: 0px; vertical-align: 0.5; }'
       -theme-str 'entry { vertical-align: 0.5; placeholder: "'"$placeholder"'"; }'
+      -theme-str 'overlay { enabled: false; }'
+      -theme-str 'listview { enabled: false; }'
+      -theme-str 'mode-switcher { enabled: false; }'
+      -theme-str 'message { enabled: false; }'
     )
     input=$(echo "" | rofi "${rofi_args[@]}")
     ;;
