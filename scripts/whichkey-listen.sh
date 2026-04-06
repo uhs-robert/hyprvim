@@ -46,7 +46,9 @@ mkdir -p "$STATE_DIR"
 if [[ -f "$PID_FILE" ]]; then
   OLD_PID=$(cat "$PID_FILE")
   if kill -0 "$OLD_PID" 2>/dev/null; then
-    exit 0 # Already running
+    # Kill old instance (and its socat child) so reload picks up new config
+    kill "$OLD_PID" 2>/dev/null || true
+    sleep 0.3
   fi
 fi
 
