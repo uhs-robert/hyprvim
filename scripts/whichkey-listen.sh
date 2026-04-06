@@ -68,12 +68,19 @@ fi
 # Position defaults to env var
 export HYPRVIM_WHICH_KEY_POSITION="${HYPRVIM_WHICH_KEY_POSITION:-bottom-right}"
 
-# ALLOW/DENY arrive as env vars injected by Hyprland via $HYPRVIM_WHICH_KEY_LISTENER in init.conf
+# ALLOW/DENY/POSITION are read from settings.conf directly so that user overrides
+# take effect without relying on Hyprland variable expansion order.
 HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW="${HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW:-}"
 HYPRVIM_WHICHKEY_AUTO_SHOW_DENY="${HYPRVIM_WHICHKEY_AUTO_SHOW_DENY:-}"
 if [[ -f "$SETTINGS_FILE" ]]; then
-  POSITION=$(grep -E '^\$HYPRVIM_WHICH_KEY_POSITION\s*=' "$SETTINGS_FILE" 2>/dev/null | sed 's/.*=\s*\(.*\)\s*$/\1/' | tr -d ' ' || echo "")
+  _read_setting() { grep -E "^\\\$$1\s*=" "$SETTINGS_FILE" 2>/dev/null | sed 's/.*=\s*\(.*\)\s*$/\1/' | tr -d ' ' || true; }
+  POSITION=$(_read_setting HYPRVIM_WHICH_KEY_POSITION)
   [[ -n "$POSITION" ]] && export HYPRVIM_WHICH_KEY_POSITION="$POSITION"
+  _allow=$(_read_setting HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW)
+  _deny=$(_read_setting HYPRVIM_WHICHKEY_AUTO_SHOW_DENY)
+  # settings.conf wins over env vars (which are frozen at init.conf expansion time)
+  HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW="${_allow:-$HYPRVIM_WHICHKEY_AUTO_SHOW_ALLOW}"
+  HYPRVIM_WHICHKEY_AUTO_SHOW_DENY="${_deny:-$HYPRVIM_WHICHKEY_AUTO_SHOW_DENY}"
 fi
 
 # Fallback for environments where XDG_RUNTIME_DIR is unset
@@ -243,10 +250,11 @@ socat - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
       rm -f "$STATE_DIR/whichkey-next-delay"
     fi
 
-    if [[ "$sm" == "NORMAL" ]]; then
-      rm -f "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target"
-      # hide already done above
-    elif [[ -n "$sm" ]]; then
+    if [[ -n "$sm" ]]; then
+      # Always clear skip state on NORMAL (acts as a motion-chain reset)
+      if [[ "$sm" == "NORMAL" ]]; then
+        rm -f "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target"
+      fi
       # Determine if the skip applies to this submap:
       # - non-targeted skip (_skip_target=""): always applies (file already consumed on read)
       # - targeted skip: only applies when sm matches target; otherwise files survive for next event
