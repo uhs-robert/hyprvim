@@ -46,7 +46,7 @@ mkdir -p "$STATE_DIR"
 if [[ -f "$PID_FILE" ]]; then
   OLD_PID=$(cat "$PID_FILE")
   if kill -0 "$OLD_PID" 2>/dev/null; then
-    # Kill old instance (and its socat child) so reload picks up new config
+    pkill -P "$OLD_PID" 2>/dev/null || true
     kill "$OLD_PID" 2>/dev/null || true
     sleep 0.3
   fi
@@ -54,7 +54,7 @@ fi
 
 echo $$ >"$PID_FILE"
 
-trap 'rm -f "$PID_FILE" "$RENDER_TOKEN_FILE" "$FOCUSED_MON_FILE" "$STATE_DIR/current-submap" "$STATE_DIR/whichkey-current-window" "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target" "$STATE_DIR/whichkey-visible"' EXIT
+trap 'pkill -P $$ 2>/dev/null || true; rm -f "$PID_FILE" "$RENDER_TOKEN_FILE" "$FOCUSED_MON_FILE" "$STATE_DIR/current-submap" "$STATE_DIR/whichkey-current-window" "$STATE_DIR/whichkey-skip-next" "$STATE_DIR/whichkey-skip-target" "$STATE_DIR/whichkey-visible"' EXIT
 
 ################################################################################
 # Settings and Initialization
