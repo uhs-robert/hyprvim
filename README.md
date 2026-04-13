@@ -189,7 +189,7 @@ You can override any of these settings by creating your own `./settings.conf` in
 > [!TIP]
 > To override or append keys in each submap, be sure to source your overriding keybindings after HyprVim
 
-1. Copy the example config:
+1. Copy `settings.conf.example` to `settings.conf`:
 2. Edit `./settings.conf` to override any defaults from `./init.conf`
 
 ```bash
