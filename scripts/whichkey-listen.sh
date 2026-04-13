@@ -100,9 +100,12 @@ fi
 # socket2 emits compositor events (submap changes, window focus, etc.)
 SOCK="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
-# Apply theme on daemon start so eww picks up current colors
+# Apply theme on daemon start and hyprctl reload so eww picks up current colors.
 APPLY_THEME="${HOME}/.config/hypr/hyprvim/scripts/apply-theme.sh"
-[[ -x "$APPLY_THEME" ]] && "$APPLY_THEME" >/dev/null 2>&1 || true
+if [[ -x "$APPLY_THEME" ]] && "$APPLY_THEME" >/dev/null 2>&1; then
+  eww -c "$EWW_DIR" kill >/dev/null 2>&1 || true
+  sleep 0.2
+fi
 
 # Ensure eww daemon is running before we try to open any windows
 eww -c "$EWW_DIR" daemon >/dev/null 2>&1 || true
