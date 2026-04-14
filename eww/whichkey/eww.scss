@@ -4,6 +4,10 @@
 // Root font size set by _vars.scss ($base_font_size from theme.conf)
 * { font-size: $base_font_size; }
 
+window {
+  background: transparent;
+}
+
 // Relative sizing (overrides $base_font_size for use in style properties)
 $title_font_size: 1.08rem;    // ~13px at 12px base
 $base_font_size: 1rem;        // Base size

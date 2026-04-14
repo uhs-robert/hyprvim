@@ -52,7 +52,7 @@
 
 (defwidget panel-center []
   (box :class "wk" :orientation "v" :spacing 6 :space-evenly false
-       :style "max-width: ${panel-width};"
+       :hexpand true
     (box :class "wk-titlebar" :orientation "h" :spacing 6 :space-evenly false
       (label :class "wk-title" :text title :xalign 0))
     (rows-center)
@@ -77,7 +77,8 @@
   :geometry (geometry :anchor "bottom center" :x "0px" :y "18px" :width "100%")
   :visible visible
   :namespace "hyprvim-whichkey"
-  (panel-center))
+  (box :hexpand true :style "padding: 0 18px; background: transparent;"
+    (panel-center)))
 
 (defwindow whichkey-top-center
   :stacking "overlay"
@@ -86,7 +87,8 @@
   :geometry (geometry :anchor "top center" :x "0px" :y "18px" :width "100%")
   :visible visible
   :namespace "hyprvim-whichkey"
-  (panel-center))
+  (box :hexpand true :style "padding: 0 18px; background: transparent;"
+    (panel-center)))
 
 (defwindow whichkey-bottom-left
   :stacking "overlay"
@@ -119,7 +121,7 @@
   :stacking "overlay"
   :focusable false
   :exclusive false
-  :geometry (geometry :anchor "center" :x "0px" :y "0px")
+  :geometry (geometry :anchor "center" :x "18px" :y "0px")
   :visible visible
   :namespace "hyprvim-whichkey"
   (panel-center))
