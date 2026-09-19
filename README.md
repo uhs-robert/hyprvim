@@ -129,6 +129,54 @@ EOF
 
 Then continue with [Load HyprVim](#load-hyprvim).
 
+### Nix / Home Manager
+
+HyprVim provides a Nix flake and Home Manager module.
+
+Add HyprVim to your flake inputs:
+
+```nix
+inputs.hyprvim = {
+  url = "github:uhs-robert/hyprvim";
+  inputs.nixpkgs.follows = "nixpkgs";
+};
+```
+
+Then import the Home Manager module:
+
+```nix
+{ inputs, ... }:
+
+{
+  imports = [
+    inputs.hyprvim.homeManagerModules.default
+  ];
+
+  programs.hyprvim = {
+    enable = true;
+
+    # Optional: installs dependencies for the WhichKey HUD
+    whichKey.enable = true;
+  };
+}
+```
+
+The module installs HyprVim to:
+
+```text
+~/.config/hypr/lua/plugins/hyprvim
+```
+
+so it can be loaded normally from `hyprland.lua`:
+
+```lua
+require("lua/plugins/hyprvim").setup({
+    -- your HyprVim configuration
+})
+```
+
+When `whichKey.enable = true`, the module also installs the dependencies required by the WhichKey HUD.
+
 ### Manual Install
 
 Manual git-checkout installs also need `git`, `curl`, and `jq` for the built-in updater. Update notifications use `notify-send` when available and fall back to a passive Hyprland notification.
