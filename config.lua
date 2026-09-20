@@ -52,6 +52,8 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @class HyprVimPrompt
 --- @field completion_menu?   boolean  true: Tab opens an fzf menu over the completions (requires fzf); false: Tab cycles matches (default true)
 --- @field completion_height? integer  Height in pixels the prompt bar grows to while the menu is open (default 400)
+--- @field history?          boolean  true: recall earlier entries with the arrow keys, kept per prompt under `$XDG_STATE_HOME/hyprvim/history` (default true)
+--- @field history_size?     integer  Entries kept per prompt (default 200)
 
 --- @class HyprVimUpdates
 --- @field channel? "stable"|"nightly"|"off"|string  "stable" = latest GitHub release (default), "nightly" = git HEAD, "off" = disabled, any other string = pinned release tag or commit SHA
@@ -132,6 +134,8 @@ Config.defaults = {
   prompt = {
     completion_menu   = true,
     completion_height = 400,
+    history           = true,
+    history_size      = 200,
   },
   updates = {
     channel = "stable",

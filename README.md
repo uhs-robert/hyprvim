@@ -331,6 +331,8 @@ require("hyprvim").setup({
   prompt = {
     completion_menu = true,     -- Tab opens an fzf menu in the command bar; false cycles matches instead
     completion_height = 400,    -- Pixel height the bar grows to while the menu is open
+    history = true,             -- Recall earlier entries with the arrow keys
+    history_size = 200,         -- Entries kept per prompt
   },
   updates = {
     channel = "stable",         -- "stable" (latest release), "nightly" (git HEAD), "off", or a tag/commit SHA to pin
