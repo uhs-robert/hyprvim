@@ -39,6 +39,17 @@
 | `:monitor NAME`    | Focus a monitor _(alias: `mon`)_                     |
 | `:special NAME`    | Toggle a special workspace                           |
 
+## Groups
+
+| Command           | Description                                 |
+| ----------------- | ------------------------------------------- |
+| `:group`          | Toggle the window into a group              |
+| `:group_next`     | Focus the next window in the group          |
+| `:group_prev`     | Focus the previous window in the group      |
+| `:group_window N` | Focus a window in the group by number       |
+| `:group_move DIR` | Move the window into a group in a direction |
+| `:group_lock`     | Lock or unlock the group                    |
+
 ## Window Move
 
 | Command              | Description                                                    |
@@ -71,10 +82,19 @@
 
 ## Workspace
 
-| Command        | Description                  |
-| -------------- | ---------------------------- |
-| `:rename NAME` | Rename the current workspace |
-| `:gaps N`      | Set gaps in and out          |
+| Command                     | Description                         |
+| --------------------------- | ----------------------------------- |
+| `:rename NAME`              | Rename the current workspace        |
+| `:gaps N`                   | Set gaps in and out                 |
+| `:workspace_monitor NAME`   | Move this workspace to a monitor    |
+| `:workspace_swap NAME NAME` | Swap the workspaces of two monitors |
+
+## Configuration
+
+| Command                   | Description             |
+| ------------------------- | ----------------------- |
+| `:set OPTION VALUE`       | Set any Hyprland option |
+| `:layout dwindle\|master` | Set the tiling layout   |
 
 ## System
 
@@ -90,11 +110,13 @@
 
 ## Apps
 
-| Command     | Description                                  |
-| ----------- | -------------------------------------------- |
-| `:edit`     | Open the editor in a terminal _(alias: `e`)_ |
-| `:terminal` | Open a terminal _(alias: `t`)_               |
-| `:help`     | Show the command reference _(alias: `h`)_    |
+| Command         | Description                                  |
+| --------------- | -------------------------------------------- |
+| `:edit`         | Open the editor in a terminal _(alias: `e`)_ |
+| `:terminal`     | Open a terminal _(alias: `t`)_               |
+| `:help`         | Show the command reference _(alias: `h`)_    |
+| `:help COMMAND` | Show the command reference at one entry      |
+| `:marks`        | List the marks that are set                  |
 
 ## Shell
 

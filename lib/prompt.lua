@@ -282,7 +282,10 @@ local function write_arg_file(specs)
       for _, v in ipairs(spec.values or {}) do
         lines[#lines + 1] = table.concat({ cmd, pos, "v", v[1], v[2] or "" }, "\31")
       end
-      if spec.source then lines[#lines + 1] = table.concat({ cmd, pos, "s", spec.source, "" }, "\31") end
+      -- the file is line based, so a source has to stay on one line
+      if spec.source then
+        lines[#lines + 1] = table.concat({ cmd, pos, "s", (spec.source:gsub("%s*\n%s*", " ")), "" }, "\31")
+      end
     end
   end
   if #lines == 0 then return nil end
