@@ -49,6 +49,10 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field position? "bottom-right"|"bottom-left"|"bottom-center"|"top-right"|"top-left"|"top-center"  Panel anchor position
 --- @field auto_show? HyprVimAutoShow
 
+--- @class HyprVimPrompt
+--- @field completion_menu?   boolean  true: Tab opens an fzf menu over the completions (requires fzf); false: Tab cycles matches (default true)
+--- @field completion_height? integer  Height in pixels the prompt bar grows to while the menu is open (default 400)
+
 --- @class HyprVimUpdates
 --- @field channel? "stable"|"nightly"|"off"|string  "stable" = latest GitHub release (default), "nightly" = git HEAD, "off" = disabled, any other string = pinned release tag or commit SHA
 
@@ -60,6 +64,7 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field enable_debug? boolean  true: write verbose diagnostic logs to the systemd journal (`journalctl -t hyprvim`)
 --- @field max_count? integer     Maximum count digit accumulator; counts above this are silently clamped (default 1000)
 --- @field which_key? HyprVimWhichKey
+--- @field prompt? HyprVimPrompt
 --- @field keymaps? table<string, { [1]: string|string[], [2]: any, [3]: HL.BindOptions|nil }[]>  Per-submap bind overrides; entries with a matching key replace the built-in bind, new keys are appended. Submap names: "NORMAL", "VISUAL", "V-LINE", "INSERT", etc.
 --- @field commands? table<string, fun()>  User-defined commands merged into the built-in command table; new names are added, existing names are overridden
 --- @field defaults? HyprVimConfig  Internal: holds the default values before user overrides are merged
@@ -70,6 +75,7 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field config_dir string   Resolved user config directory (`$XDG_CONFIG_HOME/hyprvim`)
 --- @field install_dir string  Resolved HyprVim installation directory (repo root)
 --- @field which_key HyprVimWhichKey
+--- @field prompt HyprVimPrompt
 --- @field setup fun(overrides?: HyprVimConfig|table): HyprVimInstance
 --- @field term_cmd fun(class: string): string  Returns the full terminal launch prefix for the given window class
 
@@ -112,6 +118,10 @@ Config.defaults = {
       disabled = { "NORMAL", "VISUAL", "V-LINE", "INSERT" },
       enabled  = nil,
     },
+  },
+  prompt = {
+    completion_menu   = true,
+    completion_height = 400,
   },
   updates = {
     channel = "stable",

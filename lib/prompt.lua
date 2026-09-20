@@ -14,10 +14,259 @@ local Prompt = {}
 local Utils = require("lib.utils") ---@class HyprVimUtils
 local sq = Utils.sh_escape
 
+--- @class PromptCompletion
+--- @field name string
+--- @field desc string?
+--- @field takes_args boolean?
+--- @field aliases string[]?  Alternate names; searchable in the menu but not listed as rows
+
+--- One argument position of a command. `values` are fixed candidates, `source` is a
+--- shell command printing "value<TAB>description" lines, `hint` describes a free-form value.
+--- @class PromptArgSpec
+--- @field hint string?
+--- @field values { [1]: string, [2]: string? }[]?
+--- @field source string?
+
+local MENU_HEIGHT = 400
+
+---@return boolean menu_enabled, integer height
+local function menu_opts(opts)
+  local cfg = Config.prompt or {}
+  local enabled = cfg.completion_menu
+  if enabled == nil then enabled = true end
+  return enabled ~= false, opts.menu_height or cfg.completion_height or MENU_HEIGHT
+end
+
+-- Tab cycles through prefix matches. Used when fzf is not installed.
+local CYCLE_BLOCK = [[
+_hv_cycle_base=''
+_hv_cycle_idx=-1
+_hv_cycle() {
+    local matches found m
+    if [ -n "$_hv_cycle_base" ]; then
+        mapfile -t matches < <(compgen -W "$_hv_words" -- "$_hv_cycle_base")
+        found=0
+        for m in "${matches[@]}"; do [ "$m" = "$READLINE_LINE" ] && { found=1; break; }; done
+        [ $found -eq 0 ] && { _hv_cycle_base="$READLINE_LINE"; _hv_cycle_idx=-1; }
+    else
+        _hv_cycle_base="$READLINE_LINE"
+    fi
+    mapfile -t matches < <(compgen -W "$_hv_words" -- "$_hv_cycle_base")
+    [ "${#matches[@]}" -eq 0 ] && return
+    if [ "${#matches[@]}" -eq 1 ]; then
+        _hv_insert "${matches[0]}"
+        _hv_cycle_base=''
+        _hv_cycle_idx=-1
+    else
+        _hv_cycle_idx=$(( (_hv_cycle_idx + 1) % ${#matches[@]} ))
+        READLINE_LINE="${matches[$_hv_cycle_idx]}"
+        READLINE_POINT="${#READLINE_LINE}"
+    fi
+}
+]]
+
+-- Tab opens an fzf menu over the completion list, fzf-tab style. The prompt bar
+-- is one line tall, so it is grown around the menu and restored afterwards.
+local FZF_BLOCK = [==[
+_hv_insert() {
+    local name="$1" flag
+    flag=$(awk -F'\t' -v n="$name" '{ sub(/ +$/, "", $1); if ($1 == n) { print $3; exit } }' "$_hv_entries")
+    [ "$flag" = "1" ] && name="$name "
+    READLINE_LINE="$name"
+    READLINE_POINT="${#READLINE_LINE}"
+}
+_hv_place() {
+    local sel="class:^$_hv_class\$"
+    hyprctl dispatch "hl.dsp.window.resize({ x = $1, y = $2, window = '$sel' })" >/dev/null 2>&1
+    hyprctl dispatch "hl.dsp.window.move({ x = $3, y = $4, window = '$sel' })" >/dev/null 2>&1
+}
+_hv_tty_rows() {
+    local size
+    size=$(stty size </dev/tty 2>/dev/null | cut -d' ' -f1)
+    printf '%s' "${size:-0}"
+}
+_hv_grow() {
+    _hv_w=''; _hv_h=''
+    eval "$(hyprctl activewindow | awk -F': ' '
+        /^[[:space:]]*at:/   { split($2, a, ","); printf "_hv_x=%s;_hv_y=%s;", a[1], a[2] }
+        /^[[:space:]]*size:/ { split($2, s, ","); printf "_hv_w=%s;_hv_h=%s;", s[1], s[2] }')"
+    [ -n "$_hv_w" ] && [ -n "$_hv_h" ] || return 1
+    local before rows tries=0
+    before=$(_hv_tty_rows)
+    _hv_place "$_hv_w" "$_hv_menu_h" "$_hv_x" "$((_hv_y + _hv_h - _hv_menu_h))"
+    # the pty learns its new size from SIGWINCH, which lands after the dispatch returns
+    while [ "$tries" -lt 30 ]; do
+        rows=$(_hv_tty_rows)
+        [ "$rows" -gt "$before" ] && break
+        sleep 0.02
+        tries=$((tries + 1))
+    done
+    _hv_rows=$((rows - 1))
+    [ "$_hv_rows" -gt 1 ] || _hv_rows=10
+}
+_hv_shrink() {
+    [ -n "$_hv_w" ] && [ -n "$_hv_h" ] || return 0
+    _hv_place "$_hv_w" "$_hv_h" "$_hv_x" "$_hv_y"
+}
+_hv_pad() {
+    awk -F'\t' '{ if (length($1) > w) w = length($1); a[NR] = $0 }
+        END { for (i = 1; i <= NR; i++) { split(a[i], f, "\t"); printf "%-*s\t%s\n", w, f[1], f[2] } }'
+}
+_hv_pick() {
+    local query="$1" prompt="$2" nth="${3:-1}"
+    # inline height leaves the command line drawn above the list
+    fzf --query "$query" --no-sort --info=inline --height="${_hv_rows:-10}" --layout=reverse --cycle \
+        --bind=tab:down,btab:up,ctrl-n:down,ctrl-p:up \
+        --delimiter=$'\t' --with-nth=1,2 --nth="$nth" --prompt="$prompt"
+}
+_hv_arg_candidates() {
+    local cmd="$1" pos="$2" c p k payload desc
+    [ -n "$_hv_args" ] && [ -r "$_hv_args" ] || return
+    while IFS=$'\x1f' read -r c p k payload desc; do
+        [ "$c" = "$cmd" ] && [ "$p" = "$pos" ] || continue
+        case "$k" in
+            v) printf '%s\t%s\n' "$payload" "$desc" ;;
+            h) printf '\t%s\n' "$desc" ;;
+            s) bash -c "$payload" 2>/dev/null ;;
+        esac
+    done < "$_hv_args"
+}
+_hv_arg_menu() {
+    local cmd="$1" pos="$2" cur="$3" cands sel val
+    cands=$(_hv_arg_candidates "$cmd" "$pos" | _hv_pad)
+    [ -n "$cands" ] || return
+    _hv_grow || return
+    sel=$(printf '%s\n' "$cands" | _hv_pick "$cur" "$_hv_label$cmd " 1,2)
+    _hv_shrink
+    [ -n "$sel" ] || return
+    val=$(printf '%s' "$sel" | cut -f1 | sed 's/ *$//')
+    [ -n "$val" ] || return
+    if [ -n "$cur" ]; then
+        READLINE_LINE="${READLINE_LINE% *} $val "
+    else
+        READLINE_LINE="$READLINE_LINE$val "
+    fi
+    READLINE_POINT="${#READLINE_LINE}"
+}
+_hv_menu() {
+    local line="$READLINE_LINE" cur sel matches cmd rest pos
+    if [[ "$line" == *" "* ]]; then
+        cmd="${line%% *}"
+        rest="${line#* }"
+        read -r -a matches <<< "$rest"
+        if [[ "$line" == *" " ]]; then
+            pos=$(( ${#matches[@]} + 1 ))
+            cur=''
+        else
+            pos=${#matches[@]}
+            cur="${matches[$((pos - 1))]}"
+        fi
+        _hv_arg_menu "$cmd" "$pos" "$cur"
+        return
+    fi
+    cur="$line"
+    mapfile -t matches < <(compgen -W "$_hv_words" -- "$cur")
+    if [ "${#matches[@]}" -eq 1 ]; then _hv_insert "${matches[0]}"; return; fi
+    _hv_grow || { _hv_cycle; return; }
+    sel=$(_hv_pick "$cur" "$_hv_label" 1,2,4 < "$_hv_entries")
+    _hv_shrink
+    [ -n "$sel" ] || return
+    _hv_insert "$(printf '%s' "$sel" | cut -f1 | sed 's/ *$//')"
+}
+]==]
+
+-- Escape clears the line and accepts it; an empty result is already treated as a
+-- cancel. The short keyseq-timeout keeps arrow keys and Alt bindings working.
+local ESC_BLOCK = [[
+bind 'set keyseq-timeout 50' 2>/dev/null
+bind '"\e": "\C-a\C-k\C-m"' 2>/dev/null
+]]
+
+---Write per-argument candidates as "cmd/pos/kind/payload/desc" lines, separated by \x1f
+---because bash collapses runs of tabs when splitting on them.
+---Kinds: v = literal value, h = hint for a free-form value, s = shell command printing candidates.
+---@param specs table<string, PromptArgSpec[]>
+---@return string|nil path
+local function write_arg_file(specs)
+  if not specs or not next(specs) then return nil end
+  local lines = {}
+  for cmd, positions in pairs(specs) do
+    for pos, spec in ipairs(positions) do
+      if spec.hint then lines[#lines + 1] = table.concat({ cmd, pos, "h", "", spec.hint }, "\31") end
+      for _, v in ipairs(spec.values or {}) do
+        lines[#lines + 1] = table.concat({ cmd, pos, "v", v[1], v[2] or "" }, "\31")
+      end
+      if spec.source then lines[#lines + 1] = table.concat({ cmd, pos, "s", spec.source, "" }, "\31") end
+    end
+  end
+  if #lines == 0 then return nil end
+  table.sort(lines)
+  local path = Utils.tmp_path("prompt-args")
+  local f = io.open(path, "w")
+  if not f then return nil end
+  f:write(table.concat(lines, "\n") .. "\n")
+  f:close()
+  return path
+end
+
+---Write the completion list to a file and build the readline/fzf setup block.
+---@param opts {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer}
+---@param label string
+---@param wm_class string
+---@return string block, string? entries_file, string? args_file
+local function completion_block(opts, label, wm_class)
+  local entries = opts.completions
+  if not entries or #entries == 0 then return "" end
+  local menu_enabled, menu_height = menu_opts(opts)
+
+  local width = 0
+  for _, e in ipairs(entries) do
+    local name = type(e) == "table" and e.name or e
+    if #name > width then width = #name end
+  end
+
+  local names, lines = {}, {}
+  for _, e in ipairs(entries) do
+    local name = type(e) == "table" and e.name or e
+    local desc = type(e) == "table" and (e.desc or "") or ""
+    local flag = (type(e) == "table" and e.takes_args) and "1" or "0"
+    local alts = type(e) == "table" and table.concat(e.aliases or {}, " ") or ""
+    names[#names + 1] = name
+    for _, alt in ipairs(type(e) == "table" and e.aliases or {}) do
+      names[#names + 1] = alt
+    end
+    lines[#lines + 1] = string.format("%-" .. width .. "s\t%s\t%s\t%s", name, desc, flag, alts)
+  end
+
+  local args_file = write_arg_file(opts.arg_completions)
+  local entries_file = Utils.tmp_path("prompt-entries")
+  local f = io.open(entries_file, "w")
+  if not f then return "" end
+  f:write(table.concat(lines, "\n") .. "\n")
+  f:close()
+
+  local header = table.concat({
+    "_hv_words=" .. sq(table.concat(names, " ")),
+    "_hv_entries=" .. sq(entries_file),
+    "_hv_class=" .. sq(wm_class),
+    "_hv_label=" .. sq(label),
+    "_hv_menu_h=" .. tostring(menu_height),
+    "_hv_args=" .. sq(args_file or ""),
+  }, "\n")
+
+  local bind = (menu_enabled and "if command -v fzf >/dev/null 2>&1; then\n" or "if false; then\n")
+    .. "    bind -x '\"\\t\": _hv_menu'\n"
+    .. "else\n"
+    .. "    bind -x '\"\\t\": _hv_cycle'\n"
+    .. "fi\n"
+
+  return header .. "\n" .. FZF_BLOCK .. CYCLE_BLOCK .. bind, entries_file, args_file
+end
+
 ---Build the terminal command that displays a prompt and writes input to state_file.
 ---Returns nil if the prompt script cannot be written.
 ---@param label      string    prompt label shown to the user
----@param opts       {wm_class?: string, completions?: string[]}
+---@param opts       {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer}
 ---@param state_file string    path where the result should land
 ---@return string|nil
 local function build_cmd(label, opts, state_file)
@@ -26,44 +275,17 @@ local function build_cmd(label, opts, state_file)
   local f = io.open(script, "w")
   if not f then return nil end
 
-  local comp_block = ""
-  if opts.completions and #opts.completions > 0 then
-    local wl = sq(table.concat(opts.completions, " "))
-    comp_block = "_hv_cycle_base=''\n"
-      .. "_hv_cycle_idx=-1\n"
-      .. "_hv_complete() {\n"
-      .. "    local words="
-      .. wl
-      .. "\n"
-      .. "    local matches found m\n"
-      .. '    if [ -n "$_hv_cycle_base" ]; then\n'
-      .. '        mapfile -t matches < <(compgen -W "$words" -- "$_hv_cycle_base")\n'
-      .. "        found=0\n"
-      .. '        for m in "${matches[@]}"; do [ "$m" = "$READLINE_LINE" ] && { found=1; break; }; done\n'
-      .. '        [ $found -eq 0 ] && { _hv_cycle_base="$READLINE_LINE"; _hv_cycle_idx=-1; }\n'
-      .. "    else\n"
-      .. '        _hv_cycle_base="$READLINE_LINE"\n'
-      .. "    fi\n"
-      .. '    mapfile -t matches < <(compgen -W "$words" -- "$_hv_cycle_base")\n'
-      .. '    [ "${#matches[@]}" -eq 0 ] && return\n'
-      .. '    if [ "${#matches[@]}" -eq 1 ]; then\n'
-      .. '        READLINE_LINE="${matches[0]}"\n'
-      .. '        READLINE_POINT="${#READLINE_LINE}"\n'
-      .. "        _hv_cycle_base=''\n"
-      .. "        _hv_cycle_idx=-1\n"
-      .. "    else\n"
-      .. "        _hv_cycle_idx=$(( (_hv_cycle_idx + 1) % ${#matches[@]} ))\n"
-      .. '        READLINE_LINE="${matches[$_hv_cycle_idx]}"\n'
-      .. '        READLINE_POINT="${#READLINE_LINE}"\n'
-      .. "    fi\n"
-      .. "}\n"
-      .. "bind -x '\"\\t\": _hv_complete'\n"
-  end
+  local comp_block, entries_file, args_file = completion_block(opts, label, wm_class)
+  local cleanup = sq(script)
+    .. (entries_file and (" " .. sq(entries_file)) or "")
+    .. (args_file and (" " .. sq(args_file)) or "")
+
   f:write(
     "trap 'rm -f "
-      .. sq(script)
+      .. cleanup
       .. "' EXIT\n"
       .. comp_block
+      .. ESC_BLOCK
       -- clear kernel-echoed typeahead so readline redraws it after the prompt
       .. "printf '\\033[2J\\033[H'\n"
       .. "read -e -r -p "
@@ -81,7 +303,7 @@ end
 ---`callback` is called once with the entered string, or nil if cancelled or
 ---the prompt could not be created.
 ---@param label    string
----@param opts     {wm_class?: string, completions?: string[]}
+---@param opts     {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer}
 ---@param callback fun(result: string|nil)
 function Prompt.async(label, opts, callback)
   local state_file = Utils.tmp_path("prompt-input")
