@@ -473,7 +473,19 @@ require("hyprvim").setup({
 })
 ```
 
-Custom commands appear in tab-completion alongside the built-in ones. Install [fzf](https://github.com/junegunn/fzf) to get a searchable completion menu in the command bar instead of plain cycling.
+Custom commands appear in tab-completion alongside the built-in ones. Give one a description and arguments with the table form:
+
+```lua
+require("hyprvim").setup({
+  commands = {
+    scratch = {
+      function(args) hl.dispatch(hl.dsp.exec_cmd("my-scratch " .. args)) end,
+      desc = "open a scratch buffer",
+      args = { { hint = "buffer name", values = { { "notes", "daily notes" } } } },
+    },
+  },
+})
+``` Install [fzf](https://github.com/junegunn/fzf) to get a searchable completion menu in the command bar instead of plain cycling.
 
 ### Other Extensions
 

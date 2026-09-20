@@ -56,6 +56,16 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @class HyprVimUpdates
 --- @field channel? "stable"|"nightly"|"off"|string  "stable" = latest GitHub release (default), "nightly" = git HEAD, "off" = disabled, any other string = pinned release tag or commit SHA
 
+--- @class HyprVimUserCommandArg
+--- @field hint?   string    Shown in the completion menu when the value is free-form
+--- @field values? { [1]: string, [2]: string? }[]  Fixed candidates as { value, description } pairs
+--- @field source? string    Shell command printing "value<TAB>description" lines, run when the menu opens
+
+--- @class HyprVimUserCommand
+--- @field [1]    fun(args?: string)  Handler; receives the argument string when `args` is set
+--- @field desc?  string              Description shown in the completion menu and `:help`
+--- @field args?  HyprVimUserCommandArg[]  One entry per argument position
+
 --- @class HyprVimConfig
 --- @field keys? HyprVimKeys
 --- @field applications? HyprVimApplications
@@ -66,7 +76,7 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field which_key? HyprVimWhichKey
 --- @field prompt? HyprVimPrompt
 --- @field keymaps? table<string, { [1]: string|string[], [2]: any, [3]: HL.BindOptions|nil }[]>  Per-submap bind overrides; entries with a matching key replace the built-in bind, new keys are appended. Submap names: "NORMAL", "VISUAL", "V-LINE", "INSERT", etc.
---- @field commands? table<string, fun()>  User-defined commands merged into the built-in command table; new names are added, existing names are overridden
+--- @field commands? table<string, fun()|HyprVimUserCommand>  User-defined commands merged into the built-in command table; new names are added, existing names are overridden
 --- @field defaults? HyprVimConfig  Internal: holds the default values before user overrides are merged
 
 --- @class HyprVimInstance : HyprVimConfig

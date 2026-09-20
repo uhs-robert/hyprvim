@@ -108,9 +108,6 @@ local aliases = {
 }
 for alias, canonical in pairs(aliases) do commands[alias] = commands[canonical] end
 
-if Config.commands then
-  for name, fn in pairs(Config.commands) do commands[name] = fn end
-end
 
 ---Report a rejected argument and return nil so the caller stops.
 ---@param cmd string
@@ -247,6 +244,28 @@ local arg_aliases = {
   fullscreen_opacity = "opacity_fullscreen",
 }
 for alias, canonical in pairs(arg_aliases) do arg_commands[alias] = arg_commands[canonical] end
+
+---Descriptions and argument specs contributed by `Config.commands`.
+local user_descriptions, user_arg_specs, user_names = {}, {}, {}
+
+---User commands are either a bare function or `{ fn, desc = ..., args = { ... } }`.
+if Config.commands then
+  for name, spec in pairs(Config.commands) do
+    local fn = type(spec) == "function" and spec or (spec[1] or spec.fn)
+    if fn then
+      user_names[name] = true
+      if type(spec) == "table" then
+        user_descriptions[name] = spec.desc
+        user_arg_specs[name] = spec.args
+      end
+      if user_arg_specs[name] then
+        arg_commands[name] = fn
+      else
+        commands[name] = fn
+      end
+    end
+  end
+end
 -- stylua: ignore end
 
 ---Completion descriptions; arg-taking entries carry their argument hint.
@@ -344,12 +363,23 @@ local function add(name, desc, takes_args)
 end
 
 for name in pairs(commands) do
-  if not aliases[name] then add(name, descriptions[name] or "user command") end
+  if not aliases[name] then add(name, descriptions[name] or user_descriptions[name] or "user command") end
 end
 for name in pairs(arg_commands) do
-  if not arg_aliases[name] then add(name, arg_descriptions[name], true) end
+  if not arg_aliases[name] then
+    add(name, arg_descriptions[name] or user_descriptions[name] or "user command", true)
+  end
 end
 table.sort(COMPLETIONS, function(a, b) return a.name < b.name end)
+
+---Every name that resolves, aliases included, for the unknown-command suggestion.
+local KNOWN_NAMES = {}
+for _, source in ipairs({ commands, arg_commands }) do
+  for name in pairs(source) do
+    KNOWN_NAMES[#KNOWN_NAMES + 1] = name
+  end
+end
+table.sort(KNOWN_NAMES)
 
 
 ---Shell one-liners that list live Hyprland objects as "value<TAB>description" pairs.
@@ -439,6 +469,8 @@ local arg_specs = {
 }
 -- stylua: ignore end
 
+for name, spec in pairs(user_arg_specs) do arg_specs[name] = spec end
+
 
 ---Section order for the generated reference; names not listed fall into "Other".
 -- stylua: ignore start
@@ -492,6 +524,48 @@ local function render_table(rows)
     out[#out + 1] = string.format("| %s%s | %s%s |", row[1], pad1, row[2], pad2)
   end
   return table.concat(out, "\n")
+end
+
+---Check the command tables against each other; used by `scripts/check-commands`.
+---@return string[] problems  empty when the tables agree
+function Command.lint()
+  local problems = {}
+  local function report(text) problems[#problems + 1] = text end
+
+  for name in pairs(commands) do
+    if arg_commands[name] and not (descriptions[name] and arg_descriptions[name]) then
+      report(name .. ": takes both forms but is missing one of the two descriptions")
+    end
+  end
+  for name in pairs(commands) do
+    if not aliases[name] and not descriptions[name] and not user_names[name] then report(name .. ": no description") end
+  end
+  for name in pairs(arg_commands) do
+    if not arg_aliases[name] and not arg_descriptions[name] and not user_names[name] then
+      report(name .. ": no description")
+    end
+  end
+  for _, pair in ipairs({ { aliases, commands }, { arg_aliases, arg_commands } }) do
+    for alias, canonical in pairs(pair[1]) do
+      if not pair[2][canonical] then report(alias .. ": alias of unknown command " .. canonical) end
+    end
+  end
+  for name in pairs(descriptions) do
+    if not commands[name] then report(name .. ": described but not dispatched") end
+  end
+  for name in pairs(arg_descriptions) do
+    if not arg_commands[name] then report(name .. ": described but not dispatched") end
+  end
+  for name in pairs(arg_specs) do
+    if not arg_commands[name] then report(name .. ": has argument candidates but takes no arguments") end
+  end
+  for name in pairs(arg_commands) do
+    if not arg_aliases[name] and not arg_specs[name] and not user_names[name] then
+      report(name .. ": takes arguments with no candidates or hint")
+    end
+  end
+  table.sort(problems)
+  return problems
 end
 
 ---Render the command reference from the dispatch tables, so it cannot drift from them.
@@ -561,6 +635,43 @@ function Command.render_help()
   return table.concat(out, "\n")
 end
 
+---Levenshtein distance, capped: anything past `limit` is not a useful suggestion.
+---@return integer
+local function distance(a, b, limit)
+  if math.abs(#a - #b) > limit then return limit + 1 end
+  local prev = {}
+  for j = 0, #b do
+    prev[j] = j
+  end
+  for i = 1, #a do
+    local current = { [0] = i }
+    local best = current[0]
+    for j = 1, #b do
+      local cost = a:sub(i, i) == b:sub(j, j) and 0 or 1
+      current[j] = math.min(prev[j] + 1, current[j - 1] + 1, prev[j - 1] + cost)
+      best = math.min(best, current[j])
+    end
+    if best > limit then return limit + 1 end
+    prev = current
+  end
+  return prev[#b]
+end
+
+---Closest known command name to `name`, by prefix first and edit distance second.
+---@param name string
+---@return string|nil
+local function nearest(name)
+  local best, best_distance = nil, 3
+  for _, known in ipairs(KNOWN_NAMES) do
+    if #name > 1 and known:sub(1, #name) == name then return known end
+    local d = distance(name, known, best_distance - 1)
+    if d < best_distance then
+      best, best_distance = known, d
+    end
+  end
+  return best
+end
+
 ---Look up and run a command string against the dispatch tables and special prefixes.
 ---@param cmd string  raw input from the prompt (may have leading/trailing whitespace)
 ---@param restore fun()  re-enters the originating submap (passed to async commands)
@@ -598,6 +709,14 @@ local function execute(cmd, restore)
     )()
     return true
   end
+
+  local name = cmd:match("^%S+") or cmd
+  local suggestion = nearest(name)
+  Hypr.notify(
+    "unknown command: " .. name .. (suggestion and (", did you mean :" .. suggestion .. "?") or ""),
+    "error",
+    3000
+  )
 end
 
 ---Show the `:` command prompt, execute the entered command, then restore the current submap.

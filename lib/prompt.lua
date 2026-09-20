@@ -148,8 +148,24 @@ _hv_arg_menu() {
     fi
     READLINE_POINT="${#READLINE_LINE}"
 }
+_hv_shell_menu() {
+    local cur="${READLINE_LINE#!}" cands sel
+    case "$cur" in *" "*) return;; esac
+    cands=$(compgen -c -- "$cur" | sort -u | sed 's/$/\t/')
+    [ -n "$cands" ] || return
+    _hv_grow || return
+    sel=$(printf '%s\n' "$cands" | _hv_pick "$cur" "$_hv_label!")
+    _hv_shrink
+    [ -n "$sel" ] || return
+    READLINE_LINE="!$(printf '%s' "$sel" | cut -f1) "
+    READLINE_POINT="${#READLINE_LINE}"
+}
 _hv_menu() {
     local line="$READLINE_LINE" cur sel matches cmd rest pos
+    if [[ "$line" == "!"* ]]; then
+        _hv_shell_menu
+        return
+    fi
     if [[ "$line" == *" "* ]]; then
         cmd="${line%% *}"
         rest="${line#* }"
