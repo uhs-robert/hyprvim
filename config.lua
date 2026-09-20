@@ -30,7 +30,7 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field terminal?     "kitty"|"ghostty"|"alacritty"|"wezterm"|"foot"|"footclient"|"xterm"|string  Terminal used for prompts, the help viewer, and open-editor feature; built-in flag mappings exist for the listed values, add an entry to `term_flags` for others
 --- @field term_flags?   table<string,HyprVimTermFlags>  Per-terminal flag overrides; e.g. `{ wezterm = { class = "--class", exec = "--", pre = "start" } }`. nil tries to autoresolve flags from the built-in terminal list.
 --- @field lock?         string  Screen lock command executed by `:lock` and the L key in NORMAL mode (e.g. "hyprlock")
---- @field editor?       "vim"|"nvim"  Editor launched by the open-editor feature
+--- @field editor?       "vim"|"nvim"  Editor launched by the open-editor feature, `:edit` and the `:help` viewer; the help viewer relies on its `-RM` and `+/pattern` flags
 
 --- @class HyprVimNotifications
 --- @field all?      boolean  true: enable all notifications, overriding the individual flags below
