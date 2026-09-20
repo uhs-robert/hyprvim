@@ -287,7 +287,7 @@ Multi-clipboard management with named registers (`"a` - `"z`) and special regist
 
 ### Commands
 
-Press `:` in **NORMAL** mode to execute Vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float [on|off]` (floating), `:fullscreen [maximized|fullscreen]`, `:ws <N|name:Web|empty>` (switch workspace), `:move N` (send window to workspace), `:monitor <dir|name>` (focus monitor), `:focus class:firefox` (focus window), `:rename <name>` (rename workspace), `:special <name>` (scratchpad), `:swap <l|r|u|d>`, `:resize N`, `:opacity V`, `:prop <name> <value>`, `:reload`, `:update`, `:!cmd` (shell). Full reference: `:help`.
+Press `:` in **NORMAL** mode to execute Vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float [on|off]` (floating), `:fullscreen [maximized|fullscreen]`, `:workspace <N|name:Web|empty>` (switch workspace), `:move_workspace N` (send window to workspace), `:move X Y` (nudge by pixels), `:monitor <dir|name>` (focus monitor), `:window class:firefox` (focus window), `:rename <name>` (rename workspace), `:special <name>` (scratchpad), `:swap <l|r|u|d>`, `:resize_width N`, `:opacity V`, `:prop <name> <value>`, `:reload`, `:update`, `:!cmd` (shell). Full reference: `:help`.
 
 > **📖 Learn more:** [Command Mode guide](./docs/guide/03_Modes.md#-command-mode)
 
@@ -327,6 +327,10 @@ require("hyprvim").setup({
     marks = false,
     warnings = true,
     errors = true,
+  },
+  prompt = {
+    completion_menu = true,     -- Tab opens an fzf menu in the command bar; false cycles matches instead
+    completion_height = 400,    -- Pixel height the bar grows to while the menu is open
   },
   updates = {
     channel = "stable",         -- "stable" (latest release), "nightly" (git HEAD), "off", or a tag/commit SHA to pin
@@ -469,7 +473,7 @@ require("hyprvim").setup({
 })
 ```
 
-Custom commands appear in tab-completion alongside the built-in ones.
+Custom commands appear in tab-completion alongside the built-in ones. Install [fzf](https://github.com/junegunn/fzf) to get a searchable completion menu in the command bar instead of plain cycling.
 
 ### Other Extensions
 

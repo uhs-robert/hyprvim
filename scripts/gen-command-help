@@ -1,0 +1,21 @@
+#!/usr/bin/env luajit
+-- Regenerate docs/command-help.md from the command tables in vim/commands/command.lua.
+
+local root = arg[0]:match("^(.*)/scripts/[^/]+$") or "."
+package.path = root .. "/?.lua;" .. root .. "/?/init.lua;" .. package.path
+
+hl = setmetatable({ timer = function() end }, { __index = function() return function() end end })
+package.preload["hypr"] = function()
+  return setmetatable({}, { __index = function() return function() end end })
+end
+package.preload["lib.callback"] = function() return { register = function() end } end
+package.preload["lib.updater"] = function() return { update = function() end } end
+package.preload["lib.submap"] = function() return { current = nil } end
+
+require("config").setup({})
+
+local path = root .. "/docs/command-help.md"
+local out = assert(io.open(path, "w"))
+out:write(require("vim.commands.command").render_help())
+out:close()
+print("wrote " .. path)
