@@ -41,6 +41,14 @@ local function show_help(restore)
   return true
 end
 
+---Commands that end the session ask for the bang, the way `:q!` does, because the
+---completion menu puts them one keystroke apart.
+---@param name string
+---@param what string
+local function needs_bang(name, what)
+  Hypr.notify("run :" .. name .. "! to " .. what, "warning", 4000)
+end
+
 ---Exact-match dispatch table: command string -> handler(restore).
 ---@type table<string, fun(restore: fun()): true?>
 -- stylua: ignore start
@@ -77,15 +85,18 @@ local commands = {
   reload     = function() os.execute("hyprctl reload &") end,
   update     = function() Updater.update() end,
   lock       = function() Hypr.exec(Config.applications.lock) end,
-  logout     = function()
+  logout     = function() needs_bang("logout", "end the session") end,
+  ["logout!"] = function()
     if os.execute("command -v hyprshutdown >/dev/null 2>&1") then
       os.execute("hyprshutdown &")
     else
       hl.dispatch(hl.dsp.exit())
     end
   end,
-  shutdown   = function() hl.dispatch(hl.dsp.exec_cmd("systemctl poweroff")) end,
-  reboot     = function() hl.dispatch(hl.dsp.exec_cmd("systemctl reboot")) end,
+  shutdown   = function() needs_bang("shutdown", "power off") end,
+  ["shutdown!"] = function() hl.dispatch(hl.dsp.exec_cmd("systemctl poweroff")) end,
+  reboot     = function() needs_bang("reboot", "restart the machine") end,
+  ["reboot!"] = function() hl.dispatch(hl.dsp.exec_cmd("systemctl reboot")) end,
   picker     = function() hl.dispatch(hl.dsp.exec_cmd("pidof hyprpicker || (hyprpicker | wl-copy)")) end,
   edit       = function() Hypr.exec(Config.applications.terminal .. " " .. Config.applications.editor) end,
   terminal   = function() Hypr.exec(Config.applications.terminal) end,
@@ -100,6 +111,7 @@ local aliases = {
   r  = "reload", e = "edit", t = "terminal",
   poweroff = "shutdown", pick = "picker", hyprpicker = "picker",
   restart = "reboot",
+  ["poweroff!"] = "shutdown!", ["restart!"] = "reboot!",
   h = "help", close = "q", kill = "q!",
   write = "w", save = "w",
   write_quit = "wq", save_quit = "wq",
@@ -291,9 +303,12 @@ local descriptions = {
   reload = "reload hyprland config",
   update = "update hyprvim",
   lock = "lock the session",
-  logout = "log out of the session",
-  shutdown = "power off",
-  reboot = "restart the machine",
+  logout = "log out of the session (asks for the bang)",
+  ["logout!"] = "log out of the session",
+  shutdown = "power off (asks for the bang)",
+  ["shutdown!"] = "power off",
+  reboot = "restart the machine (asks for the bang)",
+  ["reboot!"] = "restart the machine",
   picker = "pick a color to the clipboard",
   edit = "open the editor in a terminal",
   terminal = "open a terminal",
@@ -488,7 +503,7 @@ local help_groups = {
   { "Window Resize",     { "resize_width", "resize_height", "size" } },
   { "Window Properties", { "opacity", "opacity_active", "opacity_inactive", "opacity_fullscreen", "dim", "prop" } },
   { "Workspace",         { "rename", "gaps" } },
-  { "System",            { "reload", "lock", "update", "logout", "reboot", "shutdown", "picker" } },
+  { "System",            { "reload", "lock", "update", "logout", "logout!", "reboot", "reboot!", "shutdown", "shutdown!", "picker" } },
   { "Apps",              { "edit", "terminal", "help" } },
 }
 

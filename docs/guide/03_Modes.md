@@ -112,7 +112,7 @@ Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, 
 | --------------- | ---------------------- |
 | `:reload`, `:r` | Reload Hyprland config |
 | `:lock`         | Lock screen            |
-| `:logout`       | Exit Hyprland          |
+| `:logout!`      | Exit Hyprland          |
 
 ### Visual
 
