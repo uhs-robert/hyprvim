@@ -82,16 +82,12 @@ local commands = {
   dim        = function() Hypr.toggle_dim() end,
   workspace_next = function() Hypr.workspace_rel(1) end,
   workspace_prev = function() Hypr.workspace_rel(-1) end,
-  reload     = function() os.execute("hyprctl reload &") end,
+  reload     = function() Hypr.reload() end,
   update     = function() Updater.update() end,
   lock       = function() Hypr.exec(Config.applications.lock) end,
   logout     = function() needs_bang("logout", "end the session") end,
   ["logout!"] = function()
-    if os.execute("command -v hyprshutdown >/dev/null 2>&1") then
-      os.execute("hyprshutdown &")
-    else
-      hl.dispatch(hl.dsp.exit())
-    end
+    Hypr.exec("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'")
   end,
   shutdown   = function() needs_bang("shutdown", "power off") end,
   ["shutdown!"] = function() hl.dispatch(hl.dsp.exec_cmd("systemctl poweroff")) end,
