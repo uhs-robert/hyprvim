@@ -91,10 +91,10 @@
 
 ## Configuration
 
-| Command                   | Description             |
-| ------------------------- | ----------------------- |
-| `:set OPTION VALUE`       | Set any Hyprland option |
-| `:layout dwindle\|master` | Set the tiling layout   |
+| Command             | Description             |
+| ------------------- | ----------------------- |
+| `:set OPTION VALUE` | Set any Hyprland option |
+| `:layout NAME`      | Set the tiling layout   |
 
 ## System
 

@@ -265,7 +265,8 @@ local arg_commands = {
     hl.config(target)
   end,
   layout         = function(a)
-    if not one_of(a, { "dwindle", "master" }) then return reject("layout", "dwindle or master") end
+    -- plugins and hl.layout.register add layouts, so any name may be valid
+    if not a:match("^%S+$") then return reject("layout", "a layout name, e.g. dwindle") end
     hl.config({ general = { layout = a } })
   end,
   group_move     = function(a)
@@ -400,7 +401,7 @@ local arg_descriptions = {
   zorder = "alter the window z-order <top|bottom>",
   help = "show the command reference at one entry <COMMAND>",
   set = "set any Hyprland option <OPTION VALUE>",
-  layout = "set the tiling layout <dwindle|master>",
+  layout = "set the tiling layout <NAME>",
   group_move = "move the window into a group in a direction <DIR>",
   group_window = "focus a window in the group by number <N>",
   workspace_monitor = "move this workspace to a monitor <NAME>",
@@ -529,7 +530,11 @@ local arg_specs = {
   swap   = { { values = { { "l", "left" }, { "r", "right" }, { "u", "up" }, { "d", "down" } } } },
   zorder = { { values = { { "top", "raise above other windows" }, { "bottom", "send behind other windows" } } } },
   set = { { hint = "option name, e.g. general:gaps_in", source = sources.options }, { hint = "value" } },
-  layout = { { values = { { "dwindle", "spiral tiling" }, { "master", "master and stack" } } } },
+  layout = { {
+    hint = "layout name; plugins add their own",
+    values = { { "dwindle", "spiral tiling" }, { "master", "master and stack" } },
+    source = [==[{ hyprctl layouts 2>/dev/null | grep -v 'unknown request'; hyprctl getoption general:layout | awk '/^str:/ { print $2 }'; } | awk 'NF && !seen[$1]++ && $1 != "dwindle" && $1 != "master" { printf "%s\tregistered layout\n", $1 }']==],
+  } },
   group_move = { { values = { { "l", "left" }, { "r", "right" }, { "u", "up" }, { "d", "down" } } } },
   group_window = { { hint = "window number in the group, counting from 1" } },
   workspace_monitor = { monitor_arg },
