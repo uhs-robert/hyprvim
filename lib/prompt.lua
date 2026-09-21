@@ -70,7 +70,12 @@ _hv_cycle() {
 local FZF_BLOCK = [==[
 _hv_insert() {
     local name="$1" flag
-    flag=$(awk -F'\t' -v n="$name" '{ sub(/ +$/, "", $1); if ($1 == n) { print $3; exit } }' "$_hv_entries")
+    # aliases are not rows of their own, so match the hidden alias column too
+    flag=$(awk -F'\t' -v n="$name" '
+        { sub(/ +$/, "", $1)
+          if ($1 == n) { print $3; exit }
+          split($4, alts, " ")
+          for (i in alts) if (alts[i] == n) { print $3; exit } }' "$_hv_entries")
     [ "$flag" = "1" ] && name="$name "
     READLINE_LINE="$name"
     READLINE_POINT="${#READLINE_LINE}"

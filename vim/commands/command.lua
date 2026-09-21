@@ -672,6 +672,14 @@ local function nearest(name)
   return best
 end
 
+---Report what an argument-taking command was given without an argument.
+---@param cmd string
+local function missing_args(cmd)
+  local canonical = arg_aliases[cmd] or cmd
+  local text, args = (arg_descriptions[canonical] or ""):match("^(.-) <(.+)>$")
+  reject(cmd, args and (args .. ", to " .. text) or "an argument")
+end
+
 ---Look up and run a command string against the dispatch tables and special prefixes.
 ---@param cmd string  raw input from the prompt (may have leading/trailing whitespace)
 ---@param restore fun()  re-enters the originating submap (passed to async commands)
@@ -681,6 +689,8 @@ local function execute(cmd, restore)
 
   local fn = commands[cmd]
   if fn then return fn(restore) end
+
+  if arg_commands[cmd] then return missing_args(cmd) end
 
   local name, args = cmd:match("^(%S+)%s+(.*)")
   if name then
@@ -712,6 +722,7 @@ local function execute(cmd, restore)
 
   local name = cmd:match("^%S+") or cmd
   local suggestion = nearest(name)
+  if suggestion == name then suggestion = nil end
   Hypr.notify(
     "unknown command: " .. name .. (suggestion and (", did you mean :" .. suggestion .. "?") or ""),
     "error",
