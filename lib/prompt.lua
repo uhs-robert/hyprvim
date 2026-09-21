@@ -86,9 +86,12 @@ _hv_tty_rows() {
 }
 _hv_grow() {
     _hv_w=''; _hv_h=''
-    eval "$(hyprctl activewindow | awk -F': ' '
-        /^[[:space:]]*at:/   { split($2, a, ","); printf "_hv_x=%s;_hv_y=%s;", a[1], a[2] }
-        /^[[:space:]]*size:/ { split($2, s, ","); printf "_hv_w=%s;_hv_h=%s;", s[1], s[2] }')"
+    # by class, not by focus: the bar can lose focus while the prompt is open
+    eval "$(hyprctl clients | awk -F': ' -v cls="$_hv_class" '
+        /^Window /              { x = ""; y = ""; w = ""; h = "" }
+        /^[[:space:]]*at:/      { split($2, a, ","); x = a[1]; y = a[2] }
+        /^[[:space:]]*size:/    { split($2, s, ","); w = s[1]; h = s[2] }
+        /^[[:space:]]*class:/   { if ($2 == cls && w != "") { printf "_hv_x=%s;_hv_y=%s;_hv_w=%s;_hv_h=%s;", x, y, w, h; exit } }')"
     [ -n "$_hv_w" ] && [ -n "$_hv_h" ] || return 1
     local before rows tries=0
     before=$(_hv_tty_rows)
