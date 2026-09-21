@@ -487,7 +487,9 @@ require("hyprvim").setup({
     },
   },
 })
-``` Install [fzf](https://github.com/junegunn/fzf) to get a searchable completion menu in the command bar instead of plain cycling.
+```
+
+Install [fzf](https://github.com/junegunn/fzf) to get a searchable completion menu in the command bar instead of plain cycling.
 
 ### Other Extensions
 
