@@ -141,7 +141,8 @@
 
 ## Prompt
 
-| Command  | Description                                                                                     |
-| -------- | ----------------------------------------------------------------------------------------------- |
-| `Tab`    | Complete; with fzf installed this opens a searchable menu, and a second Tab completes arguments |
-| `Escape` | Dismiss the command bar without running anything                                                |
+| Command  | Description                                                                                           |
+| -------- | ----------------------------------------------------------------------------------------------------- |
+| `Tab`    | Complete; with fzf installed this opens a searchable menu, and a second Tab completes arguments       |
+| `Escape` | Dismiss the command bar without running anything                                                      |
+| `a \| b` | Run commands in order, stopping at the first that fails; a backslash before the pipe makes it literal |
