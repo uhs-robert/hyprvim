@@ -91,10 +91,11 @@
 
 ## Configuration
 
-| Command             | Description             |
-| ------------------- | ----------------------- |
-| `:set OPTION VALUE` | Set any Hyprland option |
-| `:layout NAME`      | Set the tiling layout   |
+| Command                 | Description                         |
+| ----------------------- | ----------------------------------- |
+| `:set OPTION VALUE`     | Set any Hyprland option             |
+| `:layout NAME`          | Set the tiling layout               |
+| `:layoutmsg MSG [ARGS]` | Send a message to the active layout |
 
 ## System
 

@@ -290,6 +290,10 @@ local arg_commands = {
     hl.dispatch(hl.dsp.workspace.swap_monitors({ monitor1 = one, monitor2 = two }))
   end,
   help           = function(a, restore) return show_help(restore, a) end,
+  layoutmsg      = function(a)
+    if a == "" then return reject("layoutmsg", "a layout message, e.g. togglesplit") end
+    hl.dispatch(hl.dsp.layout(a))
+  end,
   zorder         = function(a)
     if not one_of(a, { "top", "bottom" }) then return reject("zorder", "top or bottom") end
     hl.dispatch(hl.dsp.window.alter_zorder({ mode = a }))
@@ -402,6 +406,7 @@ local arg_descriptions = {
   help = "show the command reference at one entry <COMMAND>",
   set = "set any Hyprland option <OPTION VALUE>",
   layout = "set the tiling layout <NAME>",
+  layoutmsg = "send a message to the active layout <MSG [ARGS]>",
   group_move = "move the window into a group in a direction <DIR>",
   group_window = "focus a window in the group by number <N>",
   workspace_monitor = "move this workspace to a monitor <NAME>",
@@ -532,10 +537,48 @@ local arg_specs = {
   set = { { hint = "option name, e.g. general:gaps_in", source = sources.options }, { hint = "value" } },
   layout = { {
     hint = "layout name; plugins add their own",
-    values = { { "dwindle", "spiral tiling" }, { "master", "master and stack" } },
-    source = [==[{ hyprctl layouts 2>/dev/null | grep -v 'unknown request'; hyprctl getoption general:layout | awk '/^str:/ { print $2 }'; } | awk 'NF && !seen[$1]++ && $1 != "dwindle" && $1 != "master" { printf "%s\tregistered layout\n", $1 }']==],
+    values = {
+      { "dwindle", "spiral tiling" },
+      { "master", "master and stack" },
+      { "scrolling", "windows on an infinite tape" },
+      { "monocle", "one window fills the workspace" },
+    },
+    source = [==[{ hyprctl layouts 2>/dev/null | grep -v 'unknown request'; hyprctl getoption general:layout | awk '/^str:/ { print $2 }'; } | awk 'NF && !seen[$1]++ && $1 !~ /^(dwindle|master|scrolling|monocle)$/ { printf "%s\tregistered layout\n", $1 }']==],
   } },
   group_move = { { values = { { "l", "left" }, { "r", "right" }, { "u", "up" }, { "d", "down" } } } },
+  -- every layout answers a different set; the description says which one takes it
+  layoutmsg = { {
+    hint = "layout message",
+    values = {
+      { "togglesplit", "dwindle: toggle the split direction" },
+      { "swapsplit", "dwindle: swap the two halves of the split" },
+      { "rotatesplit", "dwindle: rotate the split" },
+      { "splitratio", "dwindle: change the split ratio" },
+      { "movetoroot", "dwindle: move to the root of the workspace tree" },
+      { "preselect", "dwindle: override the next split direction" },
+      { "swapwithmaster", "master: swap the window with the master" },
+      { "focusmaster", "master: focus the master window" },
+      { "addmaster", "master: add a master" },
+      { "removemaster", "master: remove a master" },
+      { "mfact", "master: change the master split ratio" },
+      { "orientationnext", "master: cycle the orientation" },
+      { "orientationcenter", "master: master in the centre" },
+      { "rollnext", "master: roll the next window into master" },
+      { "cyclenext", "master, monocle: focus the next window" },
+      { "cycleprev", "master, monocle: focus the previous window" },
+      { "center", "scrolling: centre the focused column" },
+      { "colresize", "scrolling: resize the column, e.g. +0.2 or +conf" },
+      { "consume", "scrolling: take the window into the previous column" },
+      { "expel", "scrolling: move the window to its own column" },
+      { "promote", "scrolling: move the window to a new column ahead" },
+      { "fit", "scrolling: fit active, visible, all, toend, tobeg or expand" },
+      { "fit_into_view", "scrolling: fit the active column into view" },
+      { "focus", "scrolling: move focus and centre, wrapping at the ends" },
+      { "move", "scrolling: scroll by pixels (+200) or columns (+col)" },
+      { "swapcol", "scrolling: swap the column with l or r" },
+      { "inhibit_scroll", "scrolling: freeze the view for this workspace" },
+    },
+  } },
   group_window = { { hint = "window number in the group, counting from 1" } },
   workspace_monitor = { monitor_arg },
   workspace_swap = { monitor_arg, monitor_arg },
@@ -590,7 +633,7 @@ local help_groups = {
   { "Window Resize",     { "resize_width", "resize_height", "size" } },
   { "Window Properties", { "opacity", "opacity_active", "opacity_inactive", "opacity_fullscreen", "dim", "prop" } },
   { "Workspace",         { "rename", "gaps", "workspace_monitor", "workspace_swap" } },
-  { "Configuration",     { "set", "layout" } },
+  { "Configuration",     { "set", "layout", "layoutmsg" } },
   { "System",            { "reload", "lock", "update", "logout", "reboot", "shutdown", "picker" } },
   { "Apps",              { "edit", "terminal", "help", "marks" } },
 }
