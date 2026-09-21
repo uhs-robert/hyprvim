@@ -338,7 +338,9 @@ for _, table_ in ipairs({ aliases, arg_aliases }) do
     list[#list + 1] = alias
   end
 end
-for _, list in pairs(alias_names) do table.sort(list) end
+for _, list in pairs(alias_names) do
+  table.sort(list)
+end
 
 ---@type PromptCompletion[]
 local COMPLETIONS = {}
@@ -366,9 +368,7 @@ for name in pairs(commands) do
   if not aliases[name] then add(name, descriptions[name] or user_descriptions[name] or "user command") end
 end
 for name in pairs(arg_commands) do
-  if not arg_aliases[name] then
-    add(name, arg_descriptions[name] or user_descriptions[name] or "user command", true)
-  end
+  if not arg_aliases[name] then add(name, arg_descriptions[name] or user_descriptions[name] or "user command", true) end
 end
 table.sort(COMPLETIONS, function(a, b) return a.name < b.name end)
 
@@ -380,7 +380,6 @@ for _, source in ipairs({ commands, arg_commands }) do
   end
 end
 table.sort(KNOWN_NAMES)
-
 
 ---Shell one-liners that list live Hyprland objects as "value<TAB>description" pairs.
 local sources = {
@@ -469,7 +468,9 @@ local arg_specs = {
 }
 -- stylua: ignore end
 
-for name, spec in pairs(user_arg_specs) do arg_specs[name] = spec end
+for name, spec in pairs(user_arg_specs) do
+  arg_specs[name] = spec
+end
 
 -- aliases complete their arguments the same way the canonical name does
 for alias, canonical in pairs(arg_aliases) do
@@ -616,9 +617,7 @@ function Command.render_help()
         local desc, args = split_args(with_args)
         rows[#rows + 1] = row(name, args, desc, (not plain) and entry and entry.aliases or nil)
       end
-      if not plain and not with_args and entry then
-        rows[#rows + 1] = row(name, "", entry.base_desc, entry.aliases)
-      end
+      if not plain and not with_args and entry then rows[#rows + 1] = row(name, "", entry.base_desc, entry.aliases) end
     end
     if #rows > 0 then
       out[#out + 1] = "## " .. group[1]
