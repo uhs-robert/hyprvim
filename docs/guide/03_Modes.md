@@ -118,7 +118,7 @@ Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, 
 
 | Command            | Description                                       |
 | ------------------ | ------------------------------------------------- |
-| `:opacity <value>` | Set window opacity 0.0-1.0 (e.g., `:opacity 0.8`) |
+| `:opacity <value>` | Set window opacity 0.0-1.0 (e.g., `:opacity 0.8`), or adjust it with `:opacity +0.1` |
 
 ### App Launching
 
@@ -146,6 +146,8 @@ Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, 
 :ws 3           - Switch to workspace 3
 :move_workspace 5 - Move current window to workspace 5
 :opacity 0.7    - Set window to 70% opacity
+:opacity -0.1   - Make the window 10% more transparent
+:opacity 0.8 address:0x1234 - Set another window's opacity without focusing it
 :reload         - Reload Hyprland configuration
 ```
 

@@ -72,25 +72,26 @@
 
 ## Window Properties
 
-| Command                       | Description                                            |
-| ----------------------------- | ------------------------------------------------------ |
-| `:opacity A [I] [F] \| reset` | Set window opacity                                     |
-| `:opacity_active V`           | Set active opacity _(alias: `active_opacity`)_         |
-| `:opacity_inactive V`         | Set inactive opacity _(alias: `inactive_opacity`)_     |
-| `:opacity_fullscreen V`       | Set fullscreen opacity _(alias: `fullscreen_opacity`)_ |
-| `:dim`                        | Toggle window dimming                                  |
-| `:dim on\|off`                | Set window dimming                                     |
-| `:prop PROP VALUE`            | Set a window property                                  |
-| `:tag NAME`                   | Tag the window; +name adds, -name removes              |
-| `:untag`                      | Clear every tag from the window                        |
-| `:swallow`                    | Toggle swallowed windows visible                       |
+| Command                                | Description                                                         |
+| -------------------------------------- | ------------------------------------------------------------------- |
+| `:opacity A [I] [F] \| reset [WINDOW]` | Set window opacity; +/- adjusts                                     |
+| `:opacity_active V [WINDOW]`           | Set active opacity; +/- adjusts _(alias: `active_opacity`)_         |
+| `:opacity_inactive V [WINDOW]`         | Set inactive opacity; +/- adjusts _(alias: `inactive_opacity`)_     |
+| `:opacity_fullscreen V [WINDOW]`       | Set fullscreen opacity; +/- adjusts _(alias: `fullscreen_opacity`)_ |
+| `:dim`                                 | Toggle window dimming                                               |
+| `:dim on\|off [WINDOW]`                | Set window dimming                                                  |
+| `:prop PROP VALUE [WINDOW]`            | Set a window property                                               |
+| `:tag NAME [WINDOW]`                   | Tag the window; +name adds, -name removes                           |
+| `:untag`                               | Clear every tag from the window                                     |
+| `:untag WINDOW`                        | Clear every tag from another window                                 |
+| `:swallow`                             | Toggle swallowed windows visible                                    |
 
 ## Workspace
 
 | Command                     | Description                         |
 | --------------------------- | ----------------------------------- |
 | `:rename NAME`              | Rename the current workspace        |
-| `:gaps N`                   | Set gaps in and out                 |
+| `:gaps N`                   | Set gaps in and out; +/- adjusts    |
 | `:workspace_monitor NAME`   | Move this workspace to a monitor    |
 | `:workspace_swap NAME NAME` | Swap the workspaces of two monitors |
 

@@ -103,45 +103,59 @@ function Hyprland.toggle_pseudo() hl.dispatch(hl.dsp.window.pseudo()) end
 --- Center the active floating window.
 function Hyprland.center_window() hl.dispatch(hl.dsp.window.center()) end
 
+---Set one window property, on `window` when given and the focused window otherwise.
+---@param prop string
+---@param value string|number
+---@param window string|nil  window selector, e.g. "address:0x1234"
+local function set_prop(prop, value, window)
+  hl.dispatch(hl.dsp.window.set_prop({ prop = prop, value = tostring(value), window = window }))
+end
+
 --- @param active number active opacity 0.0–1.0
 --- @param inactive number|nil inactive opacity; omit to leave unchanged
 --- @param fullscreen number|nil fullscreen opacity; omit to leave unchanged
-function Hyprland.set_opacity(active, inactive, fullscreen)
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity", value = tostring(active) }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_override", value = "1" }))
+--- @param window string|nil window selector; omit for the focused window
+function Hyprland.set_opacity(active, inactive, fullscreen, window)
+  set_prop("opacity", active, window)
+  set_prop("opacity_override", 1, window)
   if inactive then
-    hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_inactive", value = tostring(inactive) }))
-    hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_inactive_override", value = "1" }))
+    set_prop("opacity_inactive", inactive, window)
+    set_prop("opacity_inactive_override", 1, window)
   end
   if fullscreen then
-    hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_fullscreen", value = tostring(fullscreen) }))
-    hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_fullscreen_override", value = "1" }))
+    set_prop("opacity_fullscreen", fullscreen, window)
+    set_prop("opacity_fullscreen_override", 1, window)
   end
 end
 
-function Hyprland.set_active_opacity(v)
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity", value = tostring(v) }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_override", value = "1" }))
+--- @param v number
+--- @param window string|nil
+function Hyprland.set_active_opacity(v, window)
+  set_prop("opacity", v, window)
+  set_prop("opacity_override", 1, window)
 end
 
-function Hyprland.set_inactive_opacity(v)
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_inactive", value = tostring(v) }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_inactive_override", value = "1" }))
+--- @param v number
+--- @param window string|nil
+function Hyprland.set_inactive_opacity(v, window)
+  set_prop("opacity_inactive", v, window)
+  set_prop("opacity_inactive_override", 1, window)
 end
 
-function Hyprland.set_fullscreen_opacity(v)
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_fullscreen", value = tostring(v) }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_fullscreen_override", value = "1" }))
+--- @param v number
+--- @param window string|nil
+function Hyprland.set_fullscreen_opacity(v, window)
+  set_prop("opacity_fullscreen", v, window)
+  set_prop("opacity_fullscreen_override", 1, window)
 end
 
 --- Reset opacity to window-rule defaults (removes any setprop override).
-function Hyprland.reset_opacity()
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity", value = "1" }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_override", value = "0" }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_inactive", value = "1" }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_inactive_override", value = "0" }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_fullscreen", value = "1" }))
-  hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity_fullscreen_override", value = "0" }))
+--- @param window string|nil
+function Hyprland.reset_opacity(window)
+  for _, prop in ipairs({ "opacity", "opacity_inactive", "opacity_fullscreen" }) do
+    set_prop(prop, 1, window)
+    set_prop(prop .. "_override", 0, window)
+  end
 end
 
 local _nodim = {} -- address -> bool, tracks no_dim state per window
