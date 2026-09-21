@@ -705,7 +705,10 @@ local arg_specs = {
   fullscreen = { { values = { { "fullscreen", "true fullscreen" }, { "maximized", "maximize within gaps" } } } },
   swap   = { { values = { { "l", "left" }, { "r", "right" }, { "u", "up" }, { "d", "down" } } } },
   zorder = { { values = { { "top", "raise above other windows" }, { "bottom", "send behind other windows" } } } },
-  set = { { hint = "option name, e.g. general:gaps_in", source = sources.options }, { hint = "value" } },
+  set = {
+    { hint = "option name, e.g. general:gaps_in", source = sources.options },
+    { hint = "value", source = 'set -- $HV_ARGS; ' .. sq(Config.install_dir .. "/scripts/hyprvim-option-values") .. ' "$1"' },
+  },
   layout = { {
     hint = "layout name; plugins add their own",
     values = {
@@ -851,6 +854,19 @@ arg_specs.submap = submap_spec()
 -- seeded unfiltered; `Command.prompt` narrows it to the layout in use
 arg_specs.layoutcmd = { { hint = "layout command", values = layout_command_values(nil) } }
 
+-- stylua: ignore start
+local HELP_INTRO = table.concat({
+  "Press `:` in NORMAL mode, type a command and press Enter. `Escape` dismisses the bar and `Up` recalls earlier commands.",
+  "",
+  "- **Tab completes.** With [fzf](https://github.com/junegunn/fzf) installed it opens a searchable menu of commands and what they do; search matches descriptions too, so `close` finds `:q` and `:only`. Without fzf, Tab cycles matches.",
+  "- **Arguments complete too.** Tab after a command offers its values: open windows and workspaces, monitors, layouts, the current value and range of any `:set` option.",
+  "- **Chain commands** with `|`: `:float on | center | opacity 0.9` runs all three and stops at the first that fails.",
+  "- **Adjust instead of set.** A leading `+` or `-` changes a value relatively: `:opacity -0.1`, `:gaps +2`.",
+  "- **Target any window.** A trailing selector acts on another window without focusing it: `:opacity 0.8 address:0x1234`.",
+  "- **Reach anything else** with `:set OPTION VALUE` for any Hyprland option and `:layoutcmd` for commands your layout provides.",
+}, "\n")
+-- stylua: ignore end
+
 ---Section order for the generated reference; names not listed fall into "Other".
 -- stylua: ignore start
 local help_groups = {
@@ -875,6 +891,7 @@ local help_extras = {
     { "Tab", "Complete; with fzf installed this opens a searchable menu, and a second Tab completes arguments" },
     { "Escape", "Dismiss the command bar without running anything" },
     { "a | b", "Run commands in order, stopping at the first that fails; a backslash before the pipe makes it literal" },
+    { "N", "Focus workspace N, e.g. :3" },
   } },
 }
 -- stylua: ignore end
@@ -985,7 +1002,7 @@ function Command.render_help()
     return { "`" .. command:gsub("|", "\\|") .. "`", text }
   end
 
-  local out = { "# HyprVim Command Reference (`:`)", "" }
+  local out = { "# HyprVim Command Reference (`:`)", "", HELP_INTRO, "" }
   for _, group in ipairs(sections) do
     local rows = {}
     for _, name in ipairs(group[2]) do
@@ -1074,6 +1091,9 @@ local function execute(cmd, restore)
   if fn then return fn(restore) end
 
   if arg_commands[cmd] then return missing_args(cmd) end
+
+  -- a bare number focuses that workspace, the way :42 jumps to a line in vim
+  if cmd:match("^%d+$") then return Hypr.focus_workspace(tonumber(cmd)) end
 
   local name, args = cmd:match("^(%S+)%s+(.*)")
   if name then

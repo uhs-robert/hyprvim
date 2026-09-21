@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Candidates for the value of one Hyprland option, as "value<TAB>description" lines.
+# getoption gives the current value; descriptions gives default, limits and listed choices.
+
+opt="$1"
+[ -n "$opt" ] || exit 0
+
+current=$(hyprctl getoption "$opt" 2>/dev/null | head -n1)
+case "$current" in *:*) ;; *) exit 0 ;; esac
+type="${current%%:*}"
+value="${current#*: }"
+[ "$type" = float ] && value=$(printf '%s' "$value" | sed -E 's/(\.[0-9]*[1-9])0+$/\1/; s/\.0+$//')
+
+read -r default min max choices < <(hyprctl descriptions 2>/dev/null | awk -v want="\"$opt\"" '
+  $1 == "\"name\":" { hit = ($2 == want ",") }
+  hit && $1 == "\"description\":" { if (match($0, /\[[^]]*\/[^]]*\]/)) choices = substr($0, RSTART + 1, RLENGTH - 2) }
+  hit && $1 == "\"default\":"     { d = $2; sub(/,$/, "", d); gsub(/"/, "", d) }
+  hit && $1 == "\"min\":"         { mn = $2; sub(/,$/, "", mn) }
+  hit && $1 == "\"max\":"         { mx = $2; sub(/,$/, "", mx) }
+  hit && /^    }/                 { printf "%s %s %s %s\n", (d == "" ? "-" : d), (mn == "" ? "null" : mn), (mx == "" ? "null" : mx), (choices == "" ? "-" : choices); exit }')
+
+case "$type" in
+  bool)
+    for v in true false; do
+      if [ "$v" = "$value" ]; then printf '%s\tcurrent\n' "$v"; else printf '%s\t\n' "$v"; fi
+    done
+    ;;
+  int | float)
+    printf '%s\tcurrent\n' "$value"
+    [ -n "$default" ] && [ "$default" != "-" ] && [ "$default" != "$value" ] && printf '%s\tdefault\n' "$default"
+    [ -n "$min" ] && [ "$min" != null ] && [ -n "$max" ] && [ "$max" != null ] && printf '\trange %s to %s\n' "$min" "$max"
+    ;;
+  str)
+    if [ -n "$choices" ] && [ "$choices" != "-" ]; then
+      printf '%s\n' "$choices" | tr '/' '\n' | grep -v '<' | while read -r c; do
+        if [ "$c" = "$value" ]; then printf '%s\tcurrent\n' "$c"; else printf '%s\t\n' "$c"; fi
+      done
+    else
+      printf '%s\tcurrent\n' "$value"
+    fi
+    ;;
+  *)
+    printf '\tcurrent %s: %s\n' "$type" "$value"
+    ;;
+esac

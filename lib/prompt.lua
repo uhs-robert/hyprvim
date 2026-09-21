@@ -22,7 +22,8 @@ local sq = Utils.sh_escape
 
 --- One argument position of a command. `values` are fixed candidates, `source` is a
 --- shell command printing "value<TAB>description" lines, `hint` describes a free-form value.
---- A source may add a third field, which is inserted instead of the displayed first field.
+--- A source may add a third field, which is inserted instead of the displayed first field,
+--- and sees the arguments typed before its position in $HV_ARGS.
 --- @class PromptArgSpec
 --- @field hint string?
 --- @field values { [1]: string, [2]: string? }[]?
@@ -67,6 +68,7 @@ _hv_known_entry() {
     [ -n "$_hv_words" ] || return 0
     case "$1" in !*|s/*|%s/*) return 0;; esac
     first="${1%% *}"
+    case "$first" in "" | *[!0-9]*) ;; *) return 0 ;; esac
     for w in $_hv_words; do [ "$w" = "$first" ] && return 0; done
     return 1
 }
@@ -184,7 +186,7 @@ _hv_arg_candidates() {
         case "$k" in
             v) printf '%s\t%s\n' "$payload" "$desc" ;;
             h) printf '\t%s\n' "$desc" ;;
-            s) bash -c "$payload" 2>/dev/null ;;
+            s) HV_ARGS="$_hv_prev_args" bash -c "$payload" 2>/dev/null ;;
         esac
     done < "$_hv_args"
 }
@@ -261,6 +263,8 @@ _hv_menu_segment() {
             pos=${#matches[@]}
             cur="${matches[$((pos - 1))]}"
         fi
+        # the arguments before this one, so a source can depend on them
+        _hv_prev_args="${matches[*]:0:$((pos - 1))}"
         _hv_arg_menu "$cmd" "$pos" "$cur"
         return
     fi
