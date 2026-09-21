@@ -41,6 +41,9 @@ local function show_help(restore)
   return true
 end
 
+---Commands whose bare form only warns; the bang is what runs, so only it is offered.
+local bang_only = { logout = true, shutdown = true, reboot = true }
+
 ---Commands that end the session ask for the bang, the way `:q!` does, because the
 ---completion menu puts them one keystroke apart.
 ---@param name string
@@ -297,12 +300,9 @@ local descriptions = {
   reload = "reload hyprland config",
   update = "update hyprvim",
   lock = "lock the session",
-  logout = "log out of the session (asks for the bang)",
-  ["logout!"] = "log out of the session",
-  shutdown = "power off (asks for the bang)",
-  ["shutdown!"] = "power off",
-  reboot = "restart the machine (asks for the bang)",
-  ["reboot!"] = "restart the machine",
+  ["logout!"] = "log out of the session; plain :logout only warns",
+  ["shutdown!"] = "power off; plain :shutdown only warns",
+  ["reboot!"] = "restart the machine; plain :reboot only warns",
   picker = "pick a color to the clipboard",
   edit = "open the editor in a terminal",
   terminal = "open a terminal",
@@ -374,7 +374,9 @@ local function add(name, desc, takes_args)
 end
 
 for name in pairs(commands) do
-  if not aliases[name] then add(name, descriptions[name] or user_descriptions[name] or "user command") end
+  if not aliases[name] and not bang_only[name] then
+    add(name, descriptions[name] or user_descriptions[name] or "user command")
+  end
 end
 for name in pairs(arg_commands) do
   if not arg_aliases[name] then add(name, arg_descriptions[name] or user_descriptions[name] or "user command", true) end
@@ -497,7 +499,7 @@ local help_groups = {
   { "Window Resize",     { "resize_width", "resize_height", "size" } },
   { "Window Properties", { "opacity", "opacity_active", "opacity_inactive", "opacity_fullscreen", "dim", "prop" } },
   { "Workspace",         { "rename", "gaps" } },
-  { "System",            { "reload", "lock", "update", "logout", "logout!", "reboot", "reboot!", "shutdown", "shutdown!", "picker" } },
+  { "System",            { "reload", "lock", "update", "logout!", "reboot!", "shutdown!", "picker" } },
   { "Apps",              { "edit", "terminal", "help" } },
 }
 
@@ -553,7 +555,12 @@ function Command.lint()
     end
   end
   for name in pairs(commands) do
-    if not aliases[name] and not descriptions[name] and not user_names[name] then report(name .. ": no description") end
+    if not aliases[name] and not bang_only[name] and not descriptions[name] and not user_names[name] then
+      report(name .. ": no description")
+    end
+  end
+  for name in pairs(bang_only) do
+    if not commands[name .. "!"] then report(name .. ": warns about a bang form that does not exist") end
   end
   for name in pairs(arg_commands) do
     if not arg_aliases[name] and not arg_descriptions[name] and not user_names[name] then
