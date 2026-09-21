@@ -33,6 +33,8 @@
 | Command            | Description                                          |
 | ------------------ | ---------------------------------------------------- |
 | `:window SELECTOR` | Focus a window by selector _(alias: `focus`)_        |
+| `:next`            | Focus the next window                                |
+| `:prev`            | Focus the previous window                            |
 | `:workspace N`     | Focus a workspace _(alias: `ws`)_                    |
 | `:workspace_next`  | Focus the next workspace _(alias: `tabn`, `tn`)_     |
 | `:workspace_prev`  | Focus the previous workspace _(alias: `tabp`, `tp`)_ |
@@ -79,6 +81,9 @@
 | `:dim`                        | Toggle window dimming                                  |
 | `:dim on\|off`                | Set window dimming                                     |
 | `:prop PROP VALUE`            | Set a window property                                  |
+| `:tag NAME`                   | Tag the window; +name adds, -name removes              |
+| `:untag`                      | Clear every tag from the window                        |
+| `:swallow`                    | Toggle swallowed windows visible                       |
 
 ## Workspace
 
@@ -99,15 +104,17 @@
 
 ## System
 
-| Command     | Description                                                   |
-| ----------- | ------------------------------------------------------------- |
-| `:reload`   | Reload hyprland config _(alias: `r`)_                         |
-| `:lock`     | Lock the session                                              |
-| `:update`   | Update hyprvim                                                |
-| `:logout`   | Log out of the session, after confirming                      |
-| `:reboot`   | Restart the machine, after confirming _(alias: `restart`)_    |
-| `:shutdown` | Power off, after confirming _(alias: `poweroff`)_             |
-| `:picker`   | Pick a color to the clipboard _(alias: `hyprpicker`, `pick`)_ |
+| Command            | Description                                                   |
+| ------------------ | ------------------------------------------------------------- |
+| `:reload`          | Reload hyprland config _(alias: `r`)_                         |
+| `:renderer_reload` | Reload the renderer, e.g. after a monitor change              |
+| `:submap MODE`     | Switch to a HyprVim mode                                      |
+| `:lock`            | Lock the session                                              |
+| `:update`          | Update hyprvim                                                |
+| `:logout`          | Log out of the session, after confirming                      |
+| `:reboot`          | Restart the machine, after confirming _(alias: `restart`)_    |
+| `:shutdown`        | Power off, after confirming _(alias: `poweroff`)_             |
+| `:picker`          | Pick a color to the clipboard _(alias: `hyprpicker`, `pick`)_ |
 
 ## Apps
 
