@@ -45,9 +45,7 @@ end
 ---completion menu puts them one keystroke apart.
 ---@param name string
 ---@param what string
-local function needs_bang(name, what)
-  Hypr.notify("run :" .. name .. "! to " .. what, "warning", 4000)
-end
+local function needs_bang(name, what) Hypr.notify("run :" .. name .. "! to " .. what, "warning", 4000) end
 
 ---Exact-match dispatch table: command string -> handler(restore).
 ---@type table<string, fun(restore: fun()): true?>
