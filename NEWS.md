@@ -1,5 +1,52 @@
 # HyprVim Release Notes
 
+## [v4.0.0](https://github.com/uhs-robert/hyprvim/releases/tag/v4.0.0) - 2026-09-21
+
+### Breaking Changes
+
+**`:move` is pixels only.** `:move X Y` nudges the window; send it to a workspace with `:move_workspace N` (was `:move N`). `:move 5` now says what it expected instead of guessing.
+
+**Removed commands.** `:term` is now `:terminal` (or `:t`), `:tab N` is `:workspace N` (or `:ws N`), and `:exit` is gone since `Escape` dismisses the bar.
+
+**Session commands ask first.** `:shutdown`, `:reboot` and `:logout` confirm with `y/N` in the bar. Add a bang, e.g. `:shutdown!`, to skip the question.
+
+**Renamed, old names still work.** Commands now read as families, and every previous name below resolves as an alias:
+
+| Now | Was |
+| --- | --- |
+| `:window` | `:focus` |
+| `:move_workspace`, `:move_workspace!` | `:move_to_workspace`, `:move!` |
+| `:move_monitor`, `:move_special` | `:send_monitor`, `:send_special` |
+| `:workspace_next`, `:workspace_prev` | `:tabn`, `:tabp` |
+| `:resize_width`, `:resize_height`, `:size` | `:resize`, `:vresize`, `:resize_exact` |
+| `:opacity_active`, `:opacity_inactive`, `:opacity_fullscreen` | `:active_opacity`, `:inactive_opacity`, `:fullscreen_opacity` |
+| `:edit` | `:e` |
+
+### New Features
+
+- **Tab completion.** With [fzf](https://github.com/junegunn/fzf) installed, `Tab` opens a searchable menu of every command and what it does; search matches descriptions too, so `close` finds `:q` and `:only`. A second `Tab` completes arguments: open windows by class and title, workspaces, monitors, layouts, and for `:set` every Hyprland option plus its current value, default and range. Without fzf, `Tab` cycles matches as before.
+- **History.** `Up` recalls earlier commands, kept per prompt under `$XDG_STATE_HOME/hyprvim/history` with private permissions. Typos are not recorded.
+- **Chaining.** `:float on | center | opacity 0.9` runs several commands in order and stops at the first that fails.
+- **Relative values.** `:opacity -0.1`, `:opacity_active +0.05` and `:gaps +2` adjust from the current value.
+- **Target any window.** A trailing selector acts on another window without focusing it: `:opacity 0.8 address:0x1234`, `:tag +work class:firefox`.
+- **Any Hyprland option.** `:set OPTION VALUE` reaches every setting, and `:layout` switches between dwindle, master, scrolling and monocle.
+- **Layout commands.** `:layoutcmd` runs the commands your layout provides, listing only the ones the active layout answers.
+- **New commands.** Groups (`:group`, `:group_next`, `:group_prev`, `:group_window N`, `:group_move`, `:group_lock`), `:next` and `:prev`, `:workspace_monitor`, `:workspace_swap`, `:tag`, `:untag`, `:swallow`, `:renderer_reload`, `:submap` (your own submaps included), `:marks`, `:reboot`, `:help COMMAND`, and `:3` to focus workspace 3.
+- **Clearer errors.** Commands check their arguments and say what they expected, and an unknown command suggests the nearest one.
+- **Richer user commands.** `commands` entries in `setup()` can be a table with a description and argument completions, so your own commands sit in the menu alongside the built-in ones.
+- **Nix support.** A flake and Home Manager module, thanks to [@Battguy](https://github.com/Battguy) in [#7](https://github.com/uhs-robert/hyprvim/pull/7).
+
+New options under `prompt`: `completion_menu`, `completion_height`, `history` and `history_size`.
+
+### Bug Fixes
+
+- **Prompt bar restores its size** when another window takes focus while the completion menu is open.
+- **`:reload` and `:logout!` no longer block the compositor.** Both shelled out synchronously on Hyprland's thread.
+
+### Internal
+
+- `docs/command-help.md` and `:help` are generated from the command tables, and `scripts/check-commands` keeps them consistent, so the reference can no longer drift from what the commands do.
+
 ## [v3.0.0](https://github.com/uhs-robert/hyprvim/releases/tag/v3.0.0) - 2026-09-17
 
 ### Breaking Changes
