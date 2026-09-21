@@ -1,5 +1,14 @@
 # HyprVim Command Reference (`:`)
 
+Press `:` in NORMAL mode, type a command and press Enter. `Escape` dismisses the bar and `Up` recalls earlier commands.
+
+- **Tab completes.** With [fzf](https://github.com/junegunn/fzf) installed it opens a searchable menu of commands and what they do; search matches descriptions too, so `close` finds `:q` and `:only`. Without fzf, Tab cycles matches.
+- **Arguments complete too.** Tab after a command offers its values: open windows and workspaces, monitors, layouts, the current value and range of any `:set` option.
+- **Chain commands** with `|`: `:float on | center | opacity 0.9` runs all three and stops at the first that fails.
+- **Adjust instead of set.** A leading `+` or `-` changes a value relatively: `:opacity -0.1`, `:gaps +2`.
+- **Target any window.** A trailing selector acts on another window without focusing it: `:opacity 0.8 address:0x1234`.
+- **Reach anything else** with `:set OPTION VALUE` for any Hyprland option and `:layoutcmd` for commands your layout provides.
+
 ## File / Window
 
 | Command | Description                                                  |
@@ -146,3 +155,4 @@
 | `Tab`    | Complete; with fzf installed this opens a searchable menu, and a second Tab completes arguments       |
 | `Escape` | Dismiss the command bar without running anything                                                      |
 | `a \| b` | Run commands in order, stopping at the first that fails; a backslash before the pipe makes it literal |
+| `N`      | Focus workspace N, e.g. :3                                                                            |
