@@ -290,8 +290,8 @@ local arg_commands = {
     hl.dispatch(hl.dsp.workspace.swap_monitors({ monitor1 = one, monitor2 = two }))
   end,
   help           = function(a, restore) return show_help(restore, a) end,
-  layoutmsg      = function(a)
-    if a == "" then return reject("layoutmsg", "a layout message, e.g. togglesplit") end
+  layoutcmd      = function(a)
+    if a == "" then return reject("layoutcmd", "a layout command, e.g. togglesplit") end
     hl.dispatch(hl.dsp.layout(a))
   end,
   zorder         = function(a)
@@ -312,6 +312,7 @@ local arg_aliases = {
   vresize = "resize_height",
   resize_exact = "size",
   mon = "monitor",
+  layoutmsg = "layoutcmd",
   active_opacity = "opacity_active",
   inactive_opacity = "opacity_inactive",
   fullscreen_opacity = "opacity_fullscreen",
@@ -406,7 +407,7 @@ local arg_descriptions = {
   help = "show the command reference at one entry <COMMAND>",
   set = "set any Hyprland option <OPTION VALUE>",
   layout = "set the tiling layout <NAME>",
-  layoutmsg = "send a message to the active layout <MSG [ARGS]>",
+  layoutcmd = "run a command the active layout provides <CMD [ARGS]>",
   group_move = "move the window into a group in a direction <DIR>",
   group_window = "focus a window in the group by number <N>",
   workspace_monitor = "move this workspace to a monitor <NAME>",
@@ -589,9 +590,9 @@ for alias, canonical in pairs(arg_aliases) do
 end
 
 
----Layout messages for `hl.dsp.layout()`, tagged with the layouts that answer them.
+---Commands `hl.dsp.layout()` takes, tagged with the layouts that provide them.
 -- stylua: ignore start
-local layout_messages = {
+local layout_commands = {
   { "preselect",       "override the next split direction",            { "dwindle" } },
   { "togglesplit",     "toggle the split direction",                   { "dwindle" } },
   { "swapsplit",       "swap the two halves of the split",             { "dwindle" } },
@@ -626,25 +627,25 @@ local layout_messages = {
 }
 -- stylua: ignore end
 
----Candidates for `:layoutmsg`, narrowed to the layout in use.
+---Candidates for `:layoutcmd`, narrowed to the layout in use.
 ---@param active string|nil
 ---@return { [1]: string, [2]: string }[]
-local function layout_message_values(active)
+local function layout_command_values(active)
   local values = {}
-  for _, msg in ipairs(layout_messages) do
-    for _, layout in ipairs(msg[3]) do
-      if layout == active then values[#values + 1] = { msg[1], msg[2] } end
+  for _, cmd in ipairs(layout_commands) do
+    for _, layout in ipairs(cmd[3]) do
+      if layout == active then values[#values + 1] = { cmd[1], cmd[2] } end
     end
   end
   if #values > 0 then return values end
-  for _, msg in ipairs(layout_messages) do
-    values[#values + 1] = { msg[1], msg[2] .. " (" .. table.concat(msg[3], ", ") .. ")" }
+  for _, cmd in ipairs(layout_commands) do
+    values[#values + 1] = { cmd[1], cmd[2] .. " (" .. table.concat(cmd[3], ", ") .. ")" }
   end
   return values
 end
 
 -- seeded unfiltered; `Command.prompt` narrows it to the layout in use
-arg_specs.layoutmsg = { { hint = "layout message", values = layout_message_values(nil) } }
+arg_specs.layoutcmd = { { hint = "layout command", values = layout_command_values(nil) } }
 
 ---Section order for the generated reference; names not listed fall into "Other".
 -- stylua: ignore start
@@ -657,7 +658,7 @@ local help_groups = {
   { "Window Resize",     { "resize_width", "resize_height", "size" } },
   { "Window Properties", { "opacity", "opacity_active", "opacity_inactive", "opacity_fullscreen", "dim", "prop" } },
   { "Workspace",         { "rename", "gaps", "workspace_monitor", "workspace_swap" } },
-  { "Configuration",     { "set", "layout", "layoutmsg" } },
+  { "Configuration",     { "set", "layout", "layoutcmd" } },
   { "System",            { "reload", "lock", "update", "logout", "reboot", "shutdown", "picker" } },
   { "Apps",              { "edit", "terminal", "help", "marks" } },
 }
@@ -916,9 +917,11 @@ function Command.prompt()
   hl.timer(function()
     -- the layout can change between prompts, so its messages are collected here
     local ok, active = pcall(hl.get_config, "general:layout")
-    arg_specs.layoutmsg = {
-      { hint = "layout message", values = layout_message_values(ok and active or nil) },
-    }
+    local spec = { { hint = "layout command", values = layout_command_values(ok and active or nil) } }
+    arg_specs.layoutcmd = spec
+    for alias, canonical in pairs(arg_aliases) do
+      if canonical == "layoutcmd" then arg_specs[alias] = spec end
+    end
     local opts = { wm_class = "hyprvim-command", completions = COMPLETIONS, arg_completions = arg_specs }
     Prompt.async(":", opts, function(cmd)
       local function restore()
