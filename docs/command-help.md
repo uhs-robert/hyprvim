@@ -78,15 +78,15 @@
 
 ## System
 
-| Command      | Description                                                         |
-| ------------ | ------------------------------------------------------------------- |
-| `:reload`    | Reload hyprland config _(alias: `r`)_                               |
-| `:lock`      | Lock the session                                                    |
-| `:update`    | Update hyprvim                                                      |
-| `:logout!`   | Log out of the session; plain :logout only warns                    |
-| `:reboot!`   | Restart the machine; plain :reboot only warns _(alias: `restart!`)_ |
-| `:shutdown!` | Power off; plain :shutdown only warns _(alias: `poweroff!`)_        |
-| `:picker`    | Pick a color to the clipboard _(alias: `hyprpicker`, `pick`)_       |
+| Command     | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
+| `:reload`   | Reload hyprland config _(alias: `r`)_                         |
+| `:lock`     | Lock the session                                              |
+| `:update`   | Update hyprvim                                                |
+| `:logout`   | Log out of the session, after confirming                      |
+| `:reboot`   | Restart the machine, after confirming _(alias: `restart`)_    |
+| `:shutdown` | Power off, after confirming _(alias: `poweroff`)_             |
+| `:picker`   | Pick a color to the clipboard _(alias: `hyprpicker`, `pick`)_ |
 
 ## Apps
 
