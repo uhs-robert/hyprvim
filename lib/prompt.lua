@@ -355,7 +355,7 @@ end
 ---Build the terminal command that displays a prompt and writes input to state_file.
 ---Returns nil if the prompt script cannot be written.
 ---@param label      string    prompt label shown to the user
----@param opts       {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer}
+---@param opts       {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer, prelude?: string}
 ---@param state_file string    path where the result should land
 ---@return string|nil
 local function build_cmd(label, opts, state_file)
@@ -374,6 +374,7 @@ local function build_cmd(label, opts, state_file)
     "trap 'rm -f "
       .. cleanup
       .. "' EXIT\n"
+      .. (opts.prelude and ("( " .. opts.prelude .. " ) >/dev/null 2>&1 &\n") or "")
       .. comp_block
       .. ESC_BLOCK
       .. hist_block
@@ -395,7 +396,7 @@ end
 ---`callback` is called once with the entered string, or nil if cancelled or
 ---the prompt could not be created.
 ---@param label    string
----@param opts     {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer}
+---@param opts     {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer, prelude?: string}  prelude runs in the background as the bar opens
 ---@param callback fun(result: string|nil)
 function Prompt.async(label, opts, callback)
   local state_file = Utils.tmp_path("prompt-input")

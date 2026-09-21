@@ -108,7 +108,7 @@
 | ------------------ | ------------------------------------------------------------- |
 | `:reload`          | Reload hyprland config _(alias: `r`)_                         |
 | `:renderer_reload` | Reload the renderer, e.g. after a monitor change              |
-| `:submap MODE`     | Switch to a HyprVim mode                                      |
+| `:submap NAME`     | Switch to a HyprVim mode or one of your submaps               |
 | `:lock`            | Lock the session                                              |
 | `:update`          | Update hyprvim                                                |
 | `:logout`          | Log out of the session, after confirming                      |

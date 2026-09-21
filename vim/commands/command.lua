@@ -76,6 +76,25 @@ local function cycle(forward)
   end
 end
 
+---HyprVim submaps a person can sensibly enter; the rest are mid-keystroke states.
+local ENTERABLE_MODES = { NORMAL = true, INSERT = true, VISUAL = true, ["V-LINE"] = true }
+
+---Every submap Hyprland has binds for, written by the prompt shell as the bar opens.
+---Lua cannot ask hyprctl itself: it runs on the compositor thread and would deadlock.
+local SUBMAP_CACHE = Config.state_dir .. "/submaps"
+
+---@return table<string, true>
+local function known_submaps()
+  local names = {}
+  local f = io.open(SUBMAP_CACHE, "r")
+  if not f then return names end
+  for line in f:lines() do
+    if line ~= "" then names[line] = true end
+  end
+  f:close()
+  return names
+end
+
 ---Exact-match dispatch table: command string -> handler(restore).
 ---@type table<string, fun(restore: fun()): true?>
 -- stylua: ignore start
@@ -312,8 +331,16 @@ local arg_commands = {
   end,
   -- returns true so the prompt does not restore the mode it was opened from
   submap         = function(a)
-    if not require("lib.submap").registry[a] then return reject("submap", "a registered mode, e.g. NORMAL") end
-    Hypr.switch_mode(a)
+    if ENTERABLE_MODES[a] then
+      Hypr.switch_mode(a)
+      return true
+    end
+    if require("lib.submap").registry[a] then
+      return reject("submap", "a mode you can enter; " .. a .. " only makes sense mid-keystroke")
+    end
+    -- an unknown submap has no binds, which would leave the keyboard stranded
+    if not known_submaps()[a] then return reject("submap", "a submap that exists, e.g. NORMAL") end
+    hl.dispatch(hl.dsp.submap(a))
     return true
   end,
   layoutcmd      = function(a)
@@ -440,7 +467,7 @@ local arg_descriptions = {
   layout = "set the tiling layout <NAME>",
   layoutcmd = "run a command the active layout provides <CMD [ARGS]>",
   tag = "tag the window; +name adds, -name removes <NAME>",
-  submap = "switch to a HyprVim mode <MODE>",
+  submap = "switch to a HyprVim mode or one of your submaps <NAME>",
   group_move = "move the window into a group in a direction <DIR>",
   group_window = "focus a window in the group by number <N>",
   workspace_monitor = "move this workspace to a monitor <NAME>",
@@ -679,17 +706,32 @@ end
 
 arg_specs.tag = { { hint = "tag name; +name adds, -name removes, a bare name toggles" } }
 
----Registered modes, read when the prompt opens since submaps register after this module loads.
----@return { [1]: string, [2]: string }[]
-local function submap_values()
-  local names = {}
-  for name in pairs(require("lib.submap").registry or {}) do
-    names[#names + 1] = { name, "HyprVim mode" }
+---Candidates for `:submap`: HyprVim's enterable modes, then every submap that is not
+---HyprVim's, read from the cache so internal operator states stay hidden.
+---@return PromptArgSpec[]
+local function submap_spec()
+  local values, internal = {}, {}
+  for name in pairs(ENTERABLE_MODES) do
+    values[#values + 1] = { name, "HyprVim mode" }
   end
-  table.sort(names, function(a, b) return a[1] < b[1] end)
-  return names
+  table.sort(values, function(a, b) return a[1] < b[1] end)
+  for name in pairs(require("lib.submap").registry or {}) do
+    internal[#internal + 1] = name
+  end
+  local skip = sq(table.concat(internal, "|"))
+  return {
+    {
+      hint = "mode or submap name",
+      values = values,
+      source = "cat "
+        .. sq(SUBMAP_CACHE)
+        .. " 2>/dev/null | awk -v skip="
+        .. skip
+        .. ' \'BEGIN { n = split(skip, a, "|"); for (i = 1; i <= n; i++) s[a[i]] = 1 } NF && !($0 in s) { printf "%s\\tsubmap\\n", $0 }\'',
+    },
+  }
 end
-arg_specs.submap = { { hint = "mode name", values = submap_values() } }
+arg_specs.submap = submap_spec()
 
 -- seeded unfiltered; `Command.prompt` narrows it to the layout in use
 arg_specs.layoutcmd = { { hint = "layout command", values = layout_command_values(nil) } }
@@ -964,13 +1006,20 @@ function Command.prompt()
   hl.timer(function()
     -- the layout can change between prompts, so its messages are collected here
     local ok, active = pcall(hl.get_config, "general:layout")
-    arg_specs.submap = { { hint = "mode name", values = submap_values() } }
+    arg_specs.submap = submap_spec()
     local spec = { { hint = "layout command", values = layout_command_values(ok and active or nil) } }
     arg_specs.layoutcmd = spec
     for alias, canonical in pairs(arg_aliases) do
       if canonical == "layoutcmd" then arg_specs[alias] = spec end
     end
-    local opts = { wm_class = "hyprvim-command", completions = COMPLETIONS, arg_completions = arg_specs }
+    local opts = {
+      wm_class = "hyprvim-command",
+      completions = COMPLETIONS,
+      arg_completions = arg_specs,
+      prelude = "hyprctl binds | awk -F': ' '/^[[:space:]]*submap:/ && $2 != \"\" { print $2 }' | sort -u > " .. sq(
+        SUBMAP_CACHE .. ".tmp"
+      ) .. " && mv " .. sq(SUBMAP_CACHE .. ".tmp") .. " " .. sq(SUBMAP_CACHE),
+    }
     Prompt.async(":", opts, function(cmd)
       local function restore()
         if origin and origin ~= "reset" then Hypr.switch_mode(origin) end
