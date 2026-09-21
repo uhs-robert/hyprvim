@@ -138,7 +138,7 @@ _hv_arg_menu() {
     cands=$(_hv_arg_candidates "$cmd" "$pos" | _hv_pad)
     [ -n "$cands" ] || return
     _hv_grow || return
-    sel=$(printf '%s\n' "$cands" | _hv_pick "$cur" "$_hv_label$cmd " 1,2)
+    sel=$(printf '%s\n' "$cands" | _hv_rank "$cur" | _hv_pick "$cur" "$_hv_label$cmd " 1,2)
     _hv_shrink
     [ -n "$sel" ] || return
     val=$(printf '%s' "$sel" | cut -f1 | sed 's/ *$//')
@@ -161,6 +161,18 @@ _hv_shell_menu() {
     [ -n "$sel" ] || return
     READLINE_LINE="!$(printf '%s' "$sel" | cut -f1) "
     READLINE_POINT="${#READLINE_LINE}"
+}
+_hv_rank() {
+    # name matches outrank alias matches, which outrank description-only matches
+    awk -F'\t' -v q="$1" '
+        { name = $1; sub(/ +$/, "", name)
+          lq = tolower(q); ln = tolower(name); la = tolower($4)
+          if (lq == "") rank = 1
+          else if (index(ln, lq) == 1) rank = 0
+          else if (index(ln, lq) > 0) rank = 1
+          else if (index(la, lq) > 0) rank = 2
+          else rank = 3
+          printf "%d\t%s\n", rank, $0 }' | sort -s -k1,1n | cut -f2-
 }
 _hv_menu() {
     local line="$READLINE_LINE" cur sel matches cmd rest pos
@@ -186,7 +198,7 @@ _hv_menu() {
     mapfile -t matches < <(compgen -W "$_hv_words" -- "$cur")
     if [ "${#matches[@]}" -eq 1 ]; then _hv_insert "${matches[0]}"; return; fi
     _hv_grow || { _hv_cycle; return; }
-    sel=$(_hv_pick "$cur" "$_hv_label" 1,2,4 < "$_hv_entries")
+    sel=$(_hv_rank "$cur" < "$_hv_entries" | _hv_pick "$cur" "$_hv_label" 1,2,4)
     _hv_shrink
     [ -n "$sel" ] || return
     _hv_insert "$(printf '%s' "$sel" | cut -f1 | sed 's/ *$//')"
