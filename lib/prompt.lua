@@ -59,9 +59,18 @@ local function history_block(wm_class)
   return block, path
 end
 
----Appends the entered line, keeping the file to the configured size.
+---Appends the entered line, keeping the file to the configured size. A prompt with a
+---completion list only records entries it recognises, so typos are not recalled.
 local HISTORY_SAVE = [[
-if [ -n "$_hv_hist" ] && [ -n "$__hv_in" ]; then
+_hv_known_entry() {
+    local first w
+    [ -n "$_hv_words" ] || return 0
+    case "$1" in !*|s/*|%s/*) return 0;; esac
+    first="${1%% *}"
+    for w in $_hv_words; do [ "$w" = "$first" ] && return 0; done
+    return 1
+}
+if [ -n "$_hv_hist" ] && [ -n "$__hv_in" ] && _hv_known_entry "$__hv_in"; then
     history -s "$__hv_in" 2>/dev/null
     history -w "$_hv_hist" 2>/dev/null
     tail -n "$_hv_hist_size" "$_hv_hist" > "$_hv_hist.tmp" 2>/dev/null && mv "$_hv_hist.tmp" "$_hv_hist"
