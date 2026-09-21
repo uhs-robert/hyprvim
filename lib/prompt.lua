@@ -74,6 +74,8 @@ if [ -n "$_hv_hist" ] && [ -n "$__hv_in" ] && _hv_known_entry "$__hv_in"; then
     history -s "$__hv_in" 2>/dev/null
     history -w "$_hv_hist" 2>/dev/null
     tail -n "$_hv_hist_size" "$_hv_hist" > "$_hv_hist.tmp" 2>/dev/null && mv "$_hv_hist.tmp" "$_hv_hist"
+    # the trim recreates the file, so the mode is set after it, not once at creation
+    chmod 600 "$_hv_hist" 2>/dev/null
 fi
 ]]
 
