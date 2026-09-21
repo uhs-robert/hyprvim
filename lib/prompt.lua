@@ -77,8 +77,7 @@ _hv_insert() {
 }
 _hv_place() {
     local sel="class:^$_hv_class\$"
-    hyprctl dispatch "hl.dsp.window.resize({ x = $1, y = $2, window = '$sel' })" >/dev/null 2>&1
-    hyprctl dispatch "hl.dsp.window.move({ x = $3, y = $4, window = '$sel' })" >/dev/null 2>&1
+    hyprctl --batch "dispatch hl.dsp.window.resize({ x = $1, y = $2, window = '$sel' }) ; dispatch hl.dsp.window.move({ x = $3, y = $4, window = '$sel' })" >/dev/null 2>&1
 }
 _hv_tty_rows() {
     local size
