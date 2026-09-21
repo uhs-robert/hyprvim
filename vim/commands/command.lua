@@ -471,6 +471,11 @@ local arg_specs = {
 
 for name, spec in pairs(user_arg_specs) do arg_specs[name] = spec end
 
+-- aliases complete their arguments the same way the canonical name does
+for alias, canonical in pairs(arg_aliases) do
+  if arg_specs[canonical] then arg_specs[alias] = arg_specs[canonical] end
+end
+
 
 ---Section order for the generated reference; names not listed fall into "Other".
 -- stylua: ignore start
