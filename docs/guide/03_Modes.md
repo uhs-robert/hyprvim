@@ -64,6 +64,10 @@ Press `:` from NORMAL mode to enter COMMAND mode.
 
 Command mode provides powerful window management, workspace navigation, and system control.
 
+Press `Escape` to dismiss the bar without running anything. While the completion menu is open, `Escape` closes the menu first and leaves you at the prompt.
+
+Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, the prompt bar expands into a searchable menu of commands and their descriptions; `Tab` and `Shift+Tab` move through the list. Pressing `Tab` again after a command name completes its arguments: live workspace and monitor lists, window properties, and the accepted range for free-form values such as `:opacity` (0-1). Searching matches descriptions as well as names, so typing `close` finds `:q`, `:qa` and `:only`. Aliases are searchable but listed beside the command they point at instead of as separate entries. Without fzf, `Tab` cycles through prefix matches instead.
+
 ### File Operations
 
 | Command | Description                                 |
@@ -97,10 +101,10 @@ Command mode provides powerful window management, workspace navigation, and syst
 
 | Command        | Description                                |
 | -------------- | ------------------------------------------ |
-| `:tabn`, `:tn` | Next workspace                             |
-| `:tabp`, `:tp` | Previous workspace                         |
-| `:ws <num>`    | Switch to workspace number (e.g., `:ws 3`) |
-| `:move <num>`  | Move window to workspace (e.g., `:move 5`) |
+| `:workspace_next`, `:tabn`, `:tn` | Next workspace          |
+| `:workspace_prev`, `:tabp`, `:tp` | Previous workspace      |
+| `:workspace <num>`, `:ws` | Switch to workspace number (e.g., `:ws 3`) |
+| `:move_workspace <num>` | Move window to workspace (e.g., `:move_workspace 5`) |
 
 ### System Control
 
@@ -120,8 +124,8 @@ Command mode provides powerful window management, workspace navigation, and syst
 
 | Command       | Description               |
 | ------------- | ------------------------- |
-| `:e`, `:edit` | Open application launcher |
-| `:term`, `:t` | Open terminal             |
+| `:edit`, `:e` | Open the editor in a terminal |
+| `:terminal`, `:t` | Open a terminal           |
 
 ### Utilities
 
@@ -140,7 +144,7 @@ Command mode provides powerful window management, workspace navigation, and syst
 :wq             - Save and close window
 :float          - Toggle floating mode for current window
 :ws 3           - Switch to workspace 3
-:move 5         - Move current window to workspace 5
+:move_workspace 5 - Move current window to workspace 5
 :opacity 0.7    - Set window to 70% opacity
 :reload         - Reload Hyprland configuration
 ```

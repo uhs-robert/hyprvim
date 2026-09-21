@@ -2,105 +2,115 @@
 
 ## File / Window
 
-| Command        | Description                                                                          |
-| -------------- | ------------------------------------------------------------------------------------ |
-| `:w`           | Save (Ctrl+S) _(alias: `write`, `save`)_                                             |
-| `:wq`          | Save and close _(alias: `write_quit`, `save_quit`)_                                  |
-| `:q`           | Close window _(alias: `quit`, `close`)_                                              |
-| `:q!`          | Kill window (force) _(alias: `kill`)_                                                |
-| `:qa` / `:qa!` | Close / kill all windows in workspace _(alias: `close_workspace`, `kill_workspace`)_ |
-| `:only`        | Close all other windows in workspace                                                 |
+| Command | Description                                                  |
+| ------- | ------------------------------------------------------------ |
+| `:w`    | Save window (Ctrl+S) _(alias: `save`, `write`)_              |
+| `:wq`   | Save, then close window _(alias: `save_quit`, `write_quit`)_ |
+| `:q`    | Close window _(alias: `close`, `quit`)_                      |
+| `:q!`   | Kill window _(alias: `kill`)_                                |
+| `:qa`   | Close every window in workspace _(alias: `close_workspace`)_ |
+| `:qa!`  | Kill every window in workspace _(alias: `kill_workspace`)_   |
+| `:only` | Close every other window in workspace                        |
 
 ## Layout
 
-| Command                             | Description                                  |
-| ----------------------------------- | -------------------------------------------- |
-| `:split`                            | Preselect split down _(alias: `sp`)_         |
-| `:vsplit`                           | Preselect split right _(alias: `vsp`, `vs`)_ |
-| `:float`                            | Toggle floating _(alias: `f`)_               |
-| `:float on\|off\|toggle`            | Set floating state explicitly                |
-| `:fullscreen`                       | Toggle fullscreen _(alias: `fs`)_            |
-| `:fullscreen maximized\|fullscreen` | Set fullscreen mode explicitly               |
-| `:pin`                              | Toggle pin (sticky)                          |
-| `:center`                           | Center window _(alias: `c`)_                 |
-| `:pseudo`                           | Toggle pseudo tiling                         |
-| `:zorder top\|bottom`               | Force window above / below others            |
-| `:swap l\|r\|u\|d`                  | Swap window with neighbour in direction      |
+| Command                             | Description                                        |
+| ----------------------------------- | -------------------------------------------------- |
+| `:split`                            | Preselect next window below _(alias: `sp`)_        |
+| `:vsplit`                           | Preselect next window right _(alias: `vs`, `vsp`)_ |
+| `:float`                            | Toggle floating _(alias: `f`)_                     |
+| `:float on\|off\|toggle`            | Set the floating state                             |
+| `:fullscreen`                       | Toggle fullscreen _(alias: `fs`)_                  |
+| `:fullscreen fullscreen\|maximized` | Set the fullscreen mode                            |
+| `:pin`                              | Toggle pin above workspaces                        |
+| `:center`                           | Center window _(alias: `c`)_                       |
+| `:pseudo`                           | Toggle pseudotiling                                |
+| `:zorder top\|bottom`               | Alter the window z-order                           |
+| `:swap DIR`                         | Swap window in a direction                         |
 
 ## Navigation
 
-| Command                  | Description                                                         |
-| ------------------------ | ------------------------------------------------------------------- |
-| `:tabn`                  | Next workspace _(alias: `tn`)_                                      |
-| `:tabp`                  | Previous workspace _(alias: `tp`)_                                  |
-| `:ws N`                  | Focus workspace by number or selector _(alias: `tab`, `workspace`)_ |
-| `:ws name:Web`           | Focus workspace by name                                             |
-| `:ws empty`              | Focus first empty workspace                                         |
-| `:ws e+1`                | Focus next open workspace                                           |
-| `:monitor dir\|id\|name` | Focus a monitor _(alias: `mon`)_                                    |
-| `:focus class:firefox`   | Focus a window by class, title, pid, or address                     |
+| Command            | Description                                          |
+| ------------------ | ---------------------------------------------------- |
+| `:window SELECTOR` | Focus a window by selector _(alias: `focus`)_        |
+| `:workspace N`     | Focus a workspace _(alias: `ws`)_                    |
+| `:workspace_next`  | Focus the next workspace _(alias: `tabn`, `tn`)_     |
+| `:workspace_prev`  | Focus the previous workspace _(alias: `tabp`, `tp`)_ |
+| `:monitor NAME`    | Focus a monitor _(alias: `mon`)_                     |
+| `:special NAME`    | Toggle a special workspace                           |
 
 ## Window Move
 
-| Command                 | Description                                           |
-| ----------------------- | ----------------------------------------------------- |
-| `:move N`               | Move window to workspace N or selector                |
-| `:move! N`              | Move without following _(alias: `move_to_workspace`)_ |
-| `:move x y`             | Move window to pixel coordinate                       |
-| `:send_monitor dir\|id` | Send window to a monitor                              |
-| `:special name`         | Toggle special (scratchpad) workspace                 |
-| `:send_special name`    | Send window to special workspace                      |
+| Command              | Description                                                    |
+| -------------------- | -------------------------------------------------------------- |
+| `:move X Y`          | Move window by pixels                                          |
+| `:move_workspace N`  | Move window to a workspace _(alias: `move_to_workspace`)_      |
+| `:move_workspace! N` | Move window to a workspace, keep focus here _(alias: `move!`)_ |
+| `:move_monitor NAME` | Move window to a monitor _(alias: `send_monitor`)_             |
+| `:move_special NAME` | Move window to a special workspace _(alias: `send_special`)_   |
 
 ## Window Resize
 
-| Command      | Description                                      |
-| ------------ | ------------------------------------------------ |
-| `:resize N`  | Resize width by N px _(alias: `resize_width`)_   |
-| `:vresize N` | Resize height by N px _(alias: `resize_height`)_ |
-| `:size W H`  | Resize to exact W×H _(alias: `resize_exact`)_    |
+| Command            | Description                                   |
+| ------------------ | --------------------------------------------- |
+| `:resize_width N`  | Shrink the width _(alias: `resize`)_          |
+| `:resize_height N` | Shrink the height _(alias: `vresize`)_        |
+| `:size W H`        | Set the window size _(alias: `resize_exact`)_ |
 
 ## Window Properties
 
-| Command            | Description                                    |
-| ------------------ | ---------------------------------------------- |
-| `:opacity V`       | Set opacity (0.0–1.0)                          |
-| `:prop name value` | Set any window property (no_anim, rounding, …) |
+| Command                       | Description                                            |
+| ----------------------------- | ------------------------------------------------------ |
+| `:opacity A [I] [F] \| reset` | Set window opacity                                     |
+| `:opacity_active V`           | Set active opacity _(alias: `active_opacity`)_         |
+| `:opacity_inactive V`         | Set inactive opacity _(alias: `inactive_opacity`)_     |
+| `:opacity_fullscreen V`       | Set fullscreen opacity _(alias: `fullscreen_opacity`)_ |
+| `:dim`                        | Toggle window dimming                                  |
+| `:dim on\|off`                | Set window dimming                                     |
+| `:prop PROP VALUE`            | Set a window property                                  |
 
 ## Workspace
 
-| Command        | Description              |
-| -------------- | ------------------------ |
-| `:rename name` | Rename current workspace |
-| `:gaps N`      | Set gaps_in and gaps_out |
+| Command        | Description                  |
+| -------------- | ---------------------------- |
+| `:rename NAME` | Rename the current workspace |
+| `:gaps N`      | Set gaps in and out          |
 
 ## System
 
-| Command     | Description                           |
-| ----------- | ------------------------------------- |
-| `:reload`   | Reload Hyprland config _(alias: `r`)_ |
-| `:lock`     | Lock screen                           |
-| `:update`   | Update HyprVim                        |
-| `:exit`     | Dismiss command palette               |
-| `:logout`   | Exit session                          |
-| `:shutdown` | Power off _(alias: `poweroff`)_       |
-| `:picker`   | Colour picker to clipboard            |
+| Command     | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
+| `:reload`   | Reload hyprland config _(alias: `r`)_                         |
+| `:lock`     | Lock the session                                              |
+| `:update`   | Update hyprvim                                                |
+| `:logout`   | Log out of the session                                        |
+| `:reboot`   | Restart the machine _(alias: `restart`)_                      |
+| `:shutdown` | Power off _(alias: `poweroff`)_                               |
+| `:picker`   | Pick a color to the clipboard _(alias: `hyprpicker`, `pick`)_ |
 
 ## Apps
 
-| Command        | Description                  |
-| -------------- | ---------------------------- |
-| `:e` / `:edit` | Open editor                  |
-| `:term`        | Open terminal _(alias: `t`)_ |
-| `:help`        | Show this reference          |
+| Command     | Description                                  |
+| ----------- | -------------------------------------------- |
+| `:edit`     | Open the editor in a terminal _(alias: `e`)_ |
+| `:terminal` | Open a terminal _(alias: `t`)_               |
+| `:help`     | Show the command reference _(alias: `h`)_    |
 
 ## Shell
 
-| Command | Description                                |
-| ------- | ------------------------------------------ |
-| `:!cmd` | Run shell command with output (e.g. `!ls`) |
+| Command | Description                                          |
+| ------- | ---------------------------------------------------- |
+| `:!cmd` | Run a shell command and show its output, e.g. `:!ls` |
 
 ## Search / Replace
 
-| Command | Description                            |
-| ------- | -------------------------------------- |
-| `:%s/`  | Trigger editor find & replace (Ctrl+H) |
+| Command | Description                                  |
+| ------- | -------------------------------------------- |
+| `:%s/`  | Trigger the editor find and replace (Ctrl+H) |
+
+## Prompt
+
+| Command  | Description                                                                                     |
+| -------- | ----------------------------------------------------------------------------------------------- |
+| `Tab`    | Complete; with fzf installed this opens a searchable menu, and a second Tab completes arguments |
+| `Escape` | Dismiss the command bar without running anything                                                |
