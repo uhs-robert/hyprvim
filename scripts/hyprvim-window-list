@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# List open windows for prompt completion, sorted by workspace, class, then title.
+# Emits "display<TAB>workspace<TAB>address"; the address is what gets inserted.
+
+hyprctl clients | awk '
+  function rindex(s, t,   i, p, last) {
+    last = 0; i = 1
+    while ((p = index(substr(s, i), t)) > 0) { last = i + p - 1; i = last + length(t) }
+    return last
+  }
+  /^Window /{
+    addr = $2
+    title = substr($0, index($0, "-> ") + 3)
+    sub(/:$/, "", title)
+  }
+  /^[[:space:]]*workspace:/{ ws = $2 }
+  /^[[:space:]]*class:/{
+    cls = $2
+    if (addr == "" || cls == "") next
+    sub(/^.*\./, "", cls)
+    label = toupper(substr(cls, 1, 1)) substr(cls, 2)
+    # trailing " - App Name" repeats what the class column already shows
+    lt = tolower(title); ll = tolower(label)
+    split(" - | \342\200\223 | \342\200\224 ", seps, "|")
+    for (i in seps) {
+      p = rindex(lt, seps[i])
+      if (p > 0 && index(substr(lt, p + length(seps[i])), ll) > 0) {
+        title = substr(title, 1, p - 1)
+        lt = tolower(title)
+      }
+    }
+    if (length(title) > 60) title = substr(title, 1, 59) "\342\200\246"
+    printf "%s\t%s\t%s\t%s\n", ws, label, title, addr
+    addr = ""; cls = ""
+  }' |
+  sort -t"$(printf '\t')" -k1,1n -k2,2 -k3,3 |
+  awk -F'\t' '{ printf "%-14s %s\tworkspace %s\taddress:0x%s\n", $2, $3, $1, $4 }'

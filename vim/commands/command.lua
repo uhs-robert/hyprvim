@@ -387,7 +387,7 @@ local sources = {
   workspaces = [==[hyprctl workspaces | awk '/^workspace ID/ { id=$3; name=$4; gsub(/[()]/,"",name); mon=$7; sub(/:$/,"",mon); printf "%s\t%s on %s\n", id, name, mon }' | sort -n]==],
   specials = [==[hyprctl workspaces | awk '/^workspace ID/ { name=$4; gsub(/[()]/,"",name); if (name ~ /^special:/) { sub(/^special:/,"",name); printf "%s\topen special workspace\n", name } }' | sort -u]==],
   monitors = [==[hyprctl monitors | awk '/^Monitor /{ id=$4; gsub(/[():]/,"",id); printf "%s\tmonitor ID %s\n", $2, id }']==],
-  classes = [==[hyprctl clients | awk -F': ' '/^\tclass:/ { printf "class:%s\twindow class\n", $2 }' | sort -u]==],
+  windows = Config.install_dir .. "/scripts/hyprvim-window-list",
 }
 
 ---Opacity steps offered for any 0-1 value.
@@ -426,7 +426,7 @@ local arg_specs = {
   move_monitor = { monitor_arg },
   special      = { { hint = "special workspace name", source = sources.specials } },
   move_special = { { hint = "special workspace name", source = sources.specials } },
-  window       = { { hint = "window selector, e.g. class:firefox", source = sources.classes } },
+  window       = { { hint = "window selector, or pick a window below", source = sources.windows } },
   rename       = { { hint = "new name for the current workspace" } },
   opacity = {
     { hint = "0-1, or reset", values = (function()

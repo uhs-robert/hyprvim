@@ -22,6 +22,7 @@ local sq = Utils.sh_escape
 
 --- One argument position of a command. `values` are fixed candidates, `source` is a
 --- shell command printing "value<TAB>description" lines, `hint` describes a free-form value.
+--- A source may add a third field, which is inserted instead of the displayed first field.
 --- @class PromptArgSpec
 --- @field hint string?
 --- @field values { [1]: string, [2]: string? }[]?
@@ -117,7 +118,7 @@ _hv_shrink() {
 }
 _hv_pad() {
     awk -F'\t' '{ if (length($1) > w) w = length($1); a[NR] = $0 }
-        END { for (i = 1; i <= NR; i++) { split(a[i], f, "\t"); printf "%-*s\t%s\n", w, f[1], f[2] } }'
+        END { for (i = 1; i <= NR; i++) { split(a[i], f, "\t"); printf "%-*s\t%s\t%s\n", w, f[1], f[2], f[3] } }'
 }
 _hv_pick() {
     local query="$1" prompt="$2" nth="${3:-1}"
@@ -146,7 +147,8 @@ _hv_arg_menu() {
     sel=$(printf '%s\n' "$cands" | _hv_rank "$cur" | _hv_pick "$cur" "$_hv_label$cmd " 1,2)
     _hv_shrink
     [ -n "$sel" ] || return
-    val=$(printf '%s' "$sel" | cut -f1 | sed 's/ *$//')
+    val=$(printf '%s' "$sel" | cut -f3)
+    [ -n "$val" ] || val=$(printf '%s' "$sel" | cut -f1 | sed 's/ *$//')
     [ -n "$val" ] || return
     if [ -n "$cur" ]; then
         READLINE_LINE="${READLINE_LINE% *} $val "
