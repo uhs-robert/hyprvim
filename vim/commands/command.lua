@@ -65,6 +65,17 @@ end
 local function do_shutdown() hl.dispatch(hl.dsp.exec_cmd("systemctl poweroff")) end
 local function do_reboot() hl.dispatch(hl.dsp.exec_cmd("systemctl reboot")) end
 
+---Focus the next or previous window; monocle only answers its own layout command.
+---@param forward boolean
+local function cycle(forward)
+  local ok, layout = pcall(hl.get_config, "general:layout")
+  if ok and layout == "monocle" then
+    hl.dispatch(hl.dsp.layout(forward and "cyclenext" or "cycleprev"))
+  else
+    hl.dispatch(hl.dsp.window.cycle_next({ next = forward }))
+  end
+end
+
 ---Exact-match dispatch table: command string -> handler(restore).
 ---@type table<string, fun(restore: fun()): true?>
 -- stylua: ignore start
@@ -112,6 +123,11 @@ local commands = {
   group_prev = function() hl.dispatch(hl.dsp.group.prev()) end,
   group_lock = function() hl.dispatch(hl.dsp.group.lock({ action = "toggle" })) end,
   marks      = function() require("vim.features.marks").list() end,
+  next       = function() cycle(true) end,
+  prev       = function() cycle(false) end,
+  untag      = function() hl.dispatch(hl.dsp.window.clear_tags()) end,
+  swallow    = function() hl.dispatch(hl.dsp.window.toggle_swallow()) end,
+  renderer_reload = function() hl.dispatch(hl.dsp.force_renderer_reload()) end,
   picker     = function() hl.dispatch(hl.dsp.exec_cmd("pidof hyprpicker || (hyprpicker | wl-copy)")) end,
   edit       = function() Hypr.exec(Config.applications.terminal .. " " .. Config.applications.editor) end,
   terminal   = function() Hypr.exec(Config.applications.terminal) end,
@@ -290,6 +306,16 @@ local arg_commands = {
     hl.dispatch(hl.dsp.workspace.swap_monitors({ monitor1 = one, monitor2 = two }))
   end,
   help           = function(a, restore) return show_help(restore, a) end,
+  tag            = function(a)
+    if not a:match("^%S+$") then return reject("tag", "a tag name, e.g. +work or -work") end
+    hl.dispatch(hl.dsp.window.tag({ tag = a }))
+  end,
+  -- returns true so the prompt does not restore the mode it was opened from
+  submap         = function(a)
+    if not require("lib.submap").registry[a] then return reject("submap", "a registered mode, e.g. NORMAL") end
+    Hypr.switch_mode(a)
+    return true
+  end,
   layoutcmd      = function(a)
     if a == "" then return reject("layoutcmd", "a layout command, e.g. togglesplit") end
     hl.dispatch(hl.dsp.layout(a))
@@ -374,6 +400,11 @@ local descriptions = {
   group_prev = "focus the previous window in the group",
   group_lock = "lock or unlock the group",
   marks = "list the marks that are set",
+  next = "focus the next window",
+  prev = "focus the previous window",
+  untag = "clear every tag from the window",
+  swallow = "toggle swallowed windows visible",
+  renderer_reload = "reload the renderer, e.g. after a monitor change",
   edit = "open the editor in a terminal",
   terminal = "open a terminal",
   help = "show the command reference",
@@ -408,6 +439,8 @@ local arg_descriptions = {
   set = "set any Hyprland option <OPTION VALUE>",
   layout = "set the tiling layout <NAME>",
   layoutcmd = "run a command the active layout provides <CMD [ARGS]>",
+  tag = "tag the window; +name adds, -name removes <NAME>",
+  submap = "switch to a HyprVim mode <MODE>",
   group_move = "move the window into a group in a direction <DIR>",
   group_window = "focus a window in the group by number <N>",
   workspace_monitor = "move this workspace to a monitor <NAME>",
@@ -644,6 +677,20 @@ local function layout_command_values(active)
   return values
 end
 
+arg_specs.tag = { { hint = "tag name; +name adds, -name removes, a bare name toggles" } }
+
+---Registered modes, read when the prompt opens since submaps register after this module loads.
+---@return { [1]: string, [2]: string }[]
+local function submap_values()
+  local names = {}
+  for name in pairs(require("lib.submap").registry or {}) do
+    names[#names + 1] = { name, "HyprVim mode" }
+  end
+  table.sort(names, function(a, b) return a[1] < b[1] end)
+  return names
+end
+arg_specs.submap = { { hint = "mode name", values = submap_values() } }
+
 -- seeded unfiltered; `Command.prompt` narrows it to the layout in use
 arg_specs.layoutcmd = { { hint = "layout command", values = layout_command_values(nil) } }
 
@@ -652,14 +699,14 @@ arg_specs.layoutcmd = { { hint = "layout command", values = layout_command_value
 local help_groups = {
   { "File / Window",     { "w", "wq", "q", "q!", "qa", "qa!", "only" } },
   { "Layout",            { "split", "vsplit", "float", "fullscreen", "pin", "center", "pseudo", "zorder", "swap" } },
-  { "Navigation",        { "window", "workspace", "workspace_next", "workspace_prev", "monitor", "special" } },
+  { "Navigation",        { "window", "next", "prev", "workspace", "workspace_next", "workspace_prev", "monitor", "special" } },
   { "Groups",            { "group", "group_next", "group_prev", "group_window", "group_move", "group_lock" } },
   { "Window Move",       { "move", "move_workspace", "move_workspace!", "move_monitor", "move_special" } },
   { "Window Resize",     { "resize_width", "resize_height", "size" } },
-  { "Window Properties", { "opacity", "opacity_active", "opacity_inactive", "opacity_fullscreen", "dim", "prop" } },
+  { "Window Properties", { "opacity", "opacity_active", "opacity_inactive", "opacity_fullscreen", "dim", "prop", "tag", "untag", "swallow" } },
   { "Workspace",         { "rename", "gaps", "workspace_monitor", "workspace_swap" } },
   { "Configuration",     { "set", "layout", "layoutcmd" } },
-  { "System",            { "reload", "lock", "update", "logout", "reboot", "shutdown", "picker" } },
+  { "System",            { "reload", "renderer_reload", "submap", "lock", "update", "logout", "reboot", "shutdown", "picker" } },
   { "Apps",              { "edit", "terminal", "help", "marks" } },
 }
 
@@ -917,6 +964,7 @@ function Command.prompt()
   hl.timer(function()
     -- the layout can change between prompts, so its messages are collected here
     local ok, active = pcall(hl.get_config, "general:layout")
+    arg_specs.submap = { { hint = "mode name", values = submap_values() } }
     local spec = { { hint = "layout command", values = layout_command_values(ok and active or nil) } }
     arg_specs.layoutcmd = spec
     for alias, canonical in pairs(arg_aliases) do
