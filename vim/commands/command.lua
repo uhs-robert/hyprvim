@@ -546,39 +546,6 @@ local arg_specs = {
     source = [==[{ hyprctl layouts 2>/dev/null | grep -v 'unknown request'; hyprctl getoption general:layout | awk '/^str:/ { print $2 }'; } | awk 'NF && !seen[$1]++ && $1 !~ /^(dwindle|master|scrolling|monocle)$/ { printf "%s\tregistered layout\n", $1 }']==],
   } },
   group_move = { { values = { { "l", "left" }, { "r", "right" }, { "u", "up" }, { "d", "down" } } } },
-  -- every layout answers a different set; the description says which one takes it
-  layoutmsg = { {
-    hint = "layout message",
-    values = {
-      { "togglesplit", "dwindle: toggle the split direction" },
-      { "swapsplit", "dwindle: swap the two halves of the split" },
-      { "rotatesplit", "dwindle: rotate the split" },
-      { "splitratio", "dwindle: change the split ratio" },
-      { "movetoroot", "dwindle: move to the root of the workspace tree" },
-      { "preselect", "dwindle: override the next split direction" },
-      { "swapwithmaster", "master: swap the window with the master" },
-      { "focusmaster", "master: focus the master window" },
-      { "addmaster", "master: add a master" },
-      { "removemaster", "master: remove a master" },
-      { "mfact", "master: change the master split ratio" },
-      { "orientationnext", "master: cycle the orientation" },
-      { "orientationcenter", "master: master in the centre" },
-      { "rollnext", "master: roll the next window into master" },
-      { "cyclenext", "master, monocle: focus the next window" },
-      { "cycleprev", "master, monocle: focus the previous window" },
-      { "center", "scrolling: centre the focused column" },
-      { "colresize", "scrolling: resize the column, e.g. +0.2 or +conf" },
-      { "consume", "scrolling: take the window into the previous column" },
-      { "expel", "scrolling: move the window to its own column" },
-      { "promote", "scrolling: move the window to a new column ahead" },
-      { "fit", "scrolling: fit active, visible, all, toend, tobeg or expand" },
-      { "fit_into_view", "scrolling: fit the active column into view" },
-      { "focus", "scrolling: move focus and centre, wrapping at the ends" },
-      { "move", "scrolling: scroll by pixels (+200) or columns (+col)" },
-      { "swapcol", "scrolling: swap the column with l or r" },
-      { "inhibit_scroll", "scrolling: freeze the view for this workspace" },
-    },
-  } },
   group_window = { { hint = "window number in the group, counting from 1" } },
   workspace_monitor = { monitor_arg },
   workspace_swap = { monitor_arg, monitor_arg },
@@ -621,6 +588,63 @@ for alias, canonical in pairs(arg_aliases) do
   if arg_specs[canonical] then arg_specs[alias] = arg_specs[canonical] end
 end
 
+
+---Layout messages for `hl.dsp.layout()`, tagged with the layouts that answer them.
+-- stylua: ignore start
+local layout_messages = {
+  { "preselect",       "override the next split direction",            { "dwindle" } },
+  { "togglesplit",     "toggle the split direction",                   { "dwindle" } },
+  { "swapsplit",       "swap the two halves of the split",             { "dwindle" } },
+  { "rotatesplit",     "rotate the split",                             { "dwindle" } },
+  { "splitratio",      "change the split ratio",                       { "dwindle" } },
+  { "movetoroot",      "move to the root of the workspace tree",       { "dwindle" } },
+  { "swapwithmaster",  "swap the window with the master",              { "master" } },
+  { "focusmaster",     "focus the master window",                      { "master" } },
+  { "addmaster",       "add a master",                                 { "master" } },
+  { "removemaster",    "remove a master",                              { "master" } },
+  { "mfact",           "change the master split ratio",                { "master" } },
+  { "orientationnext", "cycle the orientation",                        { "master" } },
+  { "orientationcenter", "put the master in the centre",               { "master" } },
+  { "rollnext",        "roll the next window into master",             { "master" } },
+  { "rollprev",        "roll the previous window into master",         { "master" } },
+  { "swapnext",        "swap with the next window",                    { "master" } },
+  { "swapprev",        "swap with the previous window",                { "master" } },
+  { "cyclenext",       "focus the next window",                        { "master", "monocle" } },
+  { "cycleprev",       "focus the previous window",                    { "master", "monocle" } },
+  { "center",          "centre the focused column",                    { "scrolling" } },
+  { "colresize",       "resize the column, e.g. +0.2 or +conf",        { "scrolling" } },
+  { "consume",         "take the window into the previous column",     { "scrolling" } },
+  { "consume_or_expel","consume when alone, expel otherwise",          { "scrolling" } },
+  { "expel",           "move the window to its own column",            { "scrolling" } },
+  { "promote",         "move the window to a new column ahead",        { "scrolling" } },
+  { "fit",             "fit active, visible, all, toend, tobeg, expand", { "scrolling" } },
+  { "fit_into_view",   "fit the active column into view",              { "scrolling" } },
+  { "focus",           "move focus and centre, wrapping at the ends",  { "scrolling" } },
+  { "move",            "scroll by pixels (+200) or columns (+col)",    { "scrolling" } },
+  { "swapcol",         "swap the column with l or r",                  { "scrolling" } },
+  { "inhibit_scroll",  "freeze the view for this workspace",           { "scrolling" } },
+}
+-- stylua: ignore end
+
+---Candidates for `:layoutmsg`, narrowed to the layout in use.
+---@param active string|nil
+---@return { [1]: string, [2]: string }[]
+local function layout_message_values(active)
+  local values = {}
+  for _, msg in ipairs(layout_messages) do
+    for _, layout in ipairs(msg[3]) do
+      if layout == active then values[#values + 1] = { msg[1], msg[2] } end
+    end
+  end
+  if #values > 0 then return values end
+  for _, msg in ipairs(layout_messages) do
+    values[#values + 1] = { msg[1], msg[2] .. " (" .. table.concat(msg[3], ", ") .. ")" }
+  end
+  return values
+end
+
+-- seeded unfiltered; `Command.prompt` narrows it to the layout in use
+arg_specs.layoutmsg = { { hint = "layout message", values = layout_message_values(nil) } }
 
 ---Section order for the generated reference; names not listed fall into "Other".
 -- stylua: ignore start
@@ -890,6 +914,11 @@ function Command.prompt()
   local origin = require("lib.submap").current
   Hypr.suspend_vim()
   hl.timer(function()
+    -- the layout can change between prompts, so its messages are collected here
+    local ok, active = pcall(hl.get_config, "general:layout")
+    arg_specs.layoutmsg = {
+      { hint = "layout message", values = layout_message_values(ok and active or nil) },
+    }
     local opts = { wm_class = "hyprvim-command", completions = COMPLETIONS, arg_completions = arg_specs }
     Prompt.async(":", opts, function(cmd)
       local function restore()
