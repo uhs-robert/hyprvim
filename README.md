@@ -287,7 +287,7 @@ Multi-clipboard management with named registers (`"a` - `"z`) and special regist
 
 ### Commands
 
-Press `:` in **NORMAL** mode to execute Vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float [on|off]` (floating), `:fullscreen [maximized|fullscreen]`, `:workspace <N|name:Web|empty>` (switch workspace), `:move_workspace N` (send window to workspace), `:move X Y` (nudge by pixels), `:monitor <dir|name>` (focus monitor), `:window class:firefox` (focus window), `:rename <name>` (rename workspace), `:special <name>` (scratchpad), `:swap <l|r|u|d>`, `:resize_width N`, `:opacity V`, `:prop <name> <value>`, `:set <option> <value>` (any Hyprland option), `:group` (tabbed groups), `:marks`, `:reload`, `:update`, `:!cmd` (shell). Full reference: `:help`, or `:help <command>` for one entry.
+Press `:` in **NORMAL** mode to execute Vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float [on|off]` (floating), `:fullscreen [maximized|fullscreen]`, `:workspace <N|name:Web|empty>` (switch workspace), `:move_workspace N` (send window to workspace), `:move X Y` (nudge by pixels), `:monitor <dir|name>` (focus monitor), `:window class:firefox` (focus window), `:rename <name>` (rename workspace), `:special <name>` (scratchpad), `:swap <l|r|u|d>`, `:resize_width N`, `:opacity V` or `:opacity +0.1` (any window, not just the focused one), `:prop <name> <value>`, `:set <option> <value>` (any Hyprland option), `:group` (tabbed groups), `:marks`, `:reload`, `:update`, `:!cmd` (shell). Full reference: `:help`, or `:help <command>` for one entry.
 
 > **📖 Learn more:** [Command Mode guide](./docs/guide/03_Modes.md#-command-mode)
 

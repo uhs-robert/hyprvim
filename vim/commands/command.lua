@@ -198,6 +198,100 @@ local function one_of(a, allowed)
   end
 end
 
+---A leading + or - makes a value relative to the current one.
+---@return number|nil value, boolean relative
+local function number_or_delta(a)
+  local v = tonumber(a)
+  if not v then return nil, false end
+  return v, a:match("^[+-]") ~= nil
+end
+
+---Selector prefixes Hyprland accepts, so a trailing word can be told apart from a value.
+local SELECTOR_KEYS =
+  { address = true, class = true, title = true, initialclass = true, initialtitle = true, pid = true, tag = true }
+
+---Split a trailing window selector off an argument string: "0.8 address:0x1" -> "0.8", "address:0x1".
+---@return string args, string|nil window
+local function take_window(a)
+  local head, last = a:match("^(.-)%s*(%S+)$")
+  local key = last and last:match("^(%a+):")
+  if key and SELECTOR_KEYS[key] then return head, last end
+  return a, nil
+end
+
+---Opacity HyprVim last set per window; Hyprland does not expose a window's current opacity.
+---@type table<string, table<string, number>>
+local opacity_set = {}
+local OPACITY_OPTION = {
+  active = "decoration:active_opacity",
+  inactive = "decoration:inactive_opacity",
+  fullscreen = "decoration:fullscreen_opacity",
+}
+
+---@param window string|nil
+---@return string|nil
+local function window_key(window)
+  if window then return (window:gsub("^address:", "")) end
+  local active = hl.get_active_window()
+  return active and active.address
+end
+
+---Resolve an opacity word: absolute values must be 0-1, relative ones are clamped into it.
+---@param word string
+---@param kind "active"|"inactive"|"fullscreen"
+---@param key string|nil
+---@return number|nil
+local function resolve_opacity(word, kind, key)
+  local v, relative = number_or_delta(word)
+  if not v then return nil end
+  if not relative then return unit(word) end
+  local current = key and opacity_set[key] and opacity_set[key][kind]
+  if not current then
+    local ok, default = pcall(hl.get_config, OPACITY_OPTION[kind])
+    current = (ok and type(default) == "number") and default or 1
+  end
+  return math.floor(math.max(0, math.min(1, current + v)) * 100 + 0.5) / 100
+end
+
+---@param kind string
+---@param key string|nil
+---@param v number
+local function remember_opacity(kind, key, v)
+  if not key then return end
+  opacity_set[key] = opacity_set[key] or {}
+  opacity_set[key][kind] = v
+end
+
+---Handler for one opacity kind, taking a value or delta and an optional window.
+---@param name string
+---@param kind "active"|"inactive"|"fullscreen"
+---@param setter fun(v: number, window: string|nil)
+---@return fun(a: string)
+local function single_opacity(name, kind, setter)
+  return function(a)
+    local args, window = take_window(a)
+    local key = window_key(window)
+    local v = resolve_opacity(args, kind, key)
+    if not v then return reject(name, "a value between 0 and 1, or +/- to adjust") end
+    setter(v, window)
+    remember_opacity(kind, key, v)
+  end
+end
+
+---Shift a gap option by `delta`, whether it is one number or a per-side table.
+---@return integer|table|nil
+local function shift_gap(option, delta)
+  local ok, current = pcall(hl.get_config, option)
+  if not ok then return nil end
+  if type(current) == "number" then return math.max(0, current + delta) end
+  if type(current) ~= "table" then return nil end
+  local out = {}
+  for _, side in ipairs({ "top", "right", "bottom", "left" }) do
+    out[side] = math.max(0, (current[side] or 0) + delta)
+  end
+  return out
+end
+
 ---Argument-taking commands: name -> handler(args_string).
 ---Arguments are validated here; a rejected value notifies instead of silently doing nothing.
 ---@type table<string, fun(args: string)>
@@ -226,39 +320,44 @@ local arg_commands = {
     hl.dispatch(hl.dsp.window.resize({ x = tonumber(w), y = tonumber(h) }))
   end,
   opacity        = function(a)
-    if a == "reset" then return Hypr.reset_opacity() end
-    local values = {}
-    for word in a:gmatch("%S+") do
-      local v = unit(word)
-      if not v then return reject("opacity", "up to three values between 0 and 1, or reset") end
+    local args, window = take_window(a)
+    local key = window_key(window)
+    if args == "reset" then
+      if key then opacity_set[key] = nil end
+      return Hypr.reset_opacity(window)
+    end
+    local kinds, values = { "active", "inactive", "fullscreen" }, {}
+    local expected = "up to three values between 0 and 1, +/- to adjust, or reset"
+    for word in args:gmatch("%S+") do
+      local kind = kinds[#values + 1]
+      local v = kind and resolve_opacity(word, kind, key)
+      if not v then return reject("opacity", expected) end
       values[#values + 1] = v
     end
-    if #values == 0 or #values > 3 then return reject("opacity", "up to three values between 0 and 1, or reset") end
-    Hypr.set_opacity(values[1], values[2], values[3])
+    if #values == 0 then return reject("opacity", expected) end
+    Hypr.set_opacity(values[1], values[2], values[3], window)
+    for i, v in ipairs(values) do
+      remember_opacity(kinds[i], key, v)
+    end
   end,
   dim                = function(a)
-    if not one_of(a, { "on", "off" }) then return reject("dim", "on or off") end
-    hl.dispatch(hl.dsp.window.set_prop({ prop = "no_dim", value = a == "on" and "0" or "1" }))
+    local args, window = take_window(a)
+    if not one_of(args, { "on", "off" }) then return reject("dim", "on or off") end
+    hl.dispatch(hl.dsp.window.set_prop({ prop = "no_dim", value = args == "on" and "0" or "1", window = window }))
   end,
-  opacity_active     = function(a)
-    local v = unit(a)
-    if not v then return reject("opacity_active", "a value between 0 and 1") end
-    Hypr.set_active_opacity(v)
-  end,
-  opacity_inactive   = function(a)
-    local v = unit(a)
-    if not v then return reject("opacity_inactive", "a value between 0 and 1") end
-    Hypr.set_inactive_opacity(v)
-  end,
-  opacity_fullscreen = function(a)
-    local v = unit(a)
-    if not v then return reject("opacity_fullscreen", "a value between 0 and 1") end
-    Hypr.set_fullscreen_opacity(v)
-  end,
+  opacity_active     = single_opacity("opacity_active", "active", Hypr.set_active_opacity),
+  opacity_inactive   = single_opacity("opacity_inactive", "inactive", Hypr.set_inactive_opacity),
+  opacity_fullscreen = single_opacity("opacity_fullscreen", "fullscreen", Hypr.set_fullscreen_opacity),
   gaps           = function(a)
-    local n = int(a)
-    if not n or n < 0 then return reject("gaps", "a whole number of pixels") end
-    hl.config({ general = { gaps_in = n, gaps_out = n } })
+    local v, relative = number_or_delta(a)
+    if not v or v % 1 ~= 0 then return reject("gaps", "a whole number of pixels, or +/- to adjust") end
+    if not relative then
+      if v < 0 then return reject("gaps", "a whole number of pixels, or +/- to adjust") end
+      return hl.config({ general = { gaps_in = v, gaps_out = v } })
+    end
+    local gaps_in, gaps_out = shift_gap("general:gaps_in", v), shift_gap("general:gaps_out", v)
+    if gaps_in == nil or gaps_out == nil then return reject("gaps", "an absolute value; current gaps are unreadable") end
+    hl.config({ general = { gaps_in = gaps_in, gaps_out = gaps_out } })
   end,
   float          = function(a)
     if not one_of(a, { "on", "off", "toggle" }) then return reject("float", "on, off or toggle") end
@@ -278,9 +377,10 @@ local arg_commands = {
   move_special   = function(a) hl.dispatch(hl.dsp.window.move({ workspace = "special:" .. a })) end,
   rename         = function(a) hl.dispatch(hl.dsp.workspace.rename({ name = a })) end,
   prop           = function(a)
-    local prop, val = a:match("^(%S+)%s+(.+)$")
+    local args, window = take_window(a)
+    local prop, val = args:match("^(%S+)%s+(.+)$")
     if not prop then return reject("prop", "a property name and a value, e.g. no_dim 1") end
-    hl.dispatch(hl.dsp.window.set_prop({ prop = prop, value = val }))
+    hl.dispatch(hl.dsp.window.set_prop({ prop = prop, value = val, window = window }))
   end,
   window         = function(a) hl.dispatch(hl.dsp.focus({ window = a })) end,
   set            = function(a)
@@ -326,8 +426,14 @@ local arg_commands = {
   end,
   help           = function(a, restore) return show_help(restore, a) end,
   tag            = function(a)
-    if not a:match("^%S+$") then return reject("tag", "a tag name, e.g. +work or -work") end
-    hl.dispatch(hl.dsp.window.tag({ tag = a }))
+    local args, window = take_window(a)
+    if not args:match("^%S+$") then return reject("tag", "a tag name, e.g. +work or -work") end
+    hl.dispatch(hl.dsp.window.tag({ tag = args, window = window }))
+  end,
+  untag          = function(a)
+    local args, window = take_window(a)
+    if args ~= "" or not window then return reject("untag", "a window, e.g. address:0x1234") end
+    hl.dispatch(hl.dsp.window.clear_tags({ window = window }))
   end,
   -- returns true so the prompt does not restore the mode it was opened from
   submap         = function(a)
@@ -445,12 +551,12 @@ local arg_descriptions = {
   resize_width = "shrink the width <N>",
   resize_height = "shrink the height <N>",
   size = "set the window size <W H>",
-  opacity = "set window opacity <A [I] [F] | reset>",
-  opacity_active = "set active opacity <V>",
-  opacity_inactive = "set inactive opacity <V>",
-  opacity_fullscreen = "set fullscreen opacity <V>",
-  dim = "set window dimming <on|off>",
-  gaps = "set gaps in and out <N>",
+  opacity = "set window opacity; +/- adjusts <A [I] [F] | reset [WINDOW]>",
+  opacity_active = "set active opacity; +/- adjusts <V [WINDOW]>",
+  opacity_inactive = "set inactive opacity; +/- adjusts <V [WINDOW]>",
+  opacity_fullscreen = "set fullscreen opacity; +/- adjusts <V [WINDOW]>",
+  dim = "set window dimming <on|off [WINDOW]>",
+  gaps = "set gaps in and out; +/- adjusts <N>",
   float = "set the floating state <on|off|toggle>",
   fullscreen = "set the fullscreen mode <fullscreen|maximized>",
   monitor = "focus a monitor <NAME>",
@@ -459,14 +565,15 @@ local arg_descriptions = {
   special = "toggle a special workspace <NAME>",
   move_special = "move window to a special workspace <NAME>",
   rename = "rename the current workspace <NAME>",
-  prop = "set a window property <PROP VALUE>",
+  prop = "set a window property <PROP VALUE [WINDOW]>",
   window = "focus a window by selector <SELECTOR>",
   zorder = "alter the window z-order <top|bottom>",
   help = "show the command reference at one entry <COMMAND>",
   set = "set any Hyprland option <OPTION VALUE>",
   layout = "set the tiling layout <NAME>",
   layoutcmd = "run a command the active layout provides <CMD [ARGS]>",
-  tag = "tag the window; +name adds, -name removes <NAME>",
+  tag = "tag the window; +name adds, -name removes <NAME [WINDOW]>",
+  untag = "clear every tag from another window <WINDOW>",
   submap = "switch to a HyprVim mode or one of your submaps <NAME>",
   group_move = "move the window into a group in a direction <DIR>",
   group_window = "focus a window in the group by number <N>",
@@ -543,7 +650,7 @@ local sources = {
 ---@param label string
 ---@return { [1]: string, [2]: string }[]
 local function opacity_values(label)
-  local values = {}
+  local values = { { "+0.1", "raise " .. label }, { "-0.1", "lower " .. label } }
   for i = 10, 4, -1 do
     local v = string.format("%.1f", i / 10)
     values[#values + 1] = { v, label }
@@ -589,8 +696,8 @@ local arg_specs = {
   opacity_active     = { { hint = "0-1", values = opacity_values("active opacity") } },
   opacity_inactive   = { { hint = "0-1", values = opacity_values("inactive opacity") } },
   opacity_fullscreen = { { hint = "0-1", values = opacity_values("fullscreen opacity") } },
-  dim  = { { values = { { "on", "dim when inactive" }, { "off", "never dim" } } } },
-  gaps = { { hint = "pixels, applied to gaps_in and gaps_out", values = { { "0", "" }, { "2", "" }, { "5", "" }, { "10", "" }, { "20", "" } } } },
+  dim  = { { values = { { "on", "dim when inactive" }, { "off", "never dim" } } }, { hint = "window, optional", source = sources.windows } },
+  gaps = { { hint = "pixels, applied to gaps_in and gaps_out", values = { { "+2", "widen" }, { "-2", "narrow" }, { "0", "" }, { "5", "" }, { "10", "" }, { "20", "" } } } },
   float = { { values = { { "toggle", "toggle floating" }, { "on", "force floating" }, { "off", "force tiled" } } } },
   fullscreen = { { values = { { "fullscreen", "true fullscreen" }, { "maximized", "maximize within gaps" } } } },
   swap   = { { values = { { "l", "left" }, { "r", "right" }, { "u", "up" }, { "d", "down" } } } },
@@ -633,6 +740,7 @@ local arg_specs = {
       { "alpha_fullscreen", "fullscreen opacity, 0-1" },
     } },
     { hint = "value: 1 or 0 for toggles, 0-1 for alpha", values = { { "1", "on" }, { "0", "off" } } },
+    { hint = "window, optional", source = sources.windows },
   },
   resize_width  = { { hint = "pixels to shrink the width by" } },
   resize_height = { { hint = "pixels to shrink the height by" } },
@@ -704,7 +812,11 @@ local function layout_command_values(active)
   return values
 end
 
-arg_specs.tag = { { hint = "tag name; +name adds, -name removes, a bare name toggles" } }
+arg_specs.tag = {
+  { hint = "tag name; +name adds, -name removes, a bare name toggles" },
+  { hint = "window, optional", source = sources.windows },
+}
+arg_specs.untag = { { hint = "window to clear", source = sources.windows } }
 
 ---Candidates for `:submap`: HyprVim's enterable modes, then every submap that is not
 ---HyprVim's, read from the cache so internal operator states stay hidden.
