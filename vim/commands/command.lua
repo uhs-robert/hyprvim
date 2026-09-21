@@ -26,16 +26,17 @@ end
 ---Show a formatted command reference in a floating terminal.
 ---@param restore fun()  re-enters the originating submap when the terminal closes
 ---@return true
-local function show_help(restore)
+local function show_help(restore, name)
   local help_file = require("lib.utils").tmp_path("command-help") .. ".md"
   local f = io.open(help_file, "w")
   if not f then return end
   f:write(Command.render_help())
   f:close()
+  local search = name and (" '+/^| `:" .. name:gsub("[%W]", ".") .. "`'") or ""
   Hypr.cmd_then_dispatch(
     Config.term_cmd("hyprvim-help")
       .. " bash -c "
-      .. sq(Config.applications.editor .. " -RM " .. help_file .. "; rm -f " .. help_file),
+      .. sq(Config.applications.editor .. " -RM" .. search .. " " .. help_file .. "; rm -f " .. help_file),
     Callback.register(restore)
   )()
   return true
@@ -106,6 +107,11 @@ local commands = {
   ["shutdown!"] = function() do_shutdown() end,
   reboot     = function(restore) return confirm("Restart?", restore, do_reboot) end,
   ["reboot!"] = function() do_reboot() end,
+  group      = function() hl.dispatch(hl.dsp.group.toggle()) end,
+  group_next = function() hl.dispatch(hl.dsp.group.next()) end,
+  group_prev = function() hl.dispatch(hl.dsp.group.prev()) end,
+  group_lock = function() hl.dispatch(hl.dsp.group.lock({ action = "toggle" })) end,
+  marks      = function() require("vim.features.marks").list() end,
   picker     = function() hl.dispatch(hl.dsp.exec_cmd("pidof hyprpicker || (hyprpicker | wl-copy)")) end,
   edit       = function() Hypr.exec(Config.applications.terminal .. " " .. Config.applications.editor) end,
   terminal   = function() Hypr.exec(Config.applications.terminal) end,
@@ -242,6 +248,52 @@ local arg_commands = {
     hl.dispatch(hl.dsp.window.set_prop({ prop = prop, value = val }))
   end,
   window         = function(a) hl.dispatch(hl.dsp.focus({ window = a })) end,
+  set            = function(a)
+    local option, value = a:match("^(%S+)%s+(.+)$")
+    if not option then return reject("set", "an option name and a value, e.g. general:gaps_in 5") end
+    local target, path = {}, {}
+    for part in option:gmatch("[^:]+") do
+      path[#path + 1] = part
+    end
+    local leaf = table.remove(path)
+    local node = target
+    for _, part in ipairs(path) do
+      node[part] = {}
+      node = node[part]
+    end
+    node[leaf] = tonumber(value) or (value == "true" and true) or (value == "false" and false) or value
+    hl.config(target)
+  end,
+  layout         = function(a)
+    -- plugins and hl.layout.register add layouts, so any name may be valid
+    if not a:match("^%S+$") then return reject("layout", "a layout name, e.g. dwindle") end
+    hl.config({ general = { layout = a } })
+  end,
+  group_move     = function(a)
+    if not one_of(a, { "l", "r", "u", "d" }) then return reject("group_move", "a direction: l, r, u or d") end
+    hl.dispatch(hl.dsp.group.move_window({ direction = a }))
+  end,
+  group_window   = function(a)
+    local index = tonumber(a)
+    if not index or index < 1 then return reject("group_window", "a window number, counting from 1") end
+    hl.dispatch(hl.dsp.group.active({ index = index }))
+  end,
+  workspace_monitor = function(a)
+    if a == "" then return reject("workspace_monitor", "a monitor name") end
+    local ws = hl.get_active_workspace()
+    if not ws then return end
+    hl.dispatch(hl.dsp.workspace.move({ workspace = tostring(ws.id), monitor = a }))
+  end,
+  workspace_swap = function(a)
+    local one, two = a:match("^(%S+)%s+(%S+)$")
+    if not one then return reject("workspace_swap", "two monitor names, e.g. eDP-1 DP-7") end
+    hl.dispatch(hl.dsp.workspace.swap_monitors({ monitor1 = one, monitor2 = two }))
+  end,
+  help           = function(a, restore) return show_help(restore, a) end,
+  layoutcmd      = function(a)
+    if a == "" then return reject("layoutcmd", "a layout command, e.g. togglesplit") end
+    hl.dispatch(hl.dsp.layout(a))
+  end,
   zorder         = function(a)
     if not one_of(a, { "top", "bottom" }) then return reject("zorder", "top or bottom") end
     hl.dispatch(hl.dsp.window.alter_zorder({ mode = a }))
@@ -260,6 +312,7 @@ local arg_aliases = {
   vresize = "resize_height",
   resize_exact = "size",
   mon = "monitor",
+  layoutmsg = "layoutcmd",
   active_opacity = "opacity_active",
   inactive_opacity = "opacity_inactive",
   fullscreen_opacity = "opacity_fullscreen",
@@ -316,6 +369,11 @@ local descriptions = {
   shutdown = "power off, after confirming",
   reboot = "restart the machine, after confirming",
   picker = "pick a color to the clipboard",
+  group = "toggle the window into a group",
+  group_next = "focus the next window in the group",
+  group_prev = "focus the previous window in the group",
+  group_lock = "lock or unlock the group",
+  marks = "list the marks that are set",
   edit = "open the editor in a terminal",
   terminal = "open a terminal",
   help = "show the command reference",
@@ -346,6 +404,14 @@ local arg_descriptions = {
   prop = "set a window property <PROP VALUE>",
   window = "focus a window by selector <SELECTOR>",
   zorder = "alter the window z-order <top|bottom>",
+  help = "show the command reference at one entry <COMMAND>",
+  set = "set any Hyprland option <OPTION VALUE>",
+  layout = "set the tiling layout <NAME>",
+  layoutcmd = "run a command the active layout provides <CMD [ARGS]>",
+  group_move = "move the window into a group in a direction <DIR>",
+  group_window = "focus a window in the group by number <N>",
+  workspace_monitor = "move this workspace to a monitor <NAME>",
+  workspace_swap = "swap the workspaces of two monitors <NAME NAME>",
 }
 -- stylua: ignore end
 
@@ -410,6 +476,7 @@ local sources = {
   specials = [==[hyprctl workspaces | awk '/^workspace ID/ { name=$4; gsub(/[()]/,"",name); if (name ~ /^special:/) { sub(/^special:/,"",name); printf "%s\topen special workspace\n", name } }' | sort -u]==],
   monitors = [==[hyprctl monitors | awk '/^Monitor /{ id=$4; gsub(/[():]/,"",id); printf "%s\tmonitor ID %s\n", $2, id }']==],
   windows = Config.install_dir .. "/scripts/hyprvim-window-list",
+  options = [==[hyprctl descriptions | awk -F'"' '/"name":/ { n = $4 } /"description":/ { printf "%s\t%s\n", n, $4 }']==],
 }
 
 ---Opacity steps offered for any 0-1 value.
@@ -468,6 +535,28 @@ local arg_specs = {
   fullscreen = { { values = { { "fullscreen", "true fullscreen" }, { "maximized", "maximize within gaps" } } } },
   swap   = { { values = { { "l", "left" }, { "r", "right" }, { "u", "up" }, { "d", "down" } } } },
   zorder = { { values = { { "top", "raise above other windows" }, { "bottom", "send behind other windows" } } } },
+  set = { { hint = "option name, e.g. general:gaps_in", source = sources.options }, { hint = "value" } },
+  layout = { {
+    hint = "layout name; plugins add their own",
+    values = {
+      { "dwindle", "spiral tiling" },
+      { "master", "master and stack" },
+      { "scrolling", "windows on an infinite tape" },
+      { "monocle", "one window fills the workspace" },
+    },
+    source = [==[{ hyprctl layouts 2>/dev/null | grep -v 'unknown request'; hyprctl getoption general:layout | awk '/^str:/ { print $2 }'; } | awk 'NF && !seen[$1]++ && $1 !~ /^(dwindle|master|scrolling|monocle)$/ { printf "%s\tregistered layout\n", $1 }']==],
+  } },
+  group_move = { { values = { { "l", "left" }, { "r", "right" }, { "u", "up" }, { "d", "down" } } } },
+  group_window = { { hint = "window number in the group, counting from 1" } },
+  workspace_monitor = { monitor_arg },
+  workspace_swap = { monitor_arg, monitor_arg },
+  help = { { hint = "command to jump to", values = (function()
+    local names = {}
+    for _, entry in ipairs(COMPLETIONS) do
+      names[#names + 1] = { entry.name, entry.base_desc }
+    end
+    return names
+  end)() } },
   prop = {
     { hint = "window property", values = {
       { "opaque", "disable transparency" },
@@ -501,18 +590,77 @@ for alias, canonical in pairs(arg_aliases) do
 end
 
 
+---Commands `hl.dsp.layout()` takes, tagged with the layouts that provide them.
+-- stylua: ignore start
+local layout_commands = {
+  { "preselect",       "override the next split direction",            { "dwindle" } },
+  { "togglesplit",     "toggle the split direction",                   { "dwindle" } },
+  { "swapsplit",       "swap the two halves of the split",             { "dwindle" } },
+  { "rotatesplit",     "rotate the split",                             { "dwindle" } },
+  { "splitratio",      "change the split ratio",                       { "dwindle" } },
+  { "movetoroot",      "move to the root of the workspace tree",       { "dwindle" } },
+  { "swapwithmaster",  "swap the window with the master",              { "master" } },
+  { "focusmaster",     "focus the master window",                      { "master" } },
+  { "addmaster",       "add a master",                                 { "master" } },
+  { "removemaster",    "remove a master",                              { "master" } },
+  { "mfact",           "change the master split ratio",                { "master" } },
+  { "orientationnext", "cycle the orientation",                        { "master" } },
+  { "orientationcenter", "put the master in the centre",               { "master" } },
+  { "rollnext",        "roll the next window into master",             { "master" } },
+  { "rollprev",        "roll the previous window into master",         { "master" } },
+  { "swapnext",        "swap with the next window",                    { "master" } },
+  { "swapprev",        "swap with the previous window",                { "master" } },
+  { "cyclenext",       "focus the next window",                        { "master", "monocle" } },
+  { "cycleprev",       "focus the previous window",                    { "master", "monocle" } },
+  { "center",          "centre the focused column",                    { "scrolling" } },
+  { "colresize",       "resize the column, e.g. +0.2 or +conf",        { "scrolling" } },
+  { "consume",         "take the window into the previous column",     { "scrolling" } },
+  { "consume_or_expel","consume when alone, expel otherwise",          { "scrolling" } },
+  { "expel",           "move the window to its own column",            { "scrolling" } },
+  { "promote",         "move the window to a new column ahead",        { "scrolling" } },
+  { "fit",             "fit active, visible, all, toend, tobeg, expand", { "scrolling" } },
+  { "fit_into_view",   "fit the active column into view",              { "scrolling" } },
+  { "focus",           "move focus and centre, wrapping at the ends",  { "scrolling" } },
+  { "move",            "scroll by pixels (+200) or columns (+col)",    { "scrolling" } },
+  { "swapcol",         "swap the column with l or r",                  { "scrolling" } },
+  { "inhibit_scroll",  "freeze the view for this workspace",           { "scrolling" } },
+}
+-- stylua: ignore end
+
+---Candidates for `:layoutcmd`, narrowed to the layout in use.
+---@param active string|nil
+---@return { [1]: string, [2]: string }[]
+local function layout_command_values(active)
+  local values = {}
+  for _, cmd in ipairs(layout_commands) do
+    for _, layout in ipairs(cmd[3]) do
+      if layout == active then values[#values + 1] = { cmd[1], cmd[2] } end
+    end
+  end
+  if #values > 0 then return values end
+  for _, cmd in ipairs(layout_commands) do
+    values[#values + 1] = { cmd[1], cmd[2] .. " (" .. table.concat(cmd[3], ", ") .. ")" }
+  end
+  return values
+end
+
+-- seeded unfiltered; `Command.prompt` narrows it to the layout in use
+arg_specs.layoutcmd = { { hint = "layout command", values = layout_command_values(nil) } }
+
 ---Section order for the generated reference; names not listed fall into "Other".
 -- stylua: ignore start
 local help_groups = {
   { "File / Window",     { "w", "wq", "q", "q!", "qa", "qa!", "only" } },
   { "Layout",            { "split", "vsplit", "float", "fullscreen", "pin", "center", "pseudo", "zorder", "swap" } },
   { "Navigation",        { "window", "workspace", "workspace_next", "workspace_prev", "monitor", "special" } },
+  { "Groups",            { "group", "group_next", "group_prev", "group_window", "group_move", "group_lock" } },
   { "Window Move",       { "move", "move_workspace", "move_workspace!", "move_monitor", "move_special" } },
   { "Window Resize",     { "resize_width", "resize_height", "size" } },
   { "Window Properties", { "opacity", "opacity_active", "opacity_inactive", "opacity_fullscreen", "dim", "prop" } },
-  { "Workspace",         { "rename", "gaps" } },
+  { "Workspace",         { "rename", "gaps", "workspace_monitor", "workspace_swap" } },
+  { "Configuration",     { "set", "layout", "layoutcmd" } },
   { "System",            { "reload", "lock", "update", "logout", "reboot", "shutdown", "picker" } },
-  { "Apps",              { "edit", "terminal", "help" } },
+  { "Apps",              { "edit", "terminal", "help", "marks" } },
 }
 
 ---Rows that have no entry in the dispatch tables.
@@ -727,7 +875,7 @@ local function execute(cmd, restore)
   local name, args = cmd:match("^(%S+)%s+(.*)")
   if name then
     local afn = arg_commands[name]
-    if afn then return afn(args) end
+    if afn then return afn(args, restore) end
   end
 
   if cmd:match("^%%?s/") then
@@ -767,6 +915,13 @@ function Command.prompt()
   local origin = require("lib.submap").current
   Hypr.suspend_vim()
   hl.timer(function()
+    -- the layout can change between prompts, so its messages are collected here
+    local ok, active = pcall(hl.get_config, "general:layout")
+    local spec = { { hint = "layout command", values = layout_command_values(ok and active or nil) } }
+    arg_specs.layoutcmd = spec
+    for alias, canonical in pairs(arg_aliases) do
+      if canonical == "layoutcmd" then arg_specs[alias] = spec end
+    end
     local opts = { wm_class = "hyprvim-command", completions = COMPLETIONS, arg_completions = arg_specs }
     Prompt.async(":", opts, function(cmd)
       local function restore()
