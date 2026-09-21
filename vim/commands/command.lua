@@ -41,6 +41,29 @@ local function show_help(restore)
   return true
 end
 
+---The bang forms skip the confirmation, so only the bare name is offered.
+local no_confirm = { ["logout!"] = true, ["shutdown!"] = true, ["reboot!"] = true }
+
+---Ask in the prompt bar before doing something that ends the session. Anything but
+---y or yes cancels, so Escape and an empty line both mean no.
+---@param question string
+---@param restore fun()|nil  re-enters the originating submap once the answer is in
+---@param action fun()
+---@return true
+local function confirm(question, restore, action)
+  Prompt.async(question .. " [y/N] ", { wm_class = "hyprvim-command" }, function(answer)
+    if answer and answer:lower():match("^y") then action() end
+    if restore then restore() end
+  end)
+  return true
+end
+
+local function do_logout()
+  Hypr.exec("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'")
+end
+local function do_shutdown() hl.dispatch(hl.dsp.exec_cmd("systemctl poweroff")) end
+local function do_reboot() hl.dispatch(hl.dsp.exec_cmd("systemctl reboot")) end
+
 ---Exact-match dispatch table: command string -> handler(restore).
 ---@type table<string, fun(restore: fun()): true?>
 -- stylua: ignore start
@@ -74,18 +97,15 @@ local commands = {
   dim        = function() Hypr.toggle_dim() end,
   workspace_next = function() Hypr.workspace_rel(1) end,
   workspace_prev = function() Hypr.workspace_rel(-1) end,
-  reload     = function() os.execute("hyprctl reload &") end,
+  reload     = function() Hypr.reload() end,
   update     = function() Updater.update() end,
   lock       = function() Hypr.exec(Config.applications.lock) end,
-  logout     = function()
-    if os.execute("command -v hyprshutdown >/dev/null 2>&1") then
-      os.execute("hyprshutdown &")
-    else
-      hl.dispatch(hl.dsp.exit())
-    end
-  end,
-  shutdown   = function() hl.dispatch(hl.dsp.exec_cmd("systemctl poweroff")) end,
-  reboot     = function() hl.dispatch(hl.dsp.exec_cmd("systemctl reboot")) end,
+  logout     = function(restore) return confirm("Log out?", restore, do_logout) end,
+  ["logout!"] = function() do_logout() end,
+  shutdown   = function(restore) return confirm("Power off?", restore, do_shutdown) end,
+  ["shutdown!"] = function() do_shutdown() end,
+  reboot     = function(restore) return confirm("Restart?", restore, do_reboot) end,
+  ["reboot!"] = function() do_reboot() end,
   picker     = function() hl.dispatch(hl.dsp.exec_cmd("pidof hyprpicker || (hyprpicker | wl-copy)")) end,
   edit       = function() Hypr.exec(Config.applications.terminal .. " " .. Config.applications.editor) end,
   terminal   = function() Hypr.exec(Config.applications.terminal) end,
@@ -100,6 +120,7 @@ local aliases = {
   r  = "reload", e = "edit", t = "terminal",
   poweroff = "shutdown", pick = "picker", hyprpicker = "picker",
   restart = "reboot",
+  ["poweroff!"] = "shutdown!", ["restart!"] = "reboot!",
   h = "help", close = "q", kill = "q!",
   write = "w", save = "w",
   write_quit = "wq", save_quit = "wq",
@@ -291,9 +312,9 @@ local descriptions = {
   reload = "reload hyprland config",
   update = "update hyprvim",
   lock = "lock the session",
-  logout = "log out of the session",
-  shutdown = "power off",
-  reboot = "restart the machine",
+  logout = "log out of the session, after confirming",
+  shutdown = "power off, after confirming",
+  reboot = "restart the machine, after confirming",
   picker = "pick a color to the clipboard",
   edit = "open the editor in a terminal",
   terminal = "open a terminal",
@@ -365,7 +386,9 @@ local function add(name, desc, takes_args)
 end
 
 for name in pairs(commands) do
-  if not aliases[name] then add(name, descriptions[name] or user_descriptions[name] or "user command") end
+  if not aliases[name] and not no_confirm[name] then
+    add(name, descriptions[name] or user_descriptions[name] or "user command")
+  end
 end
 for name in pairs(arg_commands) do
   if not arg_aliases[name] then add(name, arg_descriptions[name] or user_descriptions[name] or "user command", true) end
@@ -544,7 +567,12 @@ function Command.lint()
     end
   end
   for name in pairs(commands) do
-    if not aliases[name] and not descriptions[name] and not user_names[name] then report(name .. ": no description") end
+    if not aliases[name] and not no_confirm[name] and not descriptions[name] and not user_names[name] then
+      report(name .. ": no description")
+    end
+  end
+  for name in pairs(no_confirm) do
+    if not commands[(name:gsub("!$", ""))] then report(name .. ": skips a confirmation that does not exist") end
   end
   for name in pairs(arg_commands) do
     if not arg_aliases[name] and not arg_descriptions[name] and not user_names[name] then
