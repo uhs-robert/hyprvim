@@ -29,6 +29,55 @@ local sq = Utils.sh_escape
 --- @field source string?
 
 local MENU_HEIGHT = 400
+local HISTORY_SIZE = 200
+
+---Where recalled prompt history lives. State, not runtime state: it should survive a reboot,
+---unlike everything else HyprVim keeps in `state_dir`.
+---@return string
+local function history_dir()
+  local base = os.getenv("XDG_STATE_HOME")
+  if not base or base == "" then base = (os.getenv("HOME") or ".") .. "/.local/state" end
+  return base .. "/hyprvim/history"
+end
+
+---Readline keeps its own history list, so the file only has to be read in and written back.
+---@param wm_class string
+---@return string block, string? path
+local function history_block(wm_class)
+  local cfg = Config.prompt or {}
+  if cfg.history == false then return "" end
+  local dir = history_dir()
+  os.execute("mkdir -p -m 700 " .. sq(dir))
+  local path = dir .. "/" .. wm_class
+  local size = tostring(cfg.history_size or HISTORY_SIZE)
+  local block = table.concat({
+    "_hv_hist=" .. sq(path),
+    "_hv_hist_size=" .. size,
+    [[history -r "$_hv_hist" 2>/dev/null]],
+    "",
+  }, "\n")
+  return block, path
+end
+
+---Appends the entered line, keeping the file to the configured size. A prompt with a
+---completion list only records entries it recognises, so typos are not recalled.
+local HISTORY_SAVE = [[
+_hv_known_entry() {
+    local first w
+    [ -n "$_hv_words" ] || return 0
+    case "$1" in !*|s/*|%s/*) return 0;; esac
+    first="${1%% *}"
+    for w in $_hv_words; do [ "$w" = "$first" ] && return 0; done
+    return 1
+}
+if [ -n "$_hv_hist" ] && [ -n "$__hv_in" ] && _hv_known_entry "$__hv_in"; then
+    history -s "$__hv_in" 2>/dev/null
+    history -w "$_hv_hist" 2>/dev/null
+    tail -n "$_hv_hist_size" "$_hv_hist" > "$_hv_hist.tmp" 2>/dev/null && mv "$_hv_hist.tmp" "$_hv_hist"
+    # the trim recreates the file, so the mode is set after it, not once at creation
+    chmod 600 "$_hv_hist" 2>/dev/null
+fi
+]]
 
 ---@return boolean menu_enabled, integer height
 local function menu_opts(opts)
@@ -313,6 +362,7 @@ local function build_cmd(label, opts, state_file)
   if not f then return nil end
 
   local comp_block, entries_file, args_file = completion_block(opts, label, wm_class)
+  local hist_block = history_block(wm_class)
   local cleanup = sq(script)
     .. (entries_file and (" " .. sq(entries_file)) or "")
     .. (args_file and (" " .. sq(args_file)) or "")
@@ -323,11 +373,13 @@ local function build_cmd(label, opts, state_file)
       .. "' EXIT\n"
       .. comp_block
       .. ESC_BLOCK
+      .. hist_block
       -- clear kernel-echoed typeahead so readline redraws it after the prompt
       .. "printf '\\033[2J\\033[H'\n"
       .. "read -e -r -p "
       .. sq(label)
       .. " __hv_in\n"
+      .. HISTORY_SAVE
       .. "printf '%s' \"$__hv_in\" > "
       .. sq(state_file)
       .. "\n"

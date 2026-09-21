@@ -49,6 +49,7 @@ Controls Tab completion in the `:` command bar.
 - `completion_menu = true` opens an [fzf](https://github.com/junegunn/fzf) menu listing every command with its description; the bar grows for the menu and shrinks back on selection. A second `Tab` completes arguments, listing live workspaces and monitors where they apply and showing the accepted values otherwise
 - `completion_menu = false`, or fzf not installed, falls back to cycling through prefix matches
 - `completion_height` is the pixel height the bar grows to (default 400)
+- `history = true` recalls earlier entries with the arrow keys. Each prompt keeps its own file under `$XDG_STATE_HOME/hyprvim/history`, trimmed to `history_size` entries (default 200). The command bar only records entries it recognises, so a typo is not offered back
 
 ### `updates`
 
