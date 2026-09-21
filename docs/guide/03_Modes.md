@@ -64,6 +64,8 @@ Press `:` from NORMAL mode to enter COMMAND mode.
 
 Command mode provides powerful window management, workspace navigation, and system control.
 
+Separate commands with `|` to run several at once, e.g. `:float on | center | opacity 0.9`. They run in order and stop at the first that fails; write `\|` for a literal pipe. Shell (`:!`) and substitute (`:%s/`) lines are never split.
+
 Press `Escape` to dismiss the bar without running anything. While the completion menu is open, `Escape` closes the menu first and leaves you at the prompt.
 
 Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, the prompt bar expands into a searchable menu of commands and their descriptions; `Tab` and `Shift+Tab` move through the list. Pressing `Tab` again after a command name completes its arguments: live workspace and monitor lists, window properties, and the accepted range for free-form values such as `:opacity` (0-1). Searching matches descriptions as well as names, so typing `close` finds `:q`, `:qa` and `:only`. Aliases are searchable but listed beside the command they point at instead of as separate entries. Without fzf, `Tab` cycles through prefix matches instead.

@@ -231,6 +231,20 @@ _hv_rank() {
           printf "%d\t%s\n", rank, $0 }' | sort -s -k1,1n | cut -f2-
 }
 _hv_menu() {
+    # in a chain, complete only the command after the last |, then put the rest back
+    local head=''
+    case "$READLINE_LINE" in "!"* | s/* | %s/*) ;; *"|"*)
+        head="${READLINE_LINE%|*}|"
+        READLINE_LINE="${READLINE_LINE##*|}"
+        head="$head${READLINE_LINE%%[! ]*}"
+        READLINE_LINE="${READLINE_LINE#"${READLINE_LINE%%[! ]*}"}"
+        ;;
+    esac
+    _hv_menu_segment
+    READLINE_LINE="$head$READLINE_LINE"
+    READLINE_POINT="${#READLINE_LINE}"
+}
+_hv_menu_segment() {
     local line="$READLINE_LINE" cur sel matches cmd rest pos
     if [[ "$line" == "!"* ]]; then
         _hv_shell_menu

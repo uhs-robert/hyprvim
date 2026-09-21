@@ -170,11 +170,14 @@ local aliases = {
 }
 for alias, canonical in pairs(aliases) do commands[alias] = commands[canonical] end
 
+---Set by any rejection so a chain can stop at the first command that failed.
+local chain_failed = false
 
 ---Report a rejected argument and return nil so the caller stops.
 ---@param cmd string
 ---@param expected string
 local function reject(cmd, expected)
+  chain_failed = true
   Hypr.notify(":" .. cmd .. " expects " .. expected, "error", 3000)
 end
 
@@ -871,6 +874,7 @@ local help_extras = {
   { "Prompt", {
     { "Tab", "Complete; with fzf installed this opens a searchable menu, and a second Tab completes arguments" },
     { "Escape", "Dismiss the command bar without running anything" },
+    { "a | b", "Run commands in order, stopping at the first that fails; a backslash before the pipe makes it literal" },
   } },
 }
 -- stylua: ignore end
@@ -886,20 +890,18 @@ end
 ---@param rows { [1]: string, [2]: string }[]
 ---@return string
 local function render_table(rows)
-  local function width(text) return #text end
   local w1, w2 = #"Command", #"Description"
   for _, row in ipairs(rows) do
-    w1 = math.max(w1, width(row[1]))
-    w2 = math.max(w2, width(row[2]))
+    w1 = math.max(w1, #row[1])
+    w2 = math.max(w2, #row[2])
   end
-  local out = {
-    string.format("| %-" .. w1 .. "s | %-" .. w2 .. "s |", "Command", "Description"),
-    string.format("| %s | %s |", string.rep("-", w1), string.rep("-", w2)),
-  }
+  -- padded by hand: string.format caps field widths at 99
+  local function line(a, b)
+    return "| " .. a .. string.rep(" ", w1 - #a) .. " | " .. b .. string.rep(" ", w2 - #b) .. " |"
+  end
+  local out = { line("Command", "Description"), "| " .. string.rep("-", w1) .. " | " .. string.rep("-", w2) .. " |" }
   for _, row in ipairs(rows) do
-    local pad1 = string.rep(" ", w1 - width(row[1]))
-    local pad2 = string.rep(" ", w2 - width(row[2]))
-    out[#out + 1] = string.format("| %s%s | %s%s |", row[1], pad1, row[2], pad2)
+    out[#out + 1] = line(row[1], row[2])
   end
   return table.concat(out, "\n")
 end
@@ -1101,6 +1103,7 @@ local function execute(cmd, restore)
     return true
   end
 
+  chain_failed = true
   local name = cmd:match("^%S+") or cmd
   local suggestion = nearest(name)
   if suggestion == name then suggestion = nil end
@@ -1109,6 +1112,57 @@ local function execute(cmd, restore)
     "error",
     3000
   )
+end
+
+---Split a line on unescaped |, the way vim separates commands; \| is a literal pipe.
+---Shell and substitute lines are never split, since the pipe belongs to them.
+---@param line string
+---@return string[]
+local function split_chain(line)
+  if line:match("^%s*!") or line:match("^%s*%%?s/") then return { line } end
+  local parts, buf, i = {}, {}, 1
+  while i <= #line do
+    local c = line:sub(i, i)
+    if c == "\\" and line:sub(i + 1, i + 1) == "|" then
+      buf[#buf + 1] = "|"
+      i = i + 2
+    elseif c == "|" then
+      parts[#parts + 1] = table.concat(buf)
+      buf = {}
+      i = i + 1
+    else
+      buf[#buf + 1] = c
+      i = i + 1
+    end
+  end
+  parts[#parts + 1] = table.concat(buf)
+  return parts
+end
+
+---Run each command of a chain in order, stopping at the first that fails.
+---@param line string
+---@param restore fun()
+---@return true|nil  true once a command has taken over restoring the submap
+local function run_chain(line, restore)
+  local segments = {}
+  for _, segment in ipairs(split_chain(line)) do
+    segments[#segments + 1] = segment:gsub("^%s+", ""):gsub("%s+$", "")
+  end
+  -- checked up front so a malformed chain runs nothing rather than half of itself
+  for _, segment in ipairs(segments) do
+    if segment == "" then return reject("|", "a command on each side") end
+  end
+  for i, segment in ipairs(segments) do
+    chain_failed = false
+    -- an async command restores the submap itself, so nothing may run after it
+    if execute(segment, restore) then
+      if i < #segments then
+        Hypr.notify(":" .. segment:match("^%S+") .. " waits for input, so it has to come last", "warning", 3000)
+      end
+      return true
+    end
+    if chain_failed then return end
+  end
 end
 
 ---Show the `:` command prompt, execute the entered command, then restore the current submap.
@@ -1141,7 +1195,7 @@ function Command.prompt()
         return
       end
       hl.timer(function()
-        if not execute(cmd, restore) then restore() end
+        if not run_chain(cmd, restore) then restore() end
       end, { timeout = 50, type = "oneshot" })
     end)
     -- stopgap: shrinks (does not close) the unguarded reset→terminal-focus leak window
