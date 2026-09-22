@@ -1,5 +1,13 @@
 # HyprVim Release Notes
 
+## [v4.0.1](https://github.com/uhs-robert/hyprvim/releases/tag/v4.0.1) - 2026-09-22
+
+### Bug Fixes
+
+- **HyprVim no longer hijacks your config's modules** ([#23](https://github.com/uhs-robert/hyprvim/issues/23)): internal modules used generic names like `config` and `lib.utils`, and loading HyprVim evicted and replaced the user's own modules of the same name, so a later `require("config")` in a keybind callback got HyprVim's. Internals now live under `hyprvim.*`, resolved from the install directory without touching `package.path` ([#24](https://github.com/uhs-robert/hyprvim/pull/24)).
+
+> [!NOTE] Only code that required HyprVim internals by their bare names, like `require("vim")`, is affected; use `require("hyprvim.vim")` instead. `require("hyprvim").setup(...)` is unchanged.
+
 ## [v4.0.0](https://github.com/uhs-robert/hyprvim/releases/tag/v4.0.0) - 2026-09-21
 
 ### Breaking Changes
