@@ -1,8 +1,8 @@
 -- keys/submaps/modes/init.lua
 
-require("keys.submaps.modes.normal")
-require("keys.submaps.modes.insert")
-require("keys.submaps.modes.visual")
-require("keys.submaps.modes.v-line")
-require("keys.submaps.modes.g-motion")
-require("keys.submaps.modes.g-visual")
+require("hyprvim.keys.submaps.modes.normal")
+require("hyprvim.keys.submaps.modes.insert")
+require("hyprvim.keys.submaps.modes.visual")
+require("hyprvim.keys.submaps.modes.v-line")
+require("hyprvim.keys.submaps.modes.g-motion")
+require("hyprvim.keys.submaps.modes.g-visual")

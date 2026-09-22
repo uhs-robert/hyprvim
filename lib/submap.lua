@@ -1,5 +1,5 @@
 --- Submap lifecycle manager for HyprVim.
-local Bind = require("lib.bind") ---@class HyprVimBindLib
+local Bind = require("hyprvim.lib.bind") ---@class HyprVimBindLib
 
 --- @class HyprVimSubmap
 local Submap = {
@@ -159,7 +159,7 @@ end
 --- @param builtin      table[]|nil
 --- @return table[]
 local function merge_user_keymaps(name, builtin)
-  local cfg = require("config") --[[@as HyprVimConfig]]
+  local cfg = require("hyprvim.config") --[[@as HyprVimConfig]]
   local user = cfg.keymaps and cfg.keymaps[name]
   if not user or #user == 0 then return builtin or {} end
 

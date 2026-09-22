@@ -1,11 +1,11 @@
 -- vim/features/replace.lua
 -- r (replace count chars, via R-CHAR submap) and R (replace with string) commands.
 
-local VimCount = require("vim.lib.count") ---@class VimCount
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Clipboard = require("lib.clipboard") ---@class Clipboard
-local Prompt = require("lib.prompt") ---@class Prompt
-local exit_vim = require("vim.exit")
+local VimCount = require("hyprvim.vim.lib.count") ---@class VimCount
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Clipboard = require("hyprvim.lib.clipboard") ---@class Clipboard
+local Prompt = require("hyprvim.lib.prompt") ---@class Prompt
+local exit_vim = require("hyprvim.vim.exit")
 
 --- @class ReplaceModule
 local Replace = {}

@@ -3,11 +3,11 @@
 -- All clipboard I/O and process management happens in the script subprocess,
 -- not in the compositor Lua thread.
 
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Config = require("config") ---@class HyprVimConfigModule
-local Window = require("hypr.window") ---@class HyprVimWindow
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local Count = require("vim.lib.count") ---@class VimCount
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
+local Window = require("hyprvim.hypr.window") ---@class HyprVimWindow
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local Count = require("hyprvim.vim.lib.count") ---@class VimCount
 
 --- @class EditorModule
 local Editor = {}

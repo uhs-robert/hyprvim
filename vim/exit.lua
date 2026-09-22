@@ -1,8 +1,8 @@
 -- vim/exit.lua
 -- Composes the full vim-mode teardown
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local Clipboard = require("lib.clipboard") ---@class Clipboard
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local Clipboard = require("hyprvim.lib.clipboard") ---@class Clipboard
 
 ---Exit vim mode entirely
 return function()

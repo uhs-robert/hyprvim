@@ -1,21 +1,17 @@
 -- whichkey/lib/items.lua
 -- Builds HUD item JSON arrays for marks, registers, and generic submaps.
 
-local dir = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
-local root = dir .. "../../"
-package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
-
-local Utils = require("lib.utils") ---@class HyprVimUtils
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
 local file_exists = Utils.file_exists
 local write_file = Utils.write_file
 local pread = Utils.pread
 local sh_escape = Utils.sh_escape
 local json_escape = Utils.json_escape
 
-local Config = require("config") ---@class HyprVimConfigModule
-local Clipboard = require("lib.clipboard") ---@class Clipboard
-local Hyprctl = require("whichkey.lib.hyprctl") ---@class HyprCtl
-local Find = require("vim.features.find") ---@class Find
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
+local Clipboard = require("hyprvim.lib.clipboard") ---@class Clipboard
+local Hyprctl = require("hyprvim.whichkey.lib.hyprctl") ---@class HyprCtl
+local Find = require("hyprvim.vim.features.find") ---@class Find
 
 --- @class Items
 local Items = {}

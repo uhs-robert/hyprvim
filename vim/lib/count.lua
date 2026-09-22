@@ -1,8 +1,8 @@
 -- vim/lib/count.lua
 -- VimCount accumulator for vim motions (5j, 3dw, etc.)
 
-local Config = require("config") ---@class HyprVimConfigModule
-local Hypr = require("hypr") ---@class HyprVimHyprland
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
 
 --- @class VimCount
 local VimCount = {}

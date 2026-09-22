@@ -3,9 +3,9 @@
 -- Marks store: workspace id, window address, monitor name, class, title.
 -- State: $XDG_RUNTIME_DIR/hyprvim/marks.json
 
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Config = require("config") ---@class HyprVimConfigModule
-local Utils = require("lib.utils") ---@class HyprVimUtils
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
 
 --- @class Marks
 --- @field enter_set    fun()  enter the SET-MARK submap
@@ -99,7 +99,7 @@ function Marks.dispatch_after()
     f:close()
     os.remove(after_path())
   end
-  if target == "reset" then return require("vim.exit")() end
+  if target == "reset" then return require("hyprvim.vim.exit")() end
   Hypr.switch_mode(target ~= "" and target or "NORMAL")
 end
 

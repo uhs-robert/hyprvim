@@ -1,9 +1,8 @@
 -- lib/updater.lua
 
 local dir = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
-package.path = dir .. "../?.lua;" .. dir .. "../?/init.lua;" .. package.path
 
-local Utils = require("lib.utils")
+local Utils = require("hyprvim.lib.utils")
 local sh = Utils.sh_escape
 
 local root = dir .. "../"
@@ -39,7 +38,7 @@ end
 --- Fetch remote state and notify based on the configured update channel.
 --- Runs entirely in background, does not block init.
 function Updater.check_async()
-  local channel = (require("config").updates or {}).channel or "stable"
+  local channel = (require("hyprvim.config").updates or {}).channel or "stable"
   if channel == "off" then return end
   if not is_git_checkout() then return end
   run_async("check", channel)
@@ -47,7 +46,7 @@ end
 
 --- Apply the update for the current channel. Called by :update command.
 function Updater.update()
-  local channel = (require("config").updates or {}).channel or "stable"
+  local channel = (require("hyprvim.config").updates or {}).channel or "stable"
   if channel == "off" then return end
   if not is_git_checkout() then return notify_package_managed() end
   run_async("apply", channel)

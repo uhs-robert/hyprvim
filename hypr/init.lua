@@ -1,5 +1,5 @@
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local sh_escape = require("lib.utils").sh_escape
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local sh_escape = require("hyprvim.lib.utils").sh_escape
 
 local DEFAULT_DELAY_MS = 20
 

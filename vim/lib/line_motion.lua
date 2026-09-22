@@ -1,14 +1,14 @@
 -- vim/lib/line_motion.lua
 -- V-LINE mode motions with first-motion anchoring behavior.
 
-local VimCount = require("vim.lib.count") ---@class VimCount
-local Hypr = require("hypr") ---@class HyprVimHyprland
+local VimCount = require("hyprvim.vim.lib.count") ---@class VimCount
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
 
 --- @class VLineMotion
 local VLineMotion = {}
 
 ---@return string
-local function state_dir() return require("config").state_dir end
+local function state_dir() return require("hyprvim.config").state_dir end
 
 ---@return string  path to the first-motion sentinel file
 local function flag_path() return state_dir() .. "/vline-first-motion" end

@@ -1,6 +1,6 @@
 -- config.lua
 
-local Utils = require("lib.utils") ---@class HyprVimUtils
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
 
 -- stylua: ignore
 local TERM_FLAGS = {
@@ -145,7 +145,7 @@ Config.defaults = {
 }
 
 --- Merges user overrides into defaults and writes the result onto this module table.
---- After calling setup(), any module that does require("config") gets the configured values.
+--- After calling setup(), any module that does require("hyprvim.config") gets the configured values.
 --- @param overrides HyprVimConfig|table|nil
 Config.setup = function(overrides)
   local merged = Utils.deep_extend({}, Config.defaults)

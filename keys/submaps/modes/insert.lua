@@ -1,7 +1,7 @@
 -- keys/submaps/modes/insert.lua
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local common = require("keys.submaps.common")
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local common = require("hyprvim.keys.submaps.common")
 
 Submap.define({
   name = "INSERT",

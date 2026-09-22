@@ -3,10 +3,9 @@
 
 local dir = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
 local root = dir .. "../"
-package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
 
-local Utils = require("lib.utils")
-local Config = require("config")
+local Utils = require("hyprvim.lib.utils")
+local Config = require("hyprvim.config")
 
 local Theme = {}
 

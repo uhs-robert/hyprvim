@@ -1,9 +1,9 @@
 -- keys/submaps/modes/g-motion.lua
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local vim = require("vim") ---@class Vim
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local common = require("keys.submaps.common")
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local vim = require("hyprvim.vim") ---@class Vim
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local common = require("hyprvim.keys.submaps.common")
 
 local send = Hypr.send
 local NM = vim.motion.shortcuts.NORMAL

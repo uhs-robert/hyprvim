@@ -4,9 +4,9 @@
 --- @class VimFeatures
 local VimFeatures = {}
 
-VimFeatures.marks = require("vim.features.marks")
-VimFeatures.registers = require("vim.features.registers")
-VimFeatures.find = require("vim.features.find")
-VimFeatures.replace = require("vim.features.replace")
+VimFeatures.marks = require("hyprvim.vim.features.marks")
+VimFeatures.registers = require("hyprvim.vim.features.registers")
+VimFeatures.find = require("hyprvim.vim.features.find")
+VimFeatures.replace = require("hyprvim.vim.features.replace")
 
 return VimFeatures

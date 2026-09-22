@@ -3,12 +3,12 @@
 -- Find operations require a prompt dialog and clipboard interaction, so they
 -- exit vim mode for input, then re-enter once the search term is submitted.
 
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Config = require("config") ---@class HyprVimConfigModule
-local Prompt = require("lib.prompt") ---@class Prompt
-local Clipboard = require("lib.clipboard") ---@class Clipboard
-local exit_vim = require("vim.exit")
-local SEL = require("vim.lib.motion.shortcuts").SELECT
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
+local Prompt = require("hyprvim.lib.prompt") ---@class Prompt
+local Clipboard = require("hyprvim.lib.clipboard") ---@class Clipboard
+local exit_vim = require("hyprvim.vim.exit")
+local SEL = require("hyprvim.vim.lib.motion.shortcuts").SELECT
 
 --- @class Find
 local Find = {}
