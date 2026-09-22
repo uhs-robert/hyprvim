@@ -1,10 +1,10 @@
 -- vim/lib/motion/init.lua
 -- Execute vim motions with count support and terminal vs GUI routing.
 
-local VimCount = require("vim.lib.count") ---@class VimCount
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Window = require("hypr.window") ---@class HyprVimWindow
-local sc = require("vim.lib.motion.shortcuts")
+local VimCount = require("hyprvim.vim.lib.count") ---@class VimCount
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Window = require("hyprvim.hypr.window") ---@class HyprVimWindow
+local sc = require("hyprvim.vim.lib.motion.shortcuts")
 
 --- @class VimMotion
 local VimMotion = {}

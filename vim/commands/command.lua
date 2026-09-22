@@ -1,15 +1,15 @@
 -- vim/commands/command.lua
 -- Vim-style command mode (:w, :q, :split, :ws N, etc.)
 
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Config = require("config") ---@class HyprVimConfigModule
-local Updater = require("lib.updater") ---@class Updater
-local Prompt = require("lib.prompt") ---@class Prompt
-local Callback = require("lib.callback") ---@class Callback
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
+local Updater = require("hyprvim.lib.updater") ---@class Updater
+local Prompt = require("hyprvim.lib.prompt") ---@class Prompt
+local Callback = require("hyprvim.lib.callback") ---@class Callback
 
 local Command = {} --- @class Command
 
-local sq = require("lib.utils").sh_escape
+local sq = require("hyprvim.lib.utils").sh_escape
 
 ---Close or kill every window in the active workspace.
 ---@param kill boolean  true -> kill (SIGKILL), false -> graceful close
@@ -27,7 +27,7 @@ end
 ---@param restore fun()  re-enters the originating submap when the terminal closes
 ---@return true
 local function show_help(restore, name)
-  local help_file = require("lib.utils").tmp_path("command-help") .. ".md"
+  local help_file = require("hyprvim.lib.utils").tmp_path("command-help") .. ".md"
   local f = io.open(help_file, "w")
   if not f then return end
   f:write(Command.render_help())
@@ -141,7 +141,7 @@ local commands = {
   group_next = function() hl.dispatch(hl.dsp.group.next()) end,
   group_prev = function() hl.dispatch(hl.dsp.group.prev()) end,
   group_lock = function() hl.dispatch(hl.dsp.group.lock({ action = "toggle" })) end,
-  marks      = function() require("vim.features.marks").list() end,
+  marks      = function() require("hyprvim.vim.features.marks").list() end,
   next       = function() cycle(true) end,
   prev       = function() cycle(false) end,
   untag      = function() hl.dispatch(hl.dsp.window.clear_tags()) end,
@@ -444,7 +444,7 @@ local arg_commands = {
       Hypr.switch_mode(a)
       return true
     end
-    if require("lib.submap").registry[a] then
+    if require("hyprvim.lib.submap").registry[a] then
       return reject("submap", "a mode you can enter; " .. a .. " only makes sense mid-keystroke")
     end
     -- an unknown submap has no binds, which would leave the keyboard stranded
@@ -763,7 +763,6 @@ for alias, canonical in pairs(arg_aliases) do
   if arg_specs[canonical] then arg_specs[alias] = arg_specs[canonical] end
 end
 
-
 ---Commands `hl.dsp.layout()` takes, tagged with the layouts that provide them.
 -- stylua: ignore start
 local layout_commands = {
@@ -833,7 +832,7 @@ local function submap_spec()
     values[#values + 1] = { name, "HyprVim mode" }
   end
   table.sort(values, function(a, b) return a[1] < b[1] end)
-  for name in pairs(require("lib.submap").registry or {}) do
+  for name in pairs(require("hyprvim.lib.submap").registry or {}) do
     internal[#internal + 1] = name
   end
   local skip = sq(table.concat(internal, "|"))
@@ -1187,7 +1186,7 @@ end
 
 ---Show the `:` command prompt, execute the entered command, then restore the current submap.
 function Command.prompt()
-  local origin = require("lib.submap").current
+  local origin = require("hyprvim.lib.submap").current
   Hypr.suspend_vim()
   hl.timer(function()
     -- the layout can change between prompts, so its messages are collected here

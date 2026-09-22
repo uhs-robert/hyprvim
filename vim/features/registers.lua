@@ -10,10 +10,10 @@
 --   _  black hole (yank/delete without affecting any register)
 --   /  search register (read-only, mirrors find-state.json)
 
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Clipboard = require("lib.clipboard") ---@class Clipboard
-local Find = require("vim.features.find") ---@class Find
-local Utils = require("lib.utils") ---@class HyprVimUtils
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Clipboard = require("hyprvim.lib.clipboard") ---@class Clipboard
+local Find = require("hyprvim.vim.features.find") ---@class Find
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
 
 --- @class Registers
 --- @field enter_registers fun()  enter the REGISTERS submap
@@ -21,7 +21,7 @@ local Registers = {}
 
 local DEFAULT_REG = '"'
 
-local function state_dir() return require("config").state_dir .. "/registers" end
+local function state_dir() return require("hyprvim.config").state_dir .. "/registers" end
 local function reg_path(name) return state_dir() .. "/" .. name end
 local function pending_path() return state_dir() .. "/pending-register" end
 
@@ -137,7 +137,7 @@ function Registers.handle_yank(mods, key, opts)
   local collapse = opts.collapse
   local reg = Registers.get_pending()
   Registers.clear_pending()
-  require("whichkey").cancel_pending()
+  require("hyprvim.whichkey").cancel_pending()
 
   -- Black hole: capture clipboard before copy, copy, restore clipboard.
   if reg == "_" then
@@ -190,7 +190,7 @@ function Registers.handle_delete(return_mode)
   return_mode = return_mode or "NORMAL"
   local reg = Registers.get_pending()
   Registers.clear_pending()
-  require("whichkey").cancel_pending()
+  require("hyprvim.whichkey").cancel_pending()
 
   -- Black hole: capture clipboard before delete, delete, restore clipboard.
   if reg == "_" then

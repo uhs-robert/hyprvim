@@ -1,6 +1,6 @@
 --- Key binding helpers built on top of hl.bind.
 
-local config = require("config")
+local config = require("hyprvim.config")
 
 --- @class HyprVimBindLib
 local Bind = {

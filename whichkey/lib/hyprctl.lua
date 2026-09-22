@@ -2,10 +2,8 @@
 -- Fetches whichkey HUD items from `hyprctl binds` via a jq filter.
 
 local dir = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
-local root = dir .. "../../"
-package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
 
-local Utils = require("lib.utils") ---@class HyprVimUtils
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
 local pread = Utils.pread
 local sh_escape = Utils.sh_escape
 

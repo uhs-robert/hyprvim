@@ -1,9 +1,9 @@
 -- keys/submaps/common.lua
 -- Shared LEADER/ACT/EXIT keys and footer rows for submap specs
 
-local wk = require("whichkey") ---@class WhichKey
-local vim = require("vim") ---@class Vim
-local config = require("config") ---@class HyprVimConfigModule
+local wk = require("hyprvim.whichkey") ---@class WhichKey
+local vim = require("hyprvim.vim") ---@class Vim
+local config = require("hyprvim.config") ---@class HyprVimConfigModule
 
 local Common = {}
 

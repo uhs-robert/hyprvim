@@ -1,11 +1,11 @@
 -- keys/submaps/modes/normal.lua
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local Bind = require("lib.bind") ---@class HyprVimBindLib
-local vim = require("vim") ---@class Vim
-local wk = require("whichkey") ---@class WhichKey
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local common = require("keys.submaps.common")
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local Bind = require("hyprvim.lib.bind") ---@class HyprVimBindLib
+local vim = require("hyprvim.vim") ---@class Vim
+local wk = require("hyprvim.whichkey") ---@class WhichKey
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local common = require("hyprvim.keys.submaps.common")
 
 local LEADER, _, EXIT = common.keys()
 
@@ -82,7 +82,7 @@ Submap.define({
   escape = false,
   catchall = "stay",
   on_enter = function(ctx)
-    if ctx.from == "reset" then require("lib.clipboard").save_pre_vim() end
+    if ctx.from == "reset" then require("hyprvim.lib.clipboard").save_pre_vim() end
   end,
   on_exit = function(ctx)
     local keep = { GOTO = true, CHANGE = true, YANK = true, DELETE = true, ["R-CHAR"] = true }

@@ -1,9 +1,9 @@
 -- keys/submaps/vim-replace-char.lua
 -- R-CHAR submap: overwrite [count] chars under the cursor with the pressed key (US layout).
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local vim = require("vim") ---@class Vim
-local common = require("keys.submaps.common")
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local vim = require("hyprvim.vim") ---@class Vim
+local common = require("hyprvim.keys.submaps.common")
 
 ---@param char string  literal character the keycode produces
 ---@return fun()

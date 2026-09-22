@@ -6,11 +6,11 @@
 local Submaps = {}
 
 Submaps.setup = function()
-  require("keys.submaps.modes")
-  require("keys.submaps.vim-operators")
-  require("keys.submaps.vim-marks")
-  require("keys.submaps.vim-registers")
-  require("keys.submaps.vim-replace-char")
+  require("hyprvim.keys.submaps.modes")
+  require("hyprvim.keys.submaps.vim-operators")
+  require("hyprvim.keys.submaps.vim-marks")
+  require("hyprvim.keys.submaps.vim-registers")
+  require("hyprvim.keys.submaps.vim-replace-char")
 end
 
 return Submaps

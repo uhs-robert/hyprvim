@@ -3,12 +3,12 @@
 -- io.popen("wl-paste"/"wl-copy") blocks the compositor thread; these helpers
 -- offload both operations outside the Lua event loop via Hypr.exec.
 
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Utils = require("lib.utils") ---@class HyprVimUtils
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
 
 local Clipboard = {} ---@class Clipboard
 
-function Clipboard.pre_vim_path() return require("config").state_dir .. "/clipboard_pre_vim" end
+function Clipboard.pre_vim_path() return require("hyprvim.config").state_dir .. "/clipboard_pre_vim" end
 
 -- Time for a spawned wl-paste to finish writing its tmpfile.
 local SETTLE_MS = 50

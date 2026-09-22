@@ -4,16 +4,16 @@
 
 local TERM_CLASS = "hyprvim-open-vim"
 
--- Bootstrap package.path from this script's real location so lib/ modules resolve.
+-- Load hyprvim.* modules from this script's real location.
 do
   local p = io.popen("readlink -f '" .. (arg[0] or ""):gsub("'", "'\\''") .. "' 2>/dev/null")
   local path = p and p:read("*a"):gsub("%s+$", "") or ""
   if p then p:close() end
   local root = path:match("^(.*)/scripts/[^/]+$")
-  if root then package.path = root .. "/?.lua;" .. package.path end
+  if root then dofile(root .. "/loader.lua") end
 end
 
-local ok_utils, Utils = pcall(require, "lib.utils")
+local ok_utils, Utils = pcall(require, "hyprvim.lib.utils")
 if not ok_utils then
   io.stderr:write("Error: cannot locate hyprvim lib/ modules\n")
   os.exit(1)
@@ -226,7 +226,7 @@ end
 --- @return string  e.g. "kitty --class hyprvim-open-vim -e"
 local function build_term_cmd()
   if cfg.terminal == "" then die("No terminal specified. Set $TERMINAL or use --term") end
-  local ok, Config = pcall(require, "config")
+  local ok, Config = pcall(require, "hyprvim.config")
   if ok then
     Config.setup({ applications = { terminal = cfg.terminal } })
     return Config.term_cmd(TERM_CLASS)

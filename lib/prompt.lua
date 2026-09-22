@@ -4,14 +4,14 @@
 -- The result is written to a state file by the shell, then read back inside a
 -- global callback that is dispatched by hyprctl once the terminal exits.
 
-local Config = require("config") ---@class HyprVimConfigModule
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local Callback = require("lib.callback") ---@class Callback
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local Callback = require("hyprvim.lib.callback") ---@class Callback
 
 --- @class Prompt
 local Prompt = {}
 
-local Utils = require("lib.utils") ---@class HyprVimUtils
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
 local sq = Utils.sh_escape
 
 --- @class PromptCompletion

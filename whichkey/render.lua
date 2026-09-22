@@ -3,19 +3,18 @@
 
 local script_path = debug.getinfo(1, "S").source:sub(2)
 local dir = script_path:match("(.*/)") or "./"
-local root = dir .. "../"
-package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
+dofile(dir .. "../loader.lua")
 
-local Utils = require("lib.utils") ---@class HyprVimUtils
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
 local read_file = Utils.read_file
 local write_file = Utils.write_file
 local file_exists = Utils.file_exists
 local pread = Utils.pread
 local sh_escape = Utils.sh_escape
 
-local Eww = require("whichkey.lib.eww") ---@class Eww
-local Items = require("whichkey.lib.items") ---@class Items
-local Config = require("config") ---@class HyprVimConfigModule
+local Eww = require("hyprvim.whichkey.lib.eww") ---@class Eww
+local Items = require("hyprvim.whichkey.lib.items") ---@class Items
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
 
 --- @class Render
 local Render = {}

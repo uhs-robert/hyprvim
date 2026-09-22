@@ -1,10 +1,10 @@
 -- keys/submaps/vim-marks.lua
 -- SET-MARK, MARKS (jump), DELETE-MARK
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local vim = require("vim") ---@class Vim
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local vim = require("hyprvim.vim") ---@class Vim
 local marks = vim.marks
-local common = require("keys.submaps.common")
+local common = require("hyprvim.keys.submaps.common")
 
 local lowercase = "abcdefghijklmnopqrstuvwxyz"
 local uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

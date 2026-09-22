@@ -8,22 +8,12 @@
 --    ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚═╝  ╚═╝  ╚═══╝  ╚═╝╚═╝     ╚═╝
 --
 
--- Set working directory and bust module cache for reload correctness
-local root = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
-package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
+-- Resolve hyprvim.* modules from this checkout and drop stale ones for reload correctness
+local here = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
+dofile(here .. "loader.lua")
 
 for k in pairs(package.loaded) do
-  if
-    k == "config"
-    or k == "hypr"
-    or k:match("^hypr%.")
-    or k:match("^lib%.")
-    or k:match("^whichkey")
-    or k:match("^vim")
-    or k:match("^keys")
-  then
-    package.loaded[k] = nil
-  end
+  if k:match("^hyprvim%.") and k ~= "hyprvim.loader" then package.loaded[k] = nil end
 end
 
 --- @class HyprVimAPI
@@ -41,7 +31,7 @@ local API = {}
 --- @return HyprVimAPI
 local function public_api(cfg, Vim)
   API.config = cfg
-  API.whichkey = require("whichkey")
+  API.whichkey = require("hyprvim.whichkey")
   API.marks = Vim.marks
   API.registers = Vim.registers
   API.command = Vim.command
@@ -53,24 +43,24 @@ end
 --- @param overrides HyprVimConfig?
 --- @return HyprVimAPI
 API.setup = function(overrides)
-  local cfg = require("config").setup(overrides)
-  require("lib.updater").check_async()
+  local cfg = require("hyprvim.config").setup(overrides)
+  require("hyprvim.lib.updater").check_async()
 
-  local sh_escape = require("lib.utils").sh_escape
+  local sh_escape = require("hyprvim.lib.utils").sh_escape
   os.execute("mkdir -p " .. sh_escape(cfg.state_dir .. "/registers"))
   os.execute("mkdir -p " .. sh_escape(cfg.state_dir .. "/marks"))
 
-  require("hypr.rules").setup()
-  local Vim = require("vim") ---@class Vim
+  require("hyprvim.hypr.rules").setup()
+  local Vim = require("hyprvim.vim") ---@class Vim
   Vim.setup(cfg)
 
-  if cfg.which_key and cfg.which_key.enabled then require("whichkey").start(cfg) end
+  if cfg.which_key and cfg.which_key.enabled then require("hyprvim.whichkey").start(cfg) end
 
-  require("keys")
+  require("hyprvim.keys")
 
   -- Keep Submap.current/previous truthful for transitions dispatched outside Submap.enter
   -- (async editor/replace callbacks via hyprctl).
-  hl.on("keybinds.submap", require("lib.submap").sync)
+  hl.on("keybinds.submap", require("hyprvim.lib.submap").sync)
 
   return public_api(cfg, Vim)
 end

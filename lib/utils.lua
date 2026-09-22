@@ -109,7 +109,7 @@ local tmp_dir_ready = false
 -- Table address differs per process, so concurrent renderers cannot pick the same name
 math.randomseed(os.time() + (tonumber(tostring({}):match("0x(%x+)") or "0", 16) or 0))
 Utils.tmp_path = function(prefix)
-  local dir = require("config").state_dir .. "/tmp"
+  local dir = require("hyprvim.config").state_dir .. "/tmp"
   if not tmp_dir_ready then
     os.execute("mkdir -p -m 700 " .. Utils.sh_escape(dir))
     tmp_dir_ready = true

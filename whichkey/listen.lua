@@ -2,13 +2,11 @@
 -- Registers hl event handlers for the which-key HUD.
 
 local dir = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
-local root = dir .. "../"
-package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
 
-local Render = require("whichkey.render") ---@class Render
-local Utils = require("lib.utils") ---@class HyprVimUtils
-local Theme = require("whichkey.theme")
-local Submap = require("lib.submap") ---@class HyprVimSubmap
+local Render = require("hyprvim.whichkey.render") ---@class Render
+local Utils = require("hyprvim.lib.utils") ---@class HyprVimUtils
+local Theme = require("hyprvim.whichkey.theme")
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
 local sh_escape = Utils.sh_escape
 local read_file = Utils.read_file
 local file_exists = Utils.file_exists

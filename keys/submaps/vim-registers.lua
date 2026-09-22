@@ -1,11 +1,11 @@
 -- keys/submaps/vim-registers.lua
 -- REGISTERS submap activated by " in NORMAL mode
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local vim = require("vim") ---@class Vim
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local vim = require("hyprvim.vim") ---@class Vim
 local reg = vim.registers
-local wk = require("whichkey") ---@class WhichKey
-local common = require("keys.submaps.common")
+local wk = require("hyprvim.whichkey") ---@class WhichKey
+local common = require("hyprvim.keys.submaps.common")
 
 -- Return to origin: NORMAL in the vim flow, reset when entered from a global bind.
 local function set(name)

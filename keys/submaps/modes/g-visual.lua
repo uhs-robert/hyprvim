@@ -1,8 +1,8 @@
 -- keys/submaps/modes/g-visual.lua
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local vim = require("vim") ---@class Vim
-local common = require("keys.submaps.common")
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local vim = require("hyprvim.vim") ---@class Vim
+local common = require("hyprvim.keys.submaps.common")
 
 local VS = vim.motion.shortcuts.VISUAL
 local function visual() Submap.enter("VISUAL") end

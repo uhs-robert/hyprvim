@@ -3,7 +3,7 @@
 --- @class VimCommands
 local VimCommands = {}
 
-VimCommands.command = require("vim.commands.command")
-VimCommands.editor = require("vim.commands.editor")
+VimCommands.command = require("hyprvim.vim.commands.command")
+VimCommands.editor = require("hyprvim.vim.commands.editor")
 
 return VimCommands

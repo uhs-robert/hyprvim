@@ -1,15 +1,15 @@
 -- keys/submaps/modes/v-line.lua
 -- V-LINE, G-VLINE submaps
 
-local Submap = require("lib.submap") ---@class HyprVimSubmap
-local vim = require("vim") ---@class Vim
+local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
+local vim = require("hyprvim.vim") ---@class Vim
 local motion = vim.motion
 local count = vim.count
 local lm = vim.line_motion
 local reg = vim.registers
-local wk = require("whichkey") ---@class WhichKey
-local Hypr = require("hypr") ---@class HyprVimHyprland
-local common = require("keys.submaps.common")
+local wk = require("hyprvim.whichkey") ---@class WhichKey
+local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
+local common = require("hyprvim.keys.submaps.common")
 
 local LEADER = common.keys()
 

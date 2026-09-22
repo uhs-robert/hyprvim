@@ -2,19 +2,19 @@
 -- Check the command tables against each other: descriptions, aliases and argument specs.
 
 local root = arg[0]:match("^(.*)/scripts/[^/]+$") or "."
-package.path = root .. "/?.lua;" .. root .. "/?/init.lua;" .. package.path
+dofile(root .. "/loader.lua")
 
 hl = setmetatable({ timer = function() end }, { __index = function() return function() end end })
-package.preload["hypr"] = function()
+package.preload["hyprvim.hypr"] = function()
   return setmetatable({}, { __index = function() return function() end end })
 end
-package.preload["lib.callback"] = function() return { register = function() end } end
-package.preload["lib.updater"] = function() return { update = function() end } end
-package.preload["lib.submap"] = function() return { current = nil } end
+package.preload["hyprvim.lib.callback"] = function() return { register = function() end } end
+package.preload["hyprvim.lib.updater"] = function() return { update = function() end } end
+package.preload["hyprvim.lib.submap"] = function() return { current = nil } end
 
-require("config").setup({})
+require("hyprvim.config").setup({})
 
-local problems = require("vim.commands.command").lint()
+local problems = require("hyprvim.vim.commands.command").lint()
 for _, problem in ipairs(problems) do
   io.stderr:write("command tables: " .. problem .. "\n")
 end
