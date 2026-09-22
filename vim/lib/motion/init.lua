@@ -66,7 +66,9 @@ function VimMotion.send(key, opts)
     ---@cast shortcut {[1]:string,[2]:string}[]
     local seq = {}
     for _ = 1, n do
-      for _, s in ipairs(shortcut) do seq[#seq + 1] = s end
+      for _, s in ipairs(shortcut) do
+        seq[#seq + 1] = s
+      end
     end
     Hypr.send_burst(seq)
   else
@@ -75,7 +77,9 @@ function VimMotion.send(key, opts)
       Hypr.send(shortcut[1], shortcut[2])
     else
       local seq = {}
-      for _ = 1, n do seq[#seq + 1] = shortcut end
+      for _ = 1, n do
+        seq[#seq + 1] = shortcut
+      end
       Hypr.send_burst(seq)
     end
   end
@@ -92,7 +96,9 @@ function VimMotion.send_visual(key, n)
     ---@cast shortcut {[1]:string,[2]:string}[]
     local seq = {}
     for _ = 1, n do
-      for _, s in ipairs(shortcut) do seq[#seq + 1] = s end
+      for _, s in ipairs(shortcut) do
+        seq[#seq + 1] = s
+      end
     end
     Hypr.send_burst(seq)
   else
@@ -101,7 +107,9 @@ function VimMotion.send_visual(key, n)
       Hypr.send(shortcut[1], shortcut[2])
     else
       local seq = {}
-      for _ = 1, n do seq[#seq + 1] = shortcut end
+      for _ = 1, n do
+        seq[#seq + 1] = shortcut
+      end
       Hypr.send_burst(seq)
     end
   end
