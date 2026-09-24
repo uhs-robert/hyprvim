@@ -68,6 +68,15 @@ local function watchdog(spec_path, dispatch)
     .. "; break; }; done &"
 end
 
+local swept = false
+
+---Remove prompt files a previous Lua state left behind: a reload drops their callbacks, so nothing else will.
+local function sweep_stale()
+  if swept then return end
+  swept = true
+  os.execute("rm -f " .. sq(Config.state_dir .. "/tmp") .. "/prompt-* 2>/dev/null")
+end
+
 ---Write a frontend spec as JSON; the callback is dispatched with "quickshell" so it knows who answered.
 ---@param fields table
 ---@param callback_name string
@@ -644,6 +653,7 @@ end
 ---@param opts     {wm_class?: string, title?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer, prelude?: string, shell_source?: string}  prelude runs in the background as the bar opens; shell_source lists commands for `!` completion in Quickshell
 ---@param callback fun(result: string|nil)
 function Prompt.async(label, opts, callback)
+  sweep_stale()
   local state_file = Utils.tmp_path("prompt-input")
   local quickshell = Prompt.frontend() == "quickshell"
   local wm_class = opts.wm_class or "hyprvim-prompt"
@@ -699,6 +709,7 @@ end
 ---@param command string
 ---@param on_done fun()
 function Prompt.shell(command, on_done)
+  sweep_stale()
   if Prompt.frontend() ~= "quickshell" then
     Hypr.cmd_then_dispatch(
       Config.term_cmd("hyprvim-shell")
