@@ -4,7 +4,8 @@
 --- @class Callback
 local Callback = {}
 
-local _cb_id = 0
+-- Offset per Lua state: a reload restarts the counter, and a stale frontend must not hit a new callback.
+local _cb_id = os.time() % 100000 * 1000
 
 ---Register `fn` as a one-shot global callback; arguments in the dispatched call reach `fn`.
 ---@param fn fun(...)
