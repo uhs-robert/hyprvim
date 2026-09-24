@@ -91,10 +91,10 @@ Your Quickshell config implements one `IpcHandler` with target `hyprvim_whichkey
 
 | Function             | Called when                                                               |
 | -------------------- | ------------------------------------------------------------------------- |
-| `show(path: string)` | A submap's HUD should appear; read the JSON payload at `path` and show it |
-| `hide()`             | The HUD should disappear                                                  |
+| `open(path: string)` | A submap's HUD should appear; read the JSON payload at `path` and show it |
+| `close()`            | The HUD should disappear                                                  |
 
-HyprVim runs `<quickshell_ipc> call hyprvim_whichkey show <path>` and `<quickshell_ipc> call hyprvim_whichkey hide`. `quickshell_ipc` is passed to `sh` unquoted, so it can hold flags (`qs -c myshell ipc`, `qs ipc --pid 1234`) or a wrapper script (`~/.config/hypr/scripts/qs-ipc`) that finds the right instance.
+HyprVim runs `<quickshell_ipc> call hyprvim_whichkey open <path>` and `<quickshell_ipc> call hyprvim_whichkey close`. `quickshell_ipc` is passed to `sh` unquoted, so it can hold flags (`qs -c myshell ipc`, `qs ipc --pid 1234`) or a wrapper script (`~/.config/hypr/scripts/qs-ipc`) that finds the right instance.
 
 The calls run in a background process, never on Hyprland's event loop. A `show` that no instance answers leaves the HUD marked hidden, so the next toggle tries again.
 

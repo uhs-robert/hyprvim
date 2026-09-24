@@ -80,14 +80,14 @@ end
 --- @param path string
 --- @return boolean  false when no Quickshell instance answered
 function Quickshell.show(path)
-  local cmd = Quickshell.ipc_prefix() .. " call " .. Quickshell.TARGET .. " show " .. sh_escape(path)
+  local cmd = Quickshell.ipc_prefix() .. " call " .. Quickshell.TARGET .. " open " .. sh_escape(path)
   return os.execute(cmd .. " >/dev/null 2>&1") == true
 end
 
 --- Shell command that hides the HUD, for callers that batch it into a background job.
 --- @return string
 function Quickshell.hide_cmd()
-  return Quickshell.ipc_prefix() .. " call " .. Quickshell.TARGET .. " hide >/dev/null 2>&1"
+  return Quickshell.ipc_prefix() .. " call " .. Quickshell.TARGET .. " close >/dev/null 2>&1"
 end
 
 return Quickshell

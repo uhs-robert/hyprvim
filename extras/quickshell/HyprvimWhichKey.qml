@@ -50,13 +50,13 @@ PanelWindow {
     IpcHandler {
         target: "hyprvim_whichkey"
 
-        function show(path: string): void {
+        function open(path: string): void {
             root.wanted = true;
             payload_file.path = path;
             payload_file.reload();
         }
 
-        function hide(): void {
+        function close(): void {
             root.wanted = false;
             root.visible = false;
         }
