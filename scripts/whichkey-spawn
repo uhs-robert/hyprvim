@@ -4,6 +4,7 @@
 # Guards against stale renders: only runs if the current-submap file still matches sm.
 #
 # Usage: whichkey-spawn <eww_dir> <csm_path> <sm> <position> <render> <screen> [geometry]
+# HYPRVIM_WHICH_KEY_FRONTEND=quickshell skips the eww daemon.
 
 eww_dir="$1"
 csm="$2"
@@ -13,6 +14,8 @@ render="$5"
 screen="$6"
 geometry="$7"
 
-eww -c "$eww_dir" ping >/dev/null 2>&1 || eww -c "$eww_dir" daemon >/dev/null 2>&1
+if [ "$HYPRVIM_WHICH_KEY_FRONTEND" != "quickshell" ]; then
+  eww -c "$eww_dir" ping >/dev/null 2>&1 || eww -c "$eww_dir" daemon >/dev/null 2>&1
+fi
 cur=$(cat "$csm" 2>/dev/null || echo '')
 [ "$cur" = "$sm" ] && HYPRVIM_WHICH_KEY_POSITION="$position" lua "$render" "$sm" "$screen" "$geometry"

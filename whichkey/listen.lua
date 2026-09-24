@@ -191,7 +191,8 @@ local function make_spawner(eww_dir, state_dir, render, position)
       or ""
     local csm = state_dir .. "/current-submap"
     os.execute(
-      sh_escape(script)
+      Render.spawn_env()
+        .. sh_escape(script)
         .. " "
         .. sh_escape(eww_dir)
         .. " "
@@ -323,7 +324,7 @@ local function make_submap_handler(config, state_dir, spawn_render)
 end
 
 --- Initialises the which-key HUD listener.
---- Starts the eww daemon, then registers window.open and keybinds.submap handlers.
+--- Starts the eww daemon (eww frontend only), then registers window.open and keybinds.submap handlers.
 --- @param Config table  top-level HyprVim config table
 function Listen.init(Config)
   local config = parse_config(Config)
@@ -331,7 +332,11 @@ function Listen.init(Config)
   local state_dir = Render.state_dir
   local render = dir .. "render.lua"
 
-  init_eww(eww_dir)
+  if Render.frontend() == "eww" then
+    init_eww(eww_dir)
+  else
+    Theme.apply()
+  end
 
   local spawn_render = make_spawner(eww_dir, state_dir, render, config.position)
 

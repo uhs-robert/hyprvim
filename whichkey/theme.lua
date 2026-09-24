@@ -1,5 +1,5 @@
 -- whichkey/theme.lua
--- Converts theme.conf variables into eww/whichkey/_vars.scss.
+-- Reads theme.conf variables and converts them into eww/whichkey/_vars.scss.
 
 local dir = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
 local root = dir .. "../"
@@ -12,7 +12,8 @@ local Theme = {}
 local DEFAULT_THEME = [[
 # ~/.config/hyprvim/theme.conf
 #
-# Controls the colors and font size of the which-key HUD (eww widget).
+# Controls the colors and font size of the which-key HUD (the eww widget, or the
+# `theme` field sent to a Quickshell frontend).
 # Changes are applied automatically on the next `hyprctl reload`.
 #
 # Any $variable defined here is automatically passed through to the eww SCSS.
@@ -84,39 +85,42 @@ local function create_if_missing(path, content)
   end
 end
 
+--- Reads the `$name` variables from theme.conf in file order; missing file yields none.
+--- @return { name: string, value: string }[]
+function Theme.read_vars()
+  local vars = {}
+  local f = io.open(Config.config_dir .. "/theme.conf", "r")
+  if not f then return vars end
+  for line in f:lines() do
+    if not line:match("^%s*#") and line:match("%S") then
+      -- `$name: value;` for colors, `$name = value` for sizes
+      local name, value = line:match("^%$([%a_][%w_]*)%s*:%s*([^;]*)")
+      if not name then
+        name, value = line:match("^%$([%a_][%w_]*)%s*=%s*(.*)")
+      end
+      if name then vars[#vars + 1] = { name = name, value = (value:gsub("%s+$", "")) } end
+    end
+  end
+  f:close()
+  return vars
+end
+
 --- Reads theme.conf and writes _vars.scss.
 function Theme.apply()
   local cfg_dir = Config.config_dir
   os.execute("mkdir -p " .. Utils.sh_escape(cfg_dir))
-  local theme_file = cfg_dir .. "/theme.conf"
   local vars_file = root .. "eww/whichkey/_vars.scss"
   local user_scss = cfg_dir .. "/whichkey.scss"
 
   create_if_missing(user_scss, DEFAULT_USER_SCSS)
-  create_if_missing(theme_file, DEFAULT_THEME)
+  create_if_missing(cfg_dir .. "/theme.conf", DEFAULT_THEME)
 
   local lines = {}
   table.insert(lines, "// Auto-generated from theme.conf, do not edit directly")
   table.insert(lines, "// To customize, edit theme.conf and run: hyprctl reload")
   table.insert(lines, "")
-
-  local f = io.open(theme_file, "r")
-  if f then
-    for line in f:lines() do
-      -- skip comments and blank lines
-      if not line:match("^%s*#") and line:match("%S") then
-        -- $name: value;  (colon-style, e.g. color vars)
-        local name, value = line:match("^%$([%a_][%w_]*)%s*:%s*([^;]*)")
-        if name then
-          table.insert(lines, "$" .. name .. ": " .. value:gsub("%s+$", "") .. ";")
-        else
-          -- $name = value  (equals-style, e.g. font-size)
-          name, value = line:match("^%$([%a_][%w_]*)%s*=%s*(.*)")
-          if name then table.insert(lines, "$" .. name .. ": " .. value:gsub("%s+$", "") .. ";") end
-        end
-      end
-    end
-    f:close()
+  for _, var in ipairs(Theme.read_vars()) do
+    table.insert(lines, "$" .. var.name .. ": " .. var.value .. ";")
   end
 
   Utils.write_file(vars_file, table.concat(lines, "\n") .. "\n")
