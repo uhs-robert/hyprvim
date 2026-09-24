@@ -35,7 +35,10 @@ PanelWindow {
     property int history_index: -1
     property string draft: ""
     property var source_cache: ({})
+    property var source_queue: []
     property var shell_items: null
+    // Latched at open(); Hyprland.focusedMonitor can move to another screen while the bar is up.
+    property string screen_name: ""
 
     readonly property string query_text: root.cycle_base !== null ? root.cycle_base : input.text
     readonly property var ctx: root.context_of(root.query_text)
@@ -44,10 +47,7 @@ PanelWindow {
     readonly property bool menu_shown: !root.is_output && !root.menu_hidden && root.items.length > 0 && (root.query_text !== "" || root.cycle_base !== null)
     readonly property real screen_height: root.screen ? root.screen.height : 1080
 
-    screen: {
-        const mon = Hyprland.focusedMonitor;
-        return (mon && Quickshell.screens.find(s => s.name === mon.name)) || null;
-    }
+    screen: Quickshell.screens.find(s => s.name === root.screen_name) || null
     visible: false
     color: "transparent"
     exclusiveZone: 0
@@ -84,10 +84,13 @@ PanelWindow {
             root.menu_hidden = false;
             root.history_index = -1;
             root.source_cache = {};
+            root.source_queue = [];
             root.shell_items = null;
             output_file.path = parsed.kind === "output" ? parsed.output_path : "";
             output.text = parsed.kind === "output" ? (output_file.text() || "").slice(0, 100000) : "";
             root.set_text(parsed.text || "");
+            const mon = Hyprland.focusedMonitor;
+            root.screen_name = mon ? mon.name : "";
             root.visible = true;
             if (root.is_output) output_view.forceActiveFocus();
             else input.forceActiveFocus();
@@ -115,10 +118,13 @@ PanelWindow {
         id: source_proc
         property string key: ""
         stdout: StdioCollector {
+            // a stale result can still arrive right after finish() stops the process
             onStreamFinished: {
+                if (!root.session) return;
                 const next = Object.assign({}, root.source_cache);
                 next[source_proc.key] = root.parse_source(text);
                 root.source_cache = next;
+                root.run_next_source();
             }
         }
     }
@@ -126,7 +132,10 @@ PanelWindow {
     Process {
         id: shell_proc
         stdout: StdioCollector {
-            onStreamFinished: root.shell_items = text.split("\n").filter(l => l !== "").map(l => ({ label: l, desc: "", insert: l + " " }))
+            onStreamFinished: {
+                if (!root.session) return;
+                root.shell_items = text.split("\n").filter(l => l !== "").map(l => ({ label: l, desc: "", insert: l + " " }));
+            }
         }
     }
 
@@ -134,6 +143,9 @@ PanelWindow {
     function finish(result) {
         if (!root.session) return;
         root.session = false;
+        root.source_queue = [];
+        if (source_proc.running) source_proc.running = false;
+        if (shell_proc.running) shell_proc.running = false;
         root.visible = false;
         if (result !== null && root.spec.result_path)
             Quickshell.execDetached(["sh", "-c", "printf '%s' \"$1\" > \"$2\"; exec hyprctl dispatch \"$3\"", "sh", result, root.spec.result_path, root.spec.callback]);
@@ -183,6 +195,10 @@ PanelWindow {
         return positions && pos >= 1 && pos <= positions.length ? positions[pos - 1] : null;
     }
 
+    function source_key() {
+        return root.ctx.kind === "arg" ? root.canonical(root.ctx.cmd) + "|" + root.ctx.pos + "|" + root.ctx.prev : "";
+    }
+
     function request_sources() {
         if (!root.session) return;
         if (root.ctx.kind === "shell" && root.shell_items === null && !shell_proc.running) {
@@ -190,12 +206,20 @@ PanelWindow {
             shell_proc.running = true;
         }
         const spec = root.arg_spec;
-        if (!spec || !spec.source || source_proc.running) return;
-        const key = root.canonical(root.ctx.cmd) + "|" + root.ctx.pos + "|" + root.ctx.prev;
-        if (root.source_cache[key] !== undefined) return;
-        source_proc.key = key;
-        source_proc.environment = { HV_ARGS: root.ctx.prev };
-        source_proc.command = ["bash", "-c", spec.source];
+        if (!spec || !spec.source) return;
+        const key = root.source_key();
+        if (root.source_cache[key] !== undefined || root.source_queue.some(q => q.key === key)) return;
+        root.source_queue = root.source_queue.concat([{ key: key, source: spec.source, prev: root.ctx.prev }]);
+        if (!source_proc.running) root.run_next_source();
+    }
+
+    function run_next_source() {
+        if (root.source_queue.length === 0) return;
+        const next = root.source_queue[0];
+        root.source_queue = root.source_queue.slice(1);
+        source_proc.key = next.key;
+        source_proc.environment = { HV_ARGS: next.prev };
+        source_proc.command = ["bash", "-c", next.source];
         source_proc.running = true;
     }
 

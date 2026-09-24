@@ -47,7 +47,22 @@ end
 ---@return string
 local function ipc_open(path)
   local ipc = (Config.which_key and Config.which_key.quickshell_ipc) or "qs ipc"
-  return '[ "$(' .. ipc .. " call " .. IPC_TARGET .. " open " .. sq(path) .. ' 2>/dev/null)" = ok ]'
+  return '[ "$(timeout 2 ' .. ipc .. " call " .. IPC_TARGET .. " open " .. sq(path) .. ' 2>/dev/null)" = ok ]'
+end
+
+---A background loop that fires `dispatch` itself if Quickshell dies before answering,
+---so a crash mid-prompt cannot leave hyprvim suspended. The callback removes `spec_path`,
+---which ends the loop; a second dispatch after that is a no-op.
+---@param spec_path string
+---@param dispatch string
+---@return string
+local function watchdog(spec_path, dispatch)
+  return "while [ -e "
+    .. sq(spec_path)
+    .. " ]; do sleep 1; pgrep -x qs >/dev/null || "
+    .. "{ hyprctl dispatch "
+    .. sq(dispatch)
+    .. "; break; }; done &"
 end
 
 ---Write a frontend spec as JSON; the callback is dispatched with "quickshell" so it knows who answered.
@@ -145,6 +160,7 @@ local function append_history(path, entry)
   f:write(table.concat(entries, "\n", first) .. "\n")
   f:close()
   os.rename(tmp, path)
+  os.execute("chmod 600 " .. sq(path))
 end
 
 ---Readline keeps its own history list, so the file only has to be read in and written back.
@@ -609,8 +625,8 @@ function Prompt.async(label, opts, callback)
   -- stylua: ignore
   Hypr.exec(
     (opts.prelude and ("( " .. opts.prelude .. " ) >/dev/null 2>&1 & ") or "")
-      .. "if " .. ipc_open(spec_path) .. "; then rm -f " .. cleanup
-      .. "; else " .. cmd .. "; hyprctl dispatch '" .. dispatch .. "'; fi"
+      .. "if " .. ipc_open(spec_path) .. "; then rm -f " .. cleanup .. "; " .. watchdog(spec_path, dispatch)
+      .. " else " .. cmd .. "; hyprctl dispatch '" .. dispatch .. "'; fi"
   )
 end
 
@@ -649,7 +665,9 @@ function Prompt.shell(command, on_done)
   -- stylua: ignore
   local script = "bash -c " .. sq(command) .. " > " .. sq(out) .. " 2>&1 < /dev/null; _hv_s=$?; "
     .. "[ $_hv_s -eq 0 ] || printf '\\n[exit %d]\\n' \"$_hv_s\" >> " .. sq(out) .. "; "
-    .. (spec_path and ("[ -s " .. sq(out) .. " ] && " .. ipc_open(spec_path) .. " && exit 0; ") or "")
+    .. (spec_path
+      and ("[ -s " .. sq(out) .. " ] && " .. ipc_open(spec_path) .. " && { " .. watchdog(spec_path, dispatch) .. " exit 0; }; ")
+      or "")
     .. "[ -s " .. sq(out) .. " ] && " .. show .. "; "
     .. "hyprctl dispatch '" .. dispatch .. "'"
   Hypr.exec("bash -c " .. sq(script))
