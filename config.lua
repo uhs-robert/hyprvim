@@ -65,6 +65,7 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field hint?   string    Shown in the completion menu when the value is free-form
 --- @field values? { [1]: string, [2]: string? }[]  Fixed candidates as { value, description } pairs
 --- @field source? string    Shell command printing "value<TAB>description" lines, run when the menu opens
+--- @field optional? boolean  true: the command runs without this position (then called with ""); only optional positions may follow
 
 --- @class HyprVimUserCommand
 --- @field [1]    fun(args?: string)  Handler; receives the argument string when `args` is set

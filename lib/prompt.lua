@@ -18,6 +18,8 @@ local sq = Utils.sh_escape
 --- @field name string
 --- @field desc string?
 --- @field takes_args boolean?
+--- @field min_args integer?  Leading arguments it cannot run without; Enter waits for them
+--- @field usage string?  Short signature, e.g. "<N>" or "[WINDOW]"
 --- @field aliases string[]?  Alternate names; searchable in the menu but not listed as rows
 
 --- One argument position of a command. `values` are fixed candidates, `source` is a
@@ -28,6 +30,7 @@ local sq = Utils.sh_escape
 --- @field hint string?
 --- @field values { [1]: string, [2]: string? }[]?
 --- @field source string?
+--- @field optional boolean?  The command runs without this position; only later ones may follow
 
 local MENU_HEIGHT = 400
 local HISTORY_SIZE = 200
@@ -294,9 +297,23 @@ _hv_pad() {
 _hv_pick() {
     local query="$1" prompt="$2" nth="${3:-1}"
     # inline height leaves the command line drawn above the list
-    fzf --query "$query" --no-sort --info=inline --height="${_hv_rows:-10}" --layout=reverse --cycle \
+    fzf --query "$query" --ansi --no-sort --info=inline --height="${_hv_rows:-10}" --layout=reverse --cycle \
         --bind=tab:down,btab:up,ctrl-n:down,ctrl-p:up \
         --delimiter=$'\t' --with-nth=1,2 --nth="$nth" --prompt="$prompt"
+}
+_hv_usage_cols() {
+    local cols
+    cols=$(stty size </dev/tty 2>/dev/null | cut -d' ' -f2)
+    # the dimmed usage goes between name and description only when the menu has room for both
+    awk -F'\t' -v cols="${cols:-0}" '
+        { a[NR] = $0; if (length($1) > nw) nw = length($1); if (length($6) > uw) uw = length($6) }
+        END { show = uw > 0 && cols >= nw + uw + 60
+              for (i = 1; i <= NR; i++) {
+                  n = split(a[i], f, "\t")
+                  if (show) f[2] = sprintf("\033[2m%-*s\033[0m  %s", uw, f[6], f[2])
+                  line = f[1]
+                  for (j = 2; j <= n; j++) line = line "\t" f[j]
+                  print line } }'
 }
 _hv_arg_candidates() {
     local cmd="$1" pos="$2" c p k payload desc
@@ -392,11 +409,48 @@ _hv_menu_segment() {
     mapfile -t matches < <(compgen -W "$_hv_words" -- "$cur")
     if [ "${#matches[@]}" -eq 1 ]; then _hv_insert "${matches[0]}"; return; fi
     _hv_grow || { _hv_cycle; return; }
-    sel=$(_hv_rank "$cur" < "$_hv_entries" | _hv_pick "$cur" "$_hv_label" 1,2,4)
+    sel=$(_hv_usage_cols < "$_hv_entries" | _hv_rank "$cur" | _hv_pick "$cur" "$_hv_label" 1,2,4)
     _hv_shrink
     [ -n "$sel" ] || return
     _hv_insert "$(printf '%s' "$sel" | cut -f1 | sed 's/ *$//')"
 }
+]==]
+
+-- Enter runs _hv_enter first, which rebinds the key after it to accept the line or
+-- hold it when the command still needs arguments. Column 5 of the entries is min_args.
+local ENTER_BLOCK = [==[
+_hv_enter() {
+    local seg="$READLINE_LINE" words need usage key rest
+    bind '"\C-x\C-w": accept-line'
+    case "$seg" in "!"* | "silent !"* | s/* | %s/*) return 0 ;; esac
+    read -r -a words <<< "${seg##*|}"
+    [ "${#words[@]}" -gt 0 ] || return 0
+    IFS=$'\t' read -r need usage < <(awk -F'\t' -v n="${words[0]}" '
+        { name = $1; sub(/ +$/, "", name); hit = name == n
+          split($4, alts, " "); for (i in alts) if (alts[i] == n) hit = 1
+          if (hit) { print $5 "\t" $6; exit } }' "$_hv_entries")
+    [ "${need:-0}" -gt $(( ${#words[@]} - 1 )) ] 2>/dev/null || return 0
+    bind '"\C-x\C-w": redraw-current-line'
+    [[ "$READLINE_LINE" == *" " ]] || READLINE_LINE="$READLINE_LINE "
+    READLINE_POINT=${#READLINE_LINE}
+    printf '\r\033[K\033[33m%s needs: %s\033[0m' "${words[0]}" "${usage:-an argument}" > /dev/tty
+    # shown until a key or two seconds pass; a typed character carries on, a lone Escape cancels
+    IFS= read -rsn1 -t 2 key < /dev/tty || return 0
+    case "$key" in
+        $'\e')
+            IFS= read -rsn8 -t 0.05 rest < /dev/tty
+            [ -n "$rest" ] || { READLINE_LINE=''; bind '"\C-x\C-w": accept-line'; }
+            ;;
+        [[:print:]])
+            READLINE_LINE="$READLINE_LINE$key"
+            READLINE_POINT=${#READLINE_LINE}
+            ;;
+    esac
+    return 0
+}
+bind -x '"\C-x\C-v": _hv_enter'
+bind '"\C-x\C-w": accept-line'
+bind '"\C-m": "\C-x\C-v\C-x\C-w"'
 ]==]
 
 -- Escape clears the line and accepts it; an empty result is already treated as a
@@ -458,11 +512,13 @@ local function completion_block(opts, label, wm_class)
     local desc = type(e) == "table" and (e.desc or "") or ""
     local flag = (type(e) == "table" and e.takes_args) and "1" or "0"
     local alts = type(e) == "table" and table.concat(e.aliases or {}, " ") or ""
+    local min_args = type(e) == "table" and e.min_args or 0
+    local usage = type(e) == "table" and e.usage or ""
     names[#names + 1] = name
     for _, alt in ipairs(type(e) == "table" and e.aliases or {}) do
       names[#names + 1] = alt
     end
-    lines[#lines + 1] = string.format("%-" .. width .. "s\t%s\t%s\t%s", name, desc, flag, alts)
+    lines[#lines + 1] = string.format("%-" .. width .. "s\t%s\t%s\t%s\t%d\t%s", name, desc, flag, alts, min_args, usage)
   end
 
   local args_file = write_arg_file(opts.arg_completions)
@@ -487,7 +543,7 @@ local function completion_block(opts, label, wm_class)
     .. "    bind -x '\"\\t\": _hv_cycle'\n"
     .. "fi\n"
 
-  return header .. "\n" .. FZF_BLOCK .. CYCLE_BLOCK .. bind, entries_file, args_file
+  return header .. "\n" .. FZF_BLOCK .. CYCLE_BLOCK .. bind .. ENTER_BLOCK, entries_file, args_file
 end
 
 ---Build the terminal command that displays a prompt and writes input to state_file.
@@ -541,10 +597,17 @@ local function input_spec(label, opts, state_file, hist_path)
   local completions = {}
   for _, e in ipairs(opts.completions or {}) do
     if type(e) == "table" then
-      completions[#completions + 1] =
-        { name = e.name, desc = e.desc or "", takes_args = e.takes_args == true, aliases = e.aliases or {} }
+      completions[#completions + 1] = {
+        name = e.name,
+        desc = e.desc or "",
+        takes_args = e.takes_args == true,
+        min_args = e.min_args or 0,
+        usage = e.usage or "",
+        aliases = e.aliases or {},
+      }
     else
-      completions[#completions + 1] = { name = e, desc = "", takes_args = false, aliases = {} }
+      completions[#completions + 1] =
+        { name = e, desc = "", takes_args = false, min_args = 0, usage = "", aliases = {} }
     end
   end
   local args = {}
@@ -553,6 +616,7 @@ local function input_spec(label, opts, state_file, hist_path)
     for _, spec in ipairs(positions) do
       list[#list + 1] = {
         hint = spec.hint or "",
+        optional = spec.optional == true,
         values = spec.values or {},
         source = spec.source and (spec.source:gsub("%s*\n%s*", " ")) or "",
       }

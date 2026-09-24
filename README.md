@@ -494,6 +494,8 @@ require("hyprvim").setup({
 })
 ```
 
+Each `args` entry is one argument position. `Enter` waits until every position before the first `optional = true` one is typed and shows the command's usage, here `<BUFFER_NAME>`, built from the hints; end `desc` with your own, e.g. `"open a scratch buffer <NAME>"`, to replace it.
+
 Install [fzf](https://github.com/junegunn/fzf) to get a searchable completion menu in the command bar instead of plain cycling.
 
 ### Other Extensions

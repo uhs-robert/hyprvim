@@ -72,7 +72,9 @@ A bare number focuses that workspace, so `:3` goes to workspace 3. `:set` comple
 
 Press `Escape` to dismiss the bar without running anything. While the completion menu is open, `Escape` closes the menu first and leaves you at the prompt.
 
-Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, the prompt bar expands into a searchable menu of commands and their descriptions; `Tab` and `Shift+Tab` move through the list. Pressing `Tab` again after a command name completes its arguments: live workspace and monitor lists, window properties, and the accepted range for free-form values such as `:opacity` (0-1). Searching matches descriptions as well as names, so typing `close` finds `:q`, `:qa` and `:only`. Aliases are searchable but listed beside the command they point at instead of as separate entries. Without fzf, `Tab` cycles through prefix matches instead.
+Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, the prompt bar expands into a searchable menu of commands and their descriptions; `Tab` and `Shift+Tab` move through the list. Pressing `Tab` again after a command name completes its arguments: live workspace and monitor lists, window properties, and the accepted range for free-form values such as `:opacity` (0-1). Searching matches descriptions as well as names, so typing `close` finds `:q`, `:qa` and `:only`. Aliases are searchable but listed beside the command they point at instead of as separate entries. Without fzf, `Tab` cycles through prefix matches instead. When the menu is wide enough, each command shows its usage between the name and the description, e.g. `<A [I] [F] | reset [WINDOW]>`, where `<>` is required and `[]` optional.
+
+`Enter` on a command that still lacks a required argument does not run it: the bar keeps the line and shows what the command needs, e.g. `opacity needs: <A [I] [F] | reset [WINDOW]>`.
 
 ### File Operations
 
@@ -197,11 +199,15 @@ The spec is written to `$XDG_RUNTIME_DIR/hyprvim/tmp/` before each `open` and re
   "text": "",
   "chain": true,
   "completions": [
-    { "name": "float", "desc": "toggle floating", "takes_args": true, "aliases": ["f"] }
+    { "name": "float", "desc": "toggle floating", "takes_args": true, "min_args": 0, "usage": "[on|off|toggle]", "aliases": ["f"] },
+    { "name": "move", "desc": "move window by pixels", "takes_args": true, "min_args": 2, "usage": "<X Y>", "aliases": [] }
   ],
   "args": {
-    "float": [{ "hint": "", "values": [["on", "force floating"]], "source": "" }],
-    "window": [{ "hint": "window selector", "values": [], "source": "hyprctl clients ..." }]
+    "float": [{ "hint": "", "optional": false, "values": [["on", "force floating"]], "source": "" }],
+    "tag": [
+      { "hint": "tag name", "optional": false, "values": [], "source": "" },
+      { "hint": "window, optional", "optional": true, "values": [], "source": "hyprctl clients ..." }
+    ]
   },
   "shell_source": "compgen -c | sort -u",
   "history": ["float on", "ws 3"],
@@ -211,22 +217,24 @@ The spec is written to `$XDG_RUNTIME_DIR/hyprvim/tmp/` before each `open` and re
 }
 ```
 
-| Field          | Meaning                                                                                                                                                                                              |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `version`      | Spec format version, bumped on incompatible changes                                                                                                                                                  |
-| `kind`         | `input` for a prompt, `output` for `:!cmd` output                                                                                                                                                    |
-| `title`        | `Command`, `Find`, `Replace`, `Shell` or `Prompt`                                                                                                                                                    |
-| `label`        | Prompt text drawn before the line, e.g. `:` or `Log out? [y/N] `                                                                                                                                     |
-| `text`         | Initial line; for `output`, the command that ran                                                                                                                                                     |
-| `chain`        | Complete only the command after the last `\|`, as the line may chain several                                                                                                                         |
-| `completions`  | Command names with a description, whether they take arguments (insert a trailing space) and aliases (searchable, not listed)                                                                         |
-| `args`         | Per command, one entry per argument position: `hint` for free-form values, `values` as `[value, description]` pairs, and `source`, a shell command printing `value<TAB>description[<TAB>insert]` lines |
-| `shell_source` | Shell command listing executables, for completion after `!` or `silent !`; empty when not offered                                                                                                    |
-| `history`      | Earlier entries of this prompt, oldest first                                                                                                                                                         |
-| `result_path`  | Where the entered line goes                                                                                                                                                                          |
-| `output_path`  | `output` only: file holding the command's combined stdout and stderr, with `[exit N]` appended on failure                                                                                            |
-| `callback`     | Lua call to dispatch once, see above                                                                                                                                                                 |
-| `theme`        | Every `$variable` from `theme.conf`, as strings                                                                                                                                                      |
+| Field          | Meaning                                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `version`      | Spec format version, bumped on incompatible changes                                                                                                                                                                |
+| `kind`         | `input` for a prompt, `output` for `:!cmd` output                                                                                                                                                                  |
+| `title`        | `Command`, `Find`, `Replace`, `Shell` or `Prompt`                                                                                                                                                                  |
+| `label`        | Prompt text drawn before the line, e.g. `:` or `Log out? [y/N] `                                                                                                                                                   |
+| `text`         | Initial line; for `output`, the command that ran                                                                                                                                                                   |
+| `chain`        | Complete only the command after the last `\|`, as the line may chain several                                                                                                                                       |
+| `completions`  | Command names with a description, whether they take arguments (insert a trailing space), `min_args`, `usage` and aliases (searchable, not listed)                                                                  |
+| `args`         | Per command, one entry per argument position: `hint` for free-form values, `optional`, `values` as `[value, description]` pairs, and `source`, a shell command printing `value<TAB>description[<TAB>insert]` lines |
+| `shell_source` | Shell command listing executables, for completion after `!` or `silent !`; empty when not offered                                                                                                                  |
+| `history`      | Earlier entries of this prompt, oldest first                                                                                                                                                                       |
+| `result_path`  | Where the entered line goes                                                                                                                                                                                        |
+| `output_path`  | `output` only: file holding the command's combined stdout and stderr, with `[exit N]` appended on failure                                                                                                          |
+| `callback`     | Lua call to dispatch once, see above                                                                                                                                                                               |
+| `theme`        | Every `$variable` from `theme.conf`, as strings                                                                                                                                                                    |
+
+`min_args` counts the leading arguments a command cannot run without: hold `Enter` until that many are typed and show the `usage` instead, the way the terminal bar does. It is 0 for commands that also run bare, like `:float`, and a spec without it should be read as 0. `usage` is a short signature such as `<A [I] [F] | reset [WINDOW]>`, `<>` required and `[]` optional, and empty for commands without arguments. An argument position with `optional` set may be left out, and only optional positions follow it.
 
 Run a `source` with `bash -c`, setting `HV_ARGS` to the arguments typed before its position, and only when that position is being completed: it may be slow. The third field, when present, is what gets inserted instead of the first.
 

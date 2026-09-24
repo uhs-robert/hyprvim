@@ -599,6 +599,14 @@ for _, list in pairs(alias_names) do
   table.sort(list)
 end
 
+---Split "description <ARGS>" into its two parts.
+---@return string desc, string args
+local function split_args(desc)
+  local text, args = desc:match("^(.-) <(.+)>$")
+  if text then return text, args end
+  return desc, ""
+end
+
 ---@type PromptCompletion[]
 local COMPLETIONS = {}
 local seen = {}
@@ -609,9 +617,10 @@ local function add(name, desc, takes_args)
     if takes_args then entry.takes_args = true end
     return
   end
+  -- the usage is carried apart, so the menu can show it in its own column
   entry = {
     name = name,
-    desc = desc or "",
+    desc = split_args(desc or ""),
     takes_args = takes_args or false,
     aliases = alias_names[name],
   }
@@ -693,13 +702,13 @@ local arg_specs = {
         for _, entry in ipairs(opacity_values("active opacity")) do v[#v + 1] = entry end
         return v
       end)() },
-    { hint = "0-1, optional", values = opacity_values("inactive opacity") },
-    { hint = "0-1, optional", values = opacity_values("fullscreen opacity") },
+    { hint = "0-1, optional", optional = true, values = opacity_values("inactive opacity") },
+    { hint = "0-1, optional", optional = true, values = opacity_values("fullscreen opacity") },
   },
   opacity_active     = { { hint = "0-1", values = opacity_values("active opacity") } },
   opacity_inactive   = { { hint = "0-1", values = opacity_values("inactive opacity") } },
   opacity_fullscreen = { { hint = "0-1", values = opacity_values("fullscreen opacity") } },
-  dim  = { { values = { { "on", "dim when inactive" }, { "off", "never dim" } } }, { hint = "window, optional", source = sources.windows } },
+  dim  = { { values = { { "on", "dim when inactive" }, { "off", "never dim" } } }, { hint = "window, optional", optional = true, source = sources.windows } },
   gaps = { { hint = "pixels, applied to gaps_in and gaps_out", values = { { "+2", "widen" }, { "-2", "narrow" }, { "0", "" }, { "5", "" }, { "10", "" }, { "20", "" } } } },
   float = { { values = { { "toggle", "toggle floating" }, { "on", "force floating" }, { "off", "force tiled" } } } },
   fullscreen = { { values = { { "fullscreen", "true fullscreen" }, { "maximized", "maximize within gaps" } } } },
@@ -746,7 +755,7 @@ local arg_specs = {
       { "alpha_fullscreen", "fullscreen opacity, 0-1" },
     } },
     { hint = "value: 1 or 0 for toggles, 0-1 for alpha", values = { { "1", "on" }, { "0", "off" } } },
-    { hint = "window, optional", source = sources.windows },
+    { hint = "window, optional", optional = true, source = sources.windows },
   },
   resize_width  = { { hint = "pixels to shrink the width by" } },
   resize_height = { { hint = "pixels to shrink the height by" } },
@@ -819,7 +828,7 @@ end
 
 arg_specs.tag = {
   { hint = "tag name; +name adds, -name removes, a bare name toggles" },
-  { hint = "window, optional", source = sources.windows },
+  { hint = "window, optional", optional = true, source = sources.windows },
 }
 arg_specs.untag = { { hint = "window to clear", source = sources.windows } }
 
@@ -852,6 +861,57 @@ arg_specs.submap = submap_spec()
 
 -- seeded unfiltered; `Command.prompt` narrows it to the layout in use
 arg_specs.layoutcmd = { { hint = "layout command", values = layout_command_values(nil) } }
+
+---Leading argument positions a command cannot run without; 0 when it also runs bare.
+---@param name string
+---@return integer
+local function min_args_of(name)
+  if commands[name] or not arg_commands[name] then return 0 end
+  local n = 0
+  for _, spec in ipairs(arg_specs[name] or { {} }) do
+    if spec.optional then break end
+    n = n + 1
+  end
+  return n
+end
+
+---Usage word for one argument position, from its fixed values or its hint.
+---@param spec PromptArgSpec
+---@return string
+local function usage_word(spec)
+  local values = spec.values or {}
+  if not spec.hint and not spec.source and #values > 0 and #values <= 4 then
+    local words = {}
+    for i, v in ipairs(values) do
+      words[i] = v[1]
+    end
+    return table.concat(words, "|")
+  end
+  local word = (spec.hint or ""):match("^[^,;]*"):gsub("^%s+", ""):gsub("%s+$", ""):gsub("%s+", "_"):upper()
+  return word ~= "" and word or "ARG"
+end
+
+---Short signature such as `<A [I] [F] | reset [WINDOW]>`: <> is required, [] optional.
+---@param name string
+---@param min_args integer
+---@return string
+local function usage_of(name, min_args)
+  local _, usage = split_args(arg_descriptions[name] or user_descriptions[name] or "")
+  if usage ~= "" and min_args > 0 then return "<" .. usage .. ">" end
+  if usage ~= "" then return usage:match("^%[.*%]$") and usage or ("[" .. usage .. "]") end
+  local words = {}
+  for i, spec in ipairs(arg_specs[name] or {}) do
+    local word = usage_word(spec)
+    words[i] = i <= min_args and word or ("[" .. word .. "]")
+  end
+  usage = table.concat(words, " ")
+  return min_args > 0 and ("<" .. usage .. ">") or usage
+end
+
+for _, entry in ipairs(COMPLETIONS) do
+  entry.min_args = min_args_of(entry.name)
+  entry.usage = arg_commands[entry.name] and usage_of(entry.name, entry.min_args) or ""
+end
 
 -- stylua: ignore start
 local HELP_INTRO = table.concat({
@@ -897,14 +957,6 @@ local help_extras = {
   } },
 }
 -- stylua: ignore end
-
----Split "description <ARGS>" into its two parts.
----@return string desc, string args
-local function split_args(desc)
-  local text, args = desc:match("^(.-) <(.+)>$")
-  if text then return text, args end
-  return desc, ""
-end
 
 ---@param rows { [1]: string, [2]: string }[]
 ---@return string
@@ -966,6 +1018,13 @@ function Command.lint()
   for name in pairs(arg_commands) do
     if not arg_aliases[name] and not arg_specs[name] and not user_names[name] then
       report(name .. ": takes arguments with no candidates or hint")
+    end
+  end
+  for name, positions in pairs(arg_specs) do
+    for i = 2, #positions do
+      if positions[i - 1].optional and not positions[i].optional then
+        report(name .. ": argument " .. i .. " is required after an optional one")
+      end
     end
   end
   table.sort(problems)
@@ -1079,7 +1138,8 @@ end
 local function missing_args(cmd)
   local canonical = arg_aliases[cmd] or cmd
   local text, args = (arg_descriptions[canonical] or ""):match("^(.-) <(.+)>$")
-  reject(cmd, args and (args .. ", to " .. text) or "an argument")
+  local usage = seen[canonical] and seen[canonical].usage
+  reject(cmd, args and (args .. ", to " .. text) or (usage ~= "" and usage) or "an argument")
 end
 
 ---Look up and run a command string against the dispatch tables and special prefixes.
@@ -1092,7 +1152,11 @@ local function execute(cmd, restore)
   local fn = commands[cmd]
   if fn then return fn(restore) end
 
-  if arg_commands[cmd] then return missing_args(cmd) end
+  if arg_commands[cmd] then
+    local entry = seen[arg_aliases[cmd] or cmd]
+    if entry and entry.min_args == 0 then return arg_commands[cmd]("", restore) end
+    return missing_args(cmd)
+  end
 
   -- a bare number focuses that workspace, the way :42 jumps to a line in vim
   if cmd:match("^%d+$") then return Hypr.focus_workspace(tonumber(cmd)) end
