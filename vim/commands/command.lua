@@ -884,7 +884,10 @@ local help_groups = {
 
 ---Rows that have no entry in the dispatch tables.
 local help_extras = {
-  { "Shell", { { ":!cmd", "Run a shell command and show its output, e.g. `:!ls`" } } },
+  { "Shell", {
+    { ":!cmd", "Run a shell command and show its output, e.g. `:!ls`" },
+    { ":silent !cmd", "Launch a shell command detached, without showing output, e.g. `:silent !firefox`" },
+  } },
   { "Search / Replace", { { ":%s/", "Trigger the editor find and replace (Ctrl+H)" } } },
   { "Prompt", {
     { "Tab", "Complete; with fzf installed this opens a searchable menu, and a second Tab completes arguments" },
@@ -1105,20 +1108,12 @@ local function execute(cmd, restore)
     return
   end
 
+  local detached = cmd:match("^silent%s+!(.+)$")
+  if detached then return Hypr.exec(detached) end
+
   local shell_cmd = cmd:match("^!(.+)$")
   if shell_cmd then
-    Hypr.cmd_then_dispatch(
-      Config.term_cmd("hyprvim-shell")
-        .. " bash -c "
-        .. sq(
-          "_hv_tmp=$(mktemp); "
-            .. shell_cmd
-            .. ' 2>&1 | tee "$_hv_tmp";'
-            .. " [ -s \"$_hv_tmp\" ] && { echo; read -rsn1 -p '[done] press any key...'; };"
-            .. ' rm -f "$_hv_tmp"'
-        ),
-      Callback.register(restore)
-    )()
+    Prompt.shell(shell_cmd, restore)
     return true
   end
 
@@ -1138,7 +1133,7 @@ end
 ---@param line string
 ---@return string[]
 local function split_chain(line)
-  if line:match("^%s*!") or line:match("^%s*%%?s/") then return { line } end
+  if line:match("^%s*!") or line:match("^%s*silent%s+!") or line:match("^%s*%%?s/") then return { line } end
   local parts, buf, i = {}, {}, 1
   while i <= #line do
     local c = line:sub(i, i)
@@ -1201,6 +1196,7 @@ function Command.prompt()
       wm_class = "hyprvim-command",
       completions = COMPLETIONS,
       arg_completions = arg_specs,
+      shell_source = "compgen -c | sort -u",
       prelude = "hyprctl binds | awk -F': ' '/^[[:space:]]*submap:/ && $2 != \"\" { print $2 }' | sort -u > " .. sq(
         SUBMAP_CACHE .. ".tmp"
       ) .. " && mv " .. sq(SUBMAP_CACHE .. ".tmp") .. " " .. sq(SUBMAP_CACHE),

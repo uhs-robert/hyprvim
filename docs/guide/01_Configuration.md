@@ -44,11 +44,13 @@ Controls desktop notifications.
 
 ### `prompt`
 
-Controls Tab completion in the `:` command bar.
+Controls the prompt bar used by `:`, `f`/`t`/`/` and `R`.
 
+- `frontend = "terminal"` (default) opens the bar in your terminal. `frontend = "quickshell"` hands it to your running Quickshell config over IPC, through `which_key.quickshell_ipc`, and falls back to the terminal when no instance answers. See [Quickshell Prompt](03_Modes.md#-quickshell-prompt)
 - `completion_menu = true` opens an [fzf](https://github.com/junegunn/fzf) menu listing every command with its description; the bar grows for the menu and shrinks back on selection. A second `Tab` completes arguments, listing live workspaces and monitors where they apply and showing the accepted values otherwise
 - `completion_menu = false`, or fzf not installed, falls back to cycling through prefix matches
 - `completion_height` is the pixel height the bar grows to (default 400)
+- `completion_menu` and `completion_height` only apply to the terminal bar
 - `history = true` recalls earlier entries with the arrow keys. Each prompt keeps its own file under `$XDG_STATE_HOME/hyprvim/history`, trimmed to `history_size` entries (default 200). The command bar only records entries it recognises, so a typo is not offered back
 
 ### `updates`
@@ -69,7 +71,7 @@ Controls the WhichKey HUD. The WhichKey applies to HyprVim submaps as well as yo
 
 - `enabled` turns the HUD on or off
 - `frontend` picks the renderer: `"eww"` (default) or `"quickshell"`
-- `quickshell_ipc` is the command prefix used to reach Quickshell (default `"qs ipc"`)
+- `quickshell_ipc` is the command prefix used to reach Quickshell (default `"qs ipc"`); the Quickshell prompt uses it too
 - `delay_ms` controls how quickly the HUD appears
 - `vim_delay_ms` gives operator-pending submaps a separate delay
 - `position` anchors the panel

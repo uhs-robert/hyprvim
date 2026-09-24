@@ -71,7 +71,7 @@ To use the extras, refer to their respective documentation.
 | Thunderbird     | Keybinds for Vim driven navigation                                        | [extras/thunderbird](extras/thunderbird)           |
 | Tridactyl       | Vim-style navigation for Firefox (advanced)                               | [extras/tridactyl](extras/tridactyl)               |
 | Vimium          | Vim-style navigation for web browsers (basic)                             | [extras/vimium](extras/vimium)                     |
-| Quickshell      | Reference Quickshell component for the WhichKey HUD                       | [extras/quickshell](extras/quickshell)             |
+| Quickshell      | Reference Quickshell components for the WhichKey HUD and the prompt bar   | [extras/quickshell](extras/quickshell)             |
 | Waybar Submap   | Waybar submap visual Indicator                                            | [extras/waybar](extras/waybar)                     |
 | WhichKey        | WhichKey like display built using `eww` or Quickshell to see keybinds     | [docs/guide/whichkey](./docs/guide/05_WhichKey.md) |
 | Wl-kbptr        | Keyboard-driven mouse cursor control on Wayland                           | [extras/wl-kbptr](extras/wl-kbptr)                 |
@@ -91,7 +91,7 @@ If you'd like an extra config added, raise a feature request or put one together
 | `wl-clipboard`                                 | Wayland clipboard utilities (`wl-copy`, `wl-paste`)             |
 | A terminal emulator                            | For the `command-mode`, `replace-mode`, `find-mode`, and `help` |
 | `eww` _(optional)_                             | Widget system for the which-key HUD (`frontend = "eww"`)        |
-| `quickshell` _(optional)_                      | Alternative which-key HUD renderer (`frontend = "quickshell"`)  |
+| `quickshell` _(optional)_                      | Which-key HUD and prompt renderer (`frontend = "quickshell"`)   |
 | `jq` _(optional)_                              | Required by the which-key HUD and manual-install updater        |
 | `socat` _(optional)_                           | Required by the which-key HUD daemon                            |
 
@@ -289,7 +289,7 @@ Multi-clipboard management with named registers (`"a` - `"z`) and special regist
 
 ### Commands
 
-Press `:` in **NORMAL** mode to execute Vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float [on|off]` (floating), `:fullscreen [maximized|fullscreen]`, `:workspace <N|name:Web|empty>` (switch workspace), `:move_workspace N` (send window to workspace), `:move X Y` (nudge by pixels), `:monitor <dir|name>` (focus monitor), `:window class:firefox` (focus window), `:rename <name>` (rename workspace), `:special <name>` (scratchpad), `:swap <l|r|u|d>`, `:resize_width N`, `:opacity V` or `:opacity +0.1` (any window, not just the focused one), `:prop <name> <value>`, `:set <option> <value>` (any Hyprland option), `:group` (tabbed groups), `:marks`, `:reload`, `:update`, `:!cmd` (shell). Full reference: `:help`, or `:help <command>` for one entry.
+Press `:` in **NORMAL** mode to execute Vim-style commands. Common commands: `:w` (save), `:q` (quit), `:wq` (save & quit), `:split` (split window), `:float [on|off]` (floating), `:fullscreen [maximized|fullscreen]`, `:workspace <N|name:Web|empty>` (switch workspace), `:move_workspace N` (send window to workspace), `:move X Y` (nudge by pixels), `:monitor <dir|name>` (focus monitor), `:window class:firefox` (focus window), `:rename <name>` (rename workspace), `:special <name>` (scratchpad), `:swap <l|r|u|d>`, `:resize_width N`, `:opacity V` or `:opacity +0.1` (any window, not just the focused one), `:prop <name> <value>`, `:set <option> <value>` (any Hyprland option), `:group` (tabbed groups), `:marks`, `:reload`, `:update`, `:!cmd` (shell), `:silent !cmd` (launch detached). Full reference: `:help`, or `:help <command>` for one entry.
 
 > **📖 Learn more:** [Command Mode guide](./docs/guide/03_Modes.md#-command-mode)
 
@@ -331,6 +331,7 @@ require("hyprvim").setup({
     errors = true,
   },
   prompt = {
+    frontend = "terminal",      -- "terminal" or "quickshell" (draws the bar in your Quickshell config over which_key.quickshell_ipc)
     completion_menu = true,     -- Tab opens an fzf menu in the command bar; false cycles matches instead
     completion_height = 400,    -- Pixel height the bar grows to while the menu is open
     history = true,             -- Recall earlier entries with the arrow keys

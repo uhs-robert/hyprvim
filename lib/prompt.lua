@@ -1,8 +1,8 @@
--- lib/prompt/init.lua
+-- lib/prompt.lua
 -- Non-blocking prompt helper. Spawns the configured terminal as a full-width
--- bottom bar so the compositor thread is never blocked waiting for user input.
--- The result is written to a state file by the shell, then read back inside a
--- global callback that is dispatched by hyprctl once the terminal exits.
+-- bottom bar, or hands the prompt to a running Quickshell config over IPC, so the
+-- compositor thread is never blocked waiting for user input. The result is written
+-- to a state file, then read back inside a global callback dispatched by hyprctl.
 
 local Config = require("hyprvim.config") ---@class HyprVimConfigModule
 local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
@@ -32,6 +32,44 @@ local sq = Utils.sh_escape
 local MENU_HEIGHT = 400
 local HISTORY_SIZE = 200
 
+local IPC_TARGET = "hyprvim_prompt"
+local SPEC_VERSION = 1
+
+local TITLES = { ["hyprvim-command"] = "Command", ["hyprvim-find"] = "Find", ["hyprvim-replace"] = "Replace" }
+
+---@return "terminal"|"quickshell"
+function Prompt.frontend()
+  return (Config.prompt and Config.prompt.frontend) == "quickshell" and "quickshell" or "terminal"
+end
+
+---Shell test that succeeds only when a Quickshell instance took the spec at `path`.
+---@param path string
+---@return string
+local function ipc_open(path)
+  local ipc = (Config.which_key and Config.which_key.quickshell_ipc) or "qs ipc"
+  return '[ "$(' .. ipc .. " call " .. IPC_TARGET .. " open " .. sq(path) .. ' 2>/dev/null)" = ok ]'
+end
+
+---Write a frontend spec as JSON; the callback is dispatched with "quickshell" so it knows who answered.
+---@param fields table
+---@param callback_name string
+---@return string|nil path
+local function write_spec(fields, callback_name)
+  fields.version = SPEC_VERSION
+  fields.callback = callback_name .. '("quickshell")'
+  local theme = {}
+  for _, var in ipairs(require("hyprvim.whichkey.theme").read_vars()) do
+    theme[var.name] = var.value
+  end
+  fields.theme = next(theme) and theme or nil
+  local path = Utils.tmp_path("prompt-spec") .. ".json"
+  local f = io.open(path, "w")
+  if not f then return nil end
+  f:write(Utils.json_encode(fields))
+  f:close()
+  return path
+end
+
 ---Where recalled prompt history lives. State, not runtime state: it should survive a reboot,
 ---unlike everything else HyprVim keeps in `state_dir`.
 ---@return string
@@ -41,15 +79,81 @@ local function history_dir()
   return base .. "/hyprvim/history"
 end
 
+local history_dir_ready = false
+
+---@param wm_class string
+---@return string|nil path  nil when history is off
+local function history_path(wm_class)
+  if (Config.prompt or {}).history == false then return nil end
+  local dir = history_dir()
+  if not history_dir_ready then
+    os.execute("mkdir -p -m 700 " .. sq(dir))
+    history_dir_ready = true
+  end
+  return dir .. "/" .. wm_class
+end
+
+---Entries oldest first, in the file format readline writes; its `#<epoch>` stamp lines are skipped.
+---@param path string|nil
+---@return string[]
+local function read_history(path)
+  local entries = {}
+  local f = path and io.open(path, "r")
+  if not f then return entries end
+  for line in f:lines() do
+    if line ~= "" and not line:match("^#%d+$") then entries[#entries + 1] = line end
+  end
+  f:close()
+  return entries
+end
+
+---Mirrors `_hv_known_entry` below, so both frontends record the same lines.
+---@param entry string
+---@param completions (string|PromptCompletion)[]|nil
+---@return boolean
+local function is_known_entry(entry, completions)
+  if not completions or #completions == 0 then return true end
+  if entry:match("^!") or entry:match("^%%?s/") or entry:match("^silent !") then return true end
+  local first = entry:match("^(%S*)")
+  if first:match("^%d+$") then return true end
+  for _, e in ipairs(completions) do
+    if type(e) ~= "table" then
+      if e == first then return true end
+    else
+      if e.name == first then return true end
+      for _, alt in ipairs(e.aliases or {}) do
+        if alt == first then return true end
+      end
+    end
+  end
+  return false
+end
+
+---Append the way the terminal frontend does: skip a repeat of the last entry, keep the newest `history_size`.
+---@param path string|nil
+---@param entry string
+local function append_history(path, entry)
+  if not path then return end
+  local entries = read_history(path)
+  if entries[#entries] == entry then return end
+  entries[#entries + 1] = entry
+  local size = (Config.prompt or {}).history_size or HISTORY_SIZE
+  local first = math.max(1, #entries - size + 1)
+  local tmp = path .. ".tmp"
+  local f = io.open(tmp, "w")
+  if not f then return end
+  f:write(table.concat(entries, "\n", first) .. "\n")
+  f:close()
+  os.rename(tmp, path)
+end
+
 ---Readline keeps its own history list, so the file only has to be read in and written back.
 ---@param wm_class string
 ---@return string block, string? path
 local function history_block(wm_class)
   local cfg = Config.prompt or {}
-  if cfg.history == false then return "" end
-  local dir = history_dir()
-  os.execute("mkdir -p -m 700 " .. sq(dir))
-  local path = dir .. "/" .. wm_class
+  local path = history_path(wm_class)
+  if not path then return "" end
   local size = tostring(cfg.history_size or HISTORY_SIZE)
   local block = table.concat({
     "_hv_hist=" .. sq(path),
@@ -66,7 +170,7 @@ local HISTORY_SAVE = [[
 _hv_known_entry() {
     local first w
     [ -n "$_hv_words" ] || return 0
-    case "$1" in !*|s/*|%s/*) return 0;; esac
+    case "$1" in !*|s/*|%s/*|"silent !"*) return 0;; esac
     first="${1%% *}"
     case "$first" in "" | *[!0-9]*) ;; *) return 0 ;; esac
     for w in $_hv_words; do [ "$w" = "$first" ] && return 0; done
@@ -209,15 +313,15 @@ _hv_arg_menu() {
     READLINE_POINT="${#READLINE_LINE}"
 }
 _hv_shell_menu() {
-    local cur="${READLINE_LINE#!}" cands sel
+    local pre="${READLINE_LINE%%!*}!" cur="${READLINE_LINE#*!}" cands sel
     case "$cur" in *" "*) return;; esac
     cands=$(compgen -c -- "$cur" | sort -u | sed 's/$/\t/')
     [ -n "$cands" ] || return
     _hv_grow || return
-    sel=$(printf '%s\n' "$cands" | _hv_pick "$cur" "$_hv_label!")
+    sel=$(printf '%s\n' "$cands" | _hv_pick "$cur" "$_hv_label$pre")
     _hv_shrink
     [ -n "$sel" ] || return
-    READLINE_LINE="!$(printf '%s' "$sel" | cut -f1) "
+    READLINE_LINE="$pre$(printf '%s' "$sel" | cut -f1) "
     READLINE_POINT="${#READLINE_LINE}"
 }
 _hv_rank() {
@@ -235,7 +339,7 @@ _hv_rank() {
 _hv_menu() {
     # in a chain, complete only the command after the last |, then put the rest back
     local head=''
-    case "$READLINE_LINE" in "!"* | s/* | %s/*) ;; *"|"*)
+    case "$READLINE_LINE" in "!"* | "silent !"* | s/* | %s/*) ;; *"|"*)
         head="${READLINE_LINE%|*}|"
         READLINE_LINE="${READLINE_LINE##*|}"
         head="$head${READLINE_LINE%%[! ]*}"
@@ -248,7 +352,7 @@ _hv_menu() {
 }
 _hv_menu_segment() {
     local line="$READLINE_LINE" cur sel matches cmd rest pos
-    if [[ "$line" == "!"* ]]; then
+    if [[ "$line" == "!"* || "$line" == "silent !"* ]]; then
         _hv_shell_menu
         return
     fi
@@ -375,7 +479,7 @@ end
 ---@param label      string    prompt label shown to the user
 ---@param opts       {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer, prelude?: string}
 ---@param state_file string    path where the result should land
----@return string|nil
+---@return string|nil cmd, string? cleanup  the script's temp files, quoted for `rm -f`
 local function build_cmd(label, opts, state_file)
   local wm_class = opts.wm_class or "hyprvim-prompt"
   local script = Utils.tmp_path("prompt-script")
@@ -407,36 +511,148 @@ local function build_cmd(label, opts, state_file)
       .. "\n"
   )
   f:close()
-  return Config.term_cmd(wm_class) .. " bash " .. sq(script)
+  return Config.term_cmd(wm_class) .. " bash " .. sq(script), cleanup
+end
+
+---Completions, argument specs and history as the Quickshell spec carries them.
+---@param label string
+---@param opts table
+---@param state_file string
+---@param hist_path string|nil
+---@return table
+local function input_spec(label, opts, state_file, hist_path)
+  local wm_class = opts.wm_class or "hyprvim-prompt"
+  local completions = {}
+  for _, e in ipairs(opts.completions or {}) do
+    if type(e) == "table" then
+      completions[#completions + 1] =
+        { name = e.name, desc = e.desc or "", takes_args = e.takes_args == true, aliases = e.aliases or {} }
+    else
+      completions[#completions + 1] = { name = e, desc = "", takes_args = false, aliases = {} }
+    end
+  end
+  local args = {}
+  for cmd, positions in pairs(opts.arg_completions or {}) do
+    local list = {}
+    for _, spec in ipairs(positions) do
+      list[#list + 1] = {
+        hint = spec.hint or "",
+        values = spec.values or {},
+        source = spec.source and (spec.source:gsub("%s*\n%s*", " ")) or "",
+      }
+    end
+    args[cmd] = list
+  end
+  return {
+    kind = "input",
+    title = opts.title or TITLES[wm_class] or "Prompt",
+    label = label,
+    text = opts.text or "",
+    completions = completions,
+    args = next(args) and args or nil,
+    chain = #completions > 0,
+    shell_source = opts.shell_source or "",
+    history = read_history(hist_path),
+    result_path = state_file,
+  }
 end
 
 ---Show a prompt without blocking the compositor.
 ---`callback` is called once with the entered string, or nil if cancelled or
 ---the prompt could not be created.
 ---@param label    string
----@param opts     {wm_class?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer, prelude?: string}  prelude runs in the background as the bar opens
+---@param opts     {wm_class?: string, title?: string, completions?: (string|PromptCompletion)[], arg_completions?: table<string, PromptArgSpec[]>, menu_height?: integer, prelude?: string, shell_source?: string}  prelude runs in the background as the bar opens; shell_source lists commands for `!` completion in Quickshell
 ---@param callback fun(result: string|nil)
 function Prompt.async(label, opts, callback)
   local state_file = Utils.tmp_path("prompt-input")
+  local quickshell = Prompt.frontend() == "quickshell"
+  local wm_class = opts.wm_class or "hyprvim-prompt"
+  -- in Quickshell mode the prelude runs once, outside the fallback script
+  local term_opts = opts
+  if quickshell then
+    term_opts = {}
+    for k, v in pairs(opts) do
+      term_opts[k] = v
+    end
+    term_opts.prelude = nil
+  end
 
-  local cmd = build_cmd(label, opts, state_file)
+  local cmd, cleanup = build_cmd(label, term_opts, state_file)
   if not cmd then
     Hypr.notify("prompt: failed to write prompt script", "error", 3000)
     callback(nil)
     return
   end
 
-  local dispatch = Callback.register(function()
+  local spec_path
+  local dispatch, name = Callback.register(function(via)
     local f = io.open(state_file, "r")
     local result = f and f:read("*a"):gsub("%s+$", "") or ""
     if f then
       f:close()
       os.remove(state_file)
     end
+    if spec_path then os.remove(spec_path) end
+    -- the terminal saves its own history; Quickshell only hands back the line
+    if via == "quickshell" and result ~= "" and is_known_entry(result, opts.completions) then
+      append_history(history_path(wm_class), result)
+    end
     callback(result ~= "" and result or nil)
   end)
 
-  Hypr.cmd_then_dispatch(cmd, dispatch)()
+  if quickshell then spec_path = write_spec(input_spec(label, opts, state_file, history_path(wm_class)), name) end
+  if not spec_path then
+    Hypr.cmd_then_dispatch(cmd, dispatch)()
+    return
+  end
+
+  -- stylua: ignore
+  Hypr.exec(
+    (opts.prelude and ("( " .. opts.prelude .. " ) >/dev/null 2>&1 & ") or "")
+      .. "if " .. ipc_open(spec_path) .. "; then rm -f " .. cleanup
+      .. "; else " .. cmd .. "; hyprctl dispatch '" .. dispatch .. "'; fi"
+  )
+end
+
+---Run `command` and show what it printed: in a terminal, or in the Quickshell bar with the
+---terminal as the fallback. `on_done` runs once the output is dismissed, or at once when there is none.
+---@param command string
+---@param on_done fun()
+function Prompt.shell(command, on_done)
+  if Prompt.frontend() ~= "quickshell" then
+    Hypr.cmd_then_dispatch(
+      Config.term_cmd("hyprvim-shell")
+        .. " bash -c "
+        .. sq(
+          "_hv_tmp=$(mktemp); "
+            .. command
+            .. ' 2>&1 | tee "$_hv_tmp";'
+            .. " [ -s \"$_hv_tmp\" ] && { echo; read -rsn1 -p '[done] press any key...'; };"
+            .. ' rm -f "$_hv_tmp"'
+        ),
+      Callback.register(on_done)
+    )()
+    return
+  end
+
+  local out = Utils.tmp_path("prompt-output")
+  local spec_path
+  local dispatch, name = Callback.register(function()
+    os.remove(out)
+    if spec_path then os.remove(spec_path) end
+    on_done()
+  end)
+  spec_path = write_spec({ kind = "output", title = "Shell", label = "!", text = command, output_path = out }, name)
+  local show = Config.term_cmd("hyprvim-shell")
+    .. " bash -c "
+    .. sq("cat " .. sq(out) .. "; echo; read -rsn1 -p '[done] press any key...'")
+  -- stylua: ignore
+  local script = "bash -c " .. sq(command) .. " > " .. sq(out) .. " 2>&1 < /dev/null; _hv_s=$?; "
+    .. "[ $_hv_s -eq 0 ] || printf '\\n[exit %d]\\n' \"$_hv_s\" >> " .. sq(out) .. "; "
+    .. (spec_path and ("[ -s " .. sq(out) .. " ] && " .. ipc_open(spec_path) .. " && exit 0; ") or "")
+    .. "[ -s " .. sq(out) .. " ] && " .. show .. "; "
+    .. "hyprctl dispatch '" .. dispatch .. "'"
+  Hypr.exec("bash -c " .. sq(script))
 end
 
 return Prompt

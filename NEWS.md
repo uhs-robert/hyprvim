@@ -5,6 +5,8 @@
 ### New Features
 
 - **WhichKey on Quickshell** ([#25](https://github.com/uhs-robert/hyprvim/issues/25)): set `which_key.frontend = "quickshell"` and the HUD is drawn by your running [Quickshell](https://quickshell.org) config instead of eww, so it can match the rest of your shell. HyprVim resolves the same items as before, writes them to a JSON file and calls the `hyprvim_whichkey` IPC target; `which_key.quickshell_ipc` points it at a specific instance. The protocol is in the [WhichKey guide](docs/guide/05_WhichKey.md#-quickshell-frontend), and [extras/quickshell](extras/quickshell) has a plain reference component. eww stays the default.
+- **Prompt bar on Quickshell** ([#27](https://github.com/uhs-robert/hyprvim/issues/27)): set `prompt.frontend = "quickshell"` and the `:`, find and replace prompts open in your Quickshell config instead of a terminal, with the same completions, argument candidates and history. `:!cmd` output shows in the bar too. HyprVim writes a JSON spec, calls the `hyprvim_prompt` IPC target through `which_key.quickshell_ipc`, and gets the line back through the same callback the terminal uses, so both share one history file; with no instance answering, the terminal bar opens as before. The protocol is in the [Modes guide](docs/guide/03_Modes.md#-quickshell-prompt), and [extras/quickshell](extras/quickshell) has a plain reference component.
+- **`:silent !cmd`** launches a shell command detached without showing its output, and Tab after `:silent !` completes command names like `:!` does.
 
 ## [v4.0.1](https://github.com/uhs-robert/hyprvim/releases/tag/v4.0.1) - 2026-09-22
 
