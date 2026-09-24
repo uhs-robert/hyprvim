@@ -43,7 +43,9 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field enabled  string[]|nil  Only show HUD for these submaps; nil (default) means all except `disabled`
 
 --- @class HyprVimWhichKey
---- @field enabled?      boolean  true: show the which-key HUD on submap entry (requires eww)
+--- @field enabled?      boolean  true: show the which-key HUD on submap entry (requires eww or Quickshell, see `frontend`)
+--- @field frontend?     "eww"|"quickshell"  Renderer for the HUD; "quickshell" sends it to a running Quickshell config over IPC (default "eww")
+--- @field quickshell_ipc? string  Shell command prefix for Quickshell IPC, run unquoted through sh (default "qs ipc"); e.g. "qs -c myshell ipc"
 --- @field delay_ms?     integer  Milliseconds to wait before showing the panel (0 = instant)
 --- @field vim_delay_ms? integer  Delay for vim operator-pending submaps (DELETE/CHANGE/YANK and their sub-modes); overrides delay_ms for those submaps (default 300)
 --- @field position? "bottom-right"|"bottom-left"|"bottom-center"|"top-right"|"top-left"|"top-center"  Panel anchor position
@@ -122,10 +124,12 @@ Config.defaults = {
     errors   = true,
   },
   which_key = {
-    enabled      = true,
-    delay_ms     = 0,
-    vim_delay_ms = 300,
-    position     = "bottom-right",
+    enabled        = true,
+    frontend       = "eww",
+    quickshell_ipc = "qs ipc",
+    delay_ms       = 0,
+    vim_delay_ms   = 300,
+    position       = "bottom-right",
     auto_show = {
       disabled = { "NORMAL", "VISUAL", "V-LINE", "INSERT" },
       enabled  = nil,

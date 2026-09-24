@@ -48,7 +48,7 @@ Built on Hyprland’s native submap system, uses standard GUI application keyboa
 - **🔁 Surround** - Wrap text with pairs (`gs` for word, `S` in visual) - supports `()`, `{}`, `[]`, `<div>`, or custom with spaces
 - **↩️ Undo/Redo** - Standard undo/redo (`u`, `Ctrl+r`)
 - **⌨️ Command Mode** - Execute commands (`:w`, `:q`, `:split`, `:float`, `:workspace`, `:reload`, etc.)
-- **🗺️ Which-Key HUD** - Shows all keybinds for submaps on entry. Press `SPACE` to toggle (requires `eww`)
+- **🗺️ Which-Key HUD** - Shows all keybinds for submaps on entry. Press `SPACE` to toggle (requires `eww` or Quickshell)
 - **Open Vim/Nvim Anywhere** - Press `SUPER + N` to open selected text in Vim/Nvim for complex editing. Save/close to paste.
 
 > [!WARNING]
@@ -71,8 +71,9 @@ To use the extras, refer to their respective documentation.
 | Thunderbird     | Keybinds for Vim driven navigation                                        | [extras/thunderbird](extras/thunderbird)           |
 | Tridactyl       | Vim-style navigation for Firefox (advanced)                               | [extras/tridactyl](extras/tridactyl)               |
 | Vimium          | Vim-style navigation for web browsers (basic)                             | [extras/vimium](extras/vimium)                     |
+| Quickshell      | Reference Quickshell component for the WhichKey HUD                       | [extras/quickshell](extras/quickshell)             |
 | Waybar Submap   | Waybar submap visual Indicator                                            | [extras/waybar](extras/waybar)                     |
-| WhichKey        | WhichKey like display built using `eww` to see keybinds for submaps       | [docs/guide/whichkey](./docs/guide/05_WhichKey.md) |
+| WhichKey        | WhichKey like display built using `eww` or Quickshell to see keybinds     | [docs/guide/whichkey](./docs/guide/05_WhichKey.md) |
 | Wl-kbptr        | Keyboard-driven mouse cursor control on Wayland                           | [extras/wl-kbptr](extras/wl-kbptr)                 |
 
 If you'd like an extra config added, raise a feature request or put one together and send a pull request.
@@ -89,7 +90,8 @@ If you'd like an extra config added, raise a feature request or put one together
 | [Hyprland](https://github.com/hyprwm/Hyprland) | Wayland compositor                                              |
 | `wl-clipboard`                                 | Wayland clipboard utilities (`wl-copy`, `wl-paste`)             |
 | A terminal emulator                            | For the `command-mode`, `replace-mode`, `find-mode`, and `help` |
-| `eww` _(optional)_                             | Widget system for the which-key HUD                             |
+| `eww` _(optional)_                             | Widget system for the which-key HUD (`frontend = "eww"`)        |
+| `quickshell` _(optional)_                      | Alternative which-key HUD renderer (`frontend = "quickshell"`)  |
 | `jq` _(optional)_                              | Required by the which-key HUD and manual-install updater        |
 | `socat` _(optional)_                           | Required by the which-key HUD daemon                            |
 
@@ -340,7 +342,9 @@ require("hyprvim").setup({
   enable_debug = false,
   max_count = 1000,
   which_key = {
-    enabled = true,             -- This requires eww
+    enabled = true,             -- This requires eww, or Quickshell with frontend = "quickshell"
+    frontend = "eww",           -- "eww" or "quickshell" (sends the HUD to your Quickshell config over IPC)
+    quickshell_ipc = "qs ipc",  -- Command prefix for Quickshell IPC, e.g. "qs -c myshell ipc"
     delay_ms = 0,               -- 0 = instant, else delayed a bit (200 gives you some breathing room)
     vim_delay_ms = 300,
     position = "bottom-right",
@@ -406,7 +410,7 @@ This displays the active submap in your status bar.
 
 ### WhichKey
 
-WhichKey requires `eww` to display. It is an optional feature that is **disabled by default**.
+WhichKey requires `eww` to display, or Quickshell with `which_key.frontend = "quickshell"`. It is an optional feature that is **disabled by default**.
 
 We **highly recommend using WhichKey** to learn the keybindings. It also displays active marks and works with your other submaps too.
 

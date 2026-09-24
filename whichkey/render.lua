@@ -13,6 +13,7 @@ local pread = Utils.pread
 local sh_escape = Utils.sh_escape
 
 local Eww = require("hyprvim.whichkey.lib.eww") ---@class Eww
+local Quickshell = require("hyprvim.whichkey.lib.quickshell") ---@class Quickshell
 local Items = require("hyprvim.whichkey.lib.items") ---@class Items
 local Config = require("hyprvim.config") ---@class HyprVimConfigModule
 
@@ -38,6 +39,30 @@ end
 
 local POSITIONS = Eww.POSITIONS
 
+--- Active HUD frontend; the env var carries the configured value into render subprocesses.
+--- @return "eww"|"quickshell"
+function Render.frontend()
+  local env = os.getenv("HYPRVIM_WHICH_KEY_FRONTEND")
+  if env and env ~= "" then return env == "quickshell" and "quickshell" or "eww" end
+  return (Config.which_key and Config.which_key.frontend) == "quickshell" and "quickshell" or "eww"
+end
+
+--- Env assignments that carry the frontend settings into a render subprocess.
+--- @return string  shell prefix ending in a space
+function Render.spawn_env()
+  return "HYPRVIM_WHICH_KEY_FRONTEND="
+    .. sh_escape(Render.frontend())
+    .. " HYPRVIM_WHICH_KEY_QS_IPC="
+    .. sh_escape(Quickshell.ipc_prefix())
+    .. " "
+end
+
+--- Mark the HUD visible for the listener and toggle.
+local function mark_visible()
+  local vf = io.open(Render.state_dir .. "/whichkey-visible", "w")
+  if vf then vf:close() end
+end
+
 --- Close HUD and return true (for use as `if close_if(cond) then return end`).
 --- @param cond boolean
 --- @return boolean
@@ -52,12 +77,17 @@ end
 
 --- Hide the HUD and clear the visible state file.
 function Render.close()
+  local visible_file = sh_escape(Render.state_dir .. "/whichkey-visible")
+  if Render.frontend() == "quickshell" then
+    os.execute("(" .. Quickshell.hide_cmd() .. "; rm -f " .. visible_file .. ") &")
+    return
+  end
   local ec = "eww -c " .. sh_escape(Eww.dir)
   local parts = { ec .. " update visible=false >/dev/null 2>&1" }
   for _, pos in ipairs(POSITIONS) do
     parts[#parts + 1] = ec .. " close whichkey-" .. pos .. " >/dev/null 2>&1"
   end
-  parts[#parts + 1] = "rm -f " .. sh_escape(Render.state_dir .. "/whichkey-visible")
+  parts[#parts + 1] = "rm -f " .. visible_file
   os.execute("(" .. table.concat(parts, "; ") .. ") &")
 end
 
@@ -147,6 +177,25 @@ function Render.show(submap, screen, geometry)
   local rows_fit = math.max(1, math.floor((lh * 0.9 - 102) / 24))
   local ncols = math.min(4, math.ceil(num_items / rows_fit))
 
+  if Render.frontend() == "quickshell" then
+    local path = Quickshell.write_payload({
+      submap = submap,
+      title = title,
+      position = pos,
+      screen = screen,
+      columns = pos:find("center") and ncols or 1,
+    }, items_tmp)
+    os.remove(items_tmp)
+    if not path or not is_submap_active(submap) then return end
+    if not Quickshell.show(path) then return end
+    if not is_submap_active(submap) then
+      Render.close()
+      return
+    end
+    mark_visible()
+    return
+  end
+
   Eww.run("update visible=false")
   Eww.update_layout(pos, title, items, jq_items, ncols)
   os.remove(items_tmp)
@@ -166,8 +215,7 @@ function Render.show(submap, screen, geometry)
   end
 
   write_file(Render.state_dir .. "/whichkey-current-window", window)
-  local vf = io.open(Render.state_dir .. "/whichkey-visible", "w")
-  if vf then vf:close() end
+  mark_visible()
   Eww.run("update visible=true")
 end
 

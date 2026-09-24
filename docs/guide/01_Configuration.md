@@ -68,6 +68,8 @@ For user who manually install, controls the self-update channel.
 Controls the WhichKey HUD. The WhichKey applies to HyprVim submaps as well as your own custom submaps.
 
 - `enabled` turns the HUD on or off
+- `frontend` picks the renderer: `"eww"` (default) or `"quickshell"`
+- `quickshell_ipc` is the command prefix used to reach Quickshell (default `"qs ipc"`)
 - `delay_ms` controls how quickly the HUD appears
 - `vim_delay_ms` gives operator-pending submaps a separate delay
 - `position` anchors the panel
@@ -116,7 +118,7 @@ Sets the upper bound for count accumulation. Counts above this are clamped.
 
 ### WhichKey
 
-WhichKey is enabled from the `which_key.enabled` option. Requires `eww`.
+WhichKey is enabled from the `which_key.enabled` option. Requires `eww`, or Quickshell with `which_key.frontend = "quickshell"`.
 
 See [WhichKey](05_WhichKey.md) for setup and styling details.
 

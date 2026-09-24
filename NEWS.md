@@ -1,5 +1,11 @@
 # HyprVim Release Notes
 
+## Unreleased
+
+### New Features
+
+- **WhichKey on Quickshell** ([#25](https://github.com/uhs-robert/hyprvim/issues/25)): set `which_key.frontend = "quickshell"` and the HUD is drawn by your running [Quickshell](https://quickshell.org) config instead of eww, so it can match the rest of your shell. HyprVim resolves the same items as before, writes them to a JSON file and calls the `hyprvim_whichkey` IPC target; `which_key.quickshell_ipc` points it at a specific instance. The protocol is in the [WhichKey guide](docs/guide/05_WhichKey.md#-quickshell-frontend), and [extras/quickshell](extras/quickshell) has a plain reference component. eww stays the default.
+
 ## [v4.0.1](https://github.com/uhs-robert/hyprvim/releases/tag/v4.0.1) - 2026-09-22
 
 ### Bug Fixes
