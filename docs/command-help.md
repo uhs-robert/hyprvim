@@ -138,9 +138,10 @@ Press `:` in NORMAL mode, type a command and press Enter. `Escape` dismisses the
 
 ## Shell
 
-| Command | Description                                          |
-| ------- | ---------------------------------------------------- |
-| `:!cmd` | Run a shell command and show its output, e.g. `:!ls` |
+| Command        | Description                                                                      |
+| -------------- | -------------------------------------------------------------------------------- |
+| `:!cmd`        | Run a shell command and show its output, e.g. `:!ls`                             |
+| `:silent !cmd` | Launch a shell command detached, without showing output, e.g. `:silent !firefox` |
 
 ## Search / Replace
 

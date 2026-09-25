@@ -214,7 +214,7 @@ vjjgs → <p>       - Select 3 lines, surround with <p>lines</p>
 
 ## 🔍 Find
 
-`f`, `t`, and `/` commands open HyprVim's built-in prompt in the configured terminal from `applications.terminal` (see [Configuration](01_Configuration.md#configuration)).
+`f`, `t`, and `/` commands open HyprVim's built-in prompt in the configured terminal from `applications.terminal`, or in Quickshell with `prompt.frontend = "quickshell"` (see [Configuration](01_Configuration.md#prompt)).
 
 | Key           | Description                       |
 | ------------- | --------------------------------- |

@@ -131,6 +131,33 @@ Utils.json_escape = function(s)
   return (s:gsub('[%c"\\{}]', function(c) return string.format("\\u%04x", c:byte()) end))
 end
 
+--- Encodes a Lua value as JSON. A table with keys 1..n is an array, and so is an empty table.
+--- @param v any
+--- @return string
+Utils.json_encode = function(v)
+  local t = type(v)
+  if t == "string" then return '"' .. Utils.json_escape(v) .. '"' end
+  if t == "number" then return v == math.floor(v) and string.format("%d", v) or tostring(v) end
+  if t == "boolean" then return tostring(v) end
+  if t ~= "table" then return "null" end
+  local parts = {}
+  if next(v) == nil or is_array(v) then
+    for _, item in ipairs(v) do
+      parts[#parts + 1] = Utils.json_encode(item)
+    end
+    return "[" .. table.concat(parts, ",") .. "]"
+  end
+  local keys = {}
+  for k, item in pairs(v) do
+    keys[#keys + 1] = { tostring(k), item }
+  end
+  table.sort(keys, function(a, b) return a[1] < b[1] end)
+  for _, pair in ipairs(keys) do
+    parts[#parts + 1] = Utils.json_encode(pair[1]) .. ":" .. Utils.json_encode(pair[2])
+  end
+  return "{" .. table.concat(parts, ",") .. "}"
+end
+
 --- Decodes \uXXXX escapes (as emitted by json_escape) back to bytes.
 --- @param s string
 --- @return string

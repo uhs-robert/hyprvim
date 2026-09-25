@@ -45,15 +45,16 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @class HyprVimWhichKey
 --- @field enabled?      boolean  true: show the which-key HUD on submap entry (requires eww or Quickshell, see `frontend`)
 --- @field frontend?     "eww"|"quickshell"  Renderer for the HUD; "quickshell" sends it to a running Quickshell config over IPC (default "eww")
---- @field quickshell_ipc? string  Shell command prefix for Quickshell IPC, run unquoted through sh (default "qs ipc"); e.g. "qs -c myshell ipc"
+--- @field quickshell_ipc? string  Shell command prefix for Quickshell IPC, run unquoted through sh (default "qs ipc"); e.g. "qs -c myshell ipc"; also used by `prompt.frontend = "quickshell"`
 --- @field delay_ms?     integer  Milliseconds to wait before showing the panel (0 = instant)
 --- @field vim_delay_ms? integer  Delay for vim operator-pending submaps (DELETE/CHANGE/YANK and their sub-modes); overrides delay_ms for those submaps (default 300)
 --- @field position? "bottom-right"|"bottom-left"|"bottom-center"|"top-right"|"top-left"|"top-center"  Panel anchor position
 --- @field auto_show? HyprVimAutoShow
 
 --- @class HyprVimPrompt
---- @field completion_menu?   boolean  true: Tab opens an fzf menu over the completions (requires fzf); false: Tab cycles matches (default true)
---- @field completion_height? integer  Height in pixels the prompt bar grows to while the menu is open (default 400)
+--- @field frontend?          "terminal"|"quickshell"  Who draws the prompt bar; "quickshell" hands it to a running Quickshell config over IPC (`which_key.quickshell_ipc`) and falls back to the terminal when none answers (default "terminal")
+--- @field completion_menu?   boolean  true: Tab opens an fzf menu over the completions (requires fzf); false: Tab cycles matches (default true); terminal frontend only
+--- @field completion_height? integer  Height in pixels the prompt bar grows to while the menu is open (default 400); terminal frontend only
 --- @field history?          boolean  true: recall earlier entries with the arrow keys, kept per prompt under `$XDG_STATE_HOME/hyprvim/history` (default true)
 --- @field history_size?     integer  Entries kept per prompt (default 200)
 
@@ -64,6 +65,7 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field hint?   string    Shown in the completion menu when the value is free-form
 --- @field values? { [1]: string, [2]: string? }[]  Fixed candidates as { value, description } pairs
 --- @field source? string    Shell command printing "value<TAB>description" lines, run when the menu opens
+--- @field optional? boolean  true: the command runs without this position (then called with ""); only optional positions may follow
 
 --- @class HyprVimUserCommand
 --- @field [1]    fun(args?: string)  Handler; receives the argument string when `args` is set
@@ -136,6 +138,7 @@ Config.defaults = {
     },
   },
   prompt = {
+    frontend          = "terminal",
     completion_menu   = true,
     completion_height = 400,
     history           = true,

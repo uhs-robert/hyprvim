@@ -64,13 +64,17 @@ Press `:` from NORMAL mode to enter COMMAND mode.
 
 Command mode provides powerful window management, workspace navigation, and system control.
 
-Separate commands with `|` to run several at once, e.g. `:float on | center | opacity 0.9`. They run in order and stop at the first that fails; write `\|` for a literal pipe. Shell (`:!`) and substitute (`:%s/`) lines are never split.
+Separate commands with `|` to run several at once, e.g. `:float on | center | opacity 0.9`. They run in order and stop at the first that fails; write `\|` for a literal pipe. Shell (`:!`, `:silent !`) and substitute (`:%s/`) lines are never split.
+
+`:!cmd` runs a shell command and shows what it printed, and `:silent !cmd` launches it detached without showing anything, e.g. `:silent !firefox`. Tab after `!` completes command names from your `$PATH`.
 
 A bare number focuses that workspace, so `:3` goes to workspace 3. `:set` completes values as well as names: Tab after an option shows its current value, its default and its range, or its choices.
 
 Press `Escape` to dismiss the bar without running anything. While the completion menu is open, `Escape` closes the menu first and leaves you at the prompt.
 
-Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, the prompt bar expands into a searchable menu of commands and their descriptions; `Tab` and `Shift+Tab` move through the list. Pressing `Tab` again after a command name completes its arguments: live workspace and monitor lists, window properties, and the accepted range for free-form values such as `:opacity` (0-1). Searching matches descriptions as well as names, so typing `close` finds `:q`, `:qa` and `:only`. Aliases are searchable but listed beside the command they point at instead of as separate entries. Without fzf, `Tab` cycles through prefix matches instead.
+Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, the prompt bar expands into a searchable menu of commands and their descriptions; `Tab` and `Shift+Tab` move through the list. Pressing `Tab` again after a command name completes its arguments: live workspace and monitor lists, window properties, and the accepted range for free-form values such as `:opacity` (0-1). Searching matches descriptions as well as names, so typing `close` finds `:q`, `:qa` and `:only`. Aliases are searchable but listed beside the command they point at instead of as separate entries. Without fzf, `Tab` cycles through prefix matches instead. When the menu is wide enough, each command shows its usage between the name and the description, e.g. `<A [I] [F] | reset [WINDOW]>`, where `<>` is required and `[]` optional.
+
+`Enter` on a command that still lacks a required argument does not run it: the bar keeps the line and shows what the command needs, e.g. `opacity needs: <A [I] [F] | reset [WINDOW]>`.
 
 ### File Operations
 
@@ -154,6 +158,87 @@ Press `Tab` to complete. With [fzf](https://github.com/junegunn/fzf) installed, 
 :opacity 0.8 address:0x1234 - Set another window's opacity without focusing it
 :reload         - Reload Hyprland configuration
 ```
+
+## 🧩 Quickshell Prompt
+
+With `prompt.frontend = "quickshell"`, HyprVim hands every prompt (`:`, `f`/`t`/`/`, `R` and the `y/N` confirmations) to your running [Quickshell](https://quickshell.org) config instead of spawning a terminal. HyprVim still runs everything: the bar only edits a line and hands it back, and `:!cmd` output is produced by HyprVim and only displayed by the bar. When no instance answers, the terminal bar opens instead.
+
+For a working start, copy the reference component from [extras/quickshell](../../extras/quickshell) into your config.
+
+### IPC
+
+Your Quickshell config implements one `IpcHandler` with target `hyprvim_prompt`:
+
+| Function                     | Called when                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `open(path: string): string` | A prompt or command output should appear; read the JSON spec at `path`. Return `ok` once it is shown |
+| `close()`                    | The prompt should go away; treat it as a cancel                                                        |
+
+HyprVim runs `<which_key.quickshell_ipc> call hyprvim_prompt open <path>` from a background shell. Anything other than `ok` on stdout, including an instance without the target, opens the terminal bar instead.
+
+### Answering
+
+Every spec carries a `callback`, a Lua call such as `_hv_cb_7("quickshell")`. Dispatch it exactly once, when the prompt ends:
+
+1. On submit, write the entered line to `result_path` (no trailing newline needed).
+2. On cancel, write nothing.
+3. Run `hyprctl dispatch '<callback>'`.
+
+An empty or missing result file is a cancel. HyprVim then reads the line, records it in the history file and runs it, the same way it does for the terminal bar. For an `output` spec there is nothing to write; dispatch the callback when the output is dismissed so HyprVim can restore the mode.
+
+### Spec
+
+The spec is written to `$XDG_RUNTIME_DIR/hyprvim/tmp/` before each `open` and removed after the callback runs.
+
+```json
+{
+  "version": 1,
+  "kind": "input",
+  "title": "Command",
+  "label": ":",
+  "text": "",
+  "chain": true,
+  "completions": [
+    { "name": "float", "desc": "toggle floating", "takes_args": true, "min_args": 0, "usage": "[on|off|toggle]", "aliases": ["f"] },
+    { "name": "move", "desc": "move window by pixels", "takes_args": true, "min_args": 2, "usage": "<X Y>", "aliases": [] }
+  ],
+  "args": {
+    "float": [{ "hint": "", "optional": false, "values": [["on", "force floating"]], "source": "" }],
+    "tag": [
+      { "hint": "tag name", "optional": false, "values": [], "source": "" },
+      { "hint": "window, optional", "optional": true, "values": [], "source": "hyprctl clients ..." }
+    ]
+  },
+  "shell_source": "compgen -c | sort -u",
+  "history": ["float on", "ws 3"],
+  "result_path": "/run/user/1000/hyprvim/tmp/prompt-input-...",
+  "callback": "_hv_cb_7(\"quickshell\")",
+  "theme": { "bg_core": "#070C13", "primary": "#7FA3C9", "base_font_size": "12px" }
+}
+```
+
+| Field          | Meaning                                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `version`      | Spec format version, bumped on incompatible changes                                                                                                                                                                |
+| `kind`         | `input` for a prompt, `output` for `:!cmd` output                                                                                                                                                                  |
+| `title`        | `Command`, `Find`, `Replace`, `Shell` or `Prompt`                                                                                                                                                                  |
+| `label`        | Prompt text drawn before the line, e.g. `:` or `Log out? [y/N] `                                                                                                                                                   |
+| `text`         | Initial line; for `output`, the command that ran                                                                                                                                                                   |
+| `chain`        | Complete only the command after the last `\|`, as the line may chain several                                                                                                                                       |
+| `completions`  | Command names with a description, whether they take arguments (insert a trailing space), `min_args`, `usage` and aliases (searchable, not listed)                                                                  |
+| `args`         | Per command, one entry per argument position: `hint` for free-form values, `optional`, `values` as `[value, description]` pairs, and `source`, a shell command printing `value<TAB>description[<TAB>insert]` lines |
+| `shell_source` | Shell command listing executables, for completion after `!` or `silent !`; empty when not offered                                                                                                                  |
+| `history`      | Earlier entries of this prompt, oldest first                                                                                                                                                                       |
+| `result_path`  | Where the entered line goes                                                                                                                                                                                        |
+| `output_path`  | `output` only: file holding the command's combined stdout and stderr, with `[exit N]` appended on failure                                                                                                          |
+| `callback`     | Lua call to dispatch once, see above                                                                                                                                                                               |
+| `theme`        | Every `$variable` from `theme.conf`, as strings                                                                                                                                                                    |
+
+`min_args` counts the leading arguments a command cannot run without: hold `Enter` until that many are typed and show the `usage` instead, the way the terminal bar does. It is 0 for commands that also run bare, like `:float`, and a spec without it should be read as 0. `usage` is a short signature such as `<A [I] [F] | reset [WINDOW]>`, `<>` required and `[]` optional, and empty for commands without arguments. An argument position with `optional` set may be left out, and only optional positions follow it.
+
+Run a `source` with `bash -c`, setting `HV_ARGS` to the arguments typed before its position, and only when that position is being completed: it may be slow. The third field, when present, is what gets inserted instead of the first.
+
+`:!cmd` output is collected before the bar opens, so a long-running command shows nothing until it exits, and interactive programs need a terminal (`:terminal`). Commands with no output never open the bar.
 
 <!-- Page Nav -->
 <div align=right><a href="04_Advanced.md"><i><b>>> Next: Go to Advanced</b></i></a></div>
