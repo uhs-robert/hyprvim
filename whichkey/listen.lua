@@ -335,7 +335,7 @@ function Listen.init(Config)
   if Render.frontend() == "eww" then
     init_eww(eww_dir)
   else
-    Theme.apply()
+    Theme.ensure_conf()
   end
 
   local spawn_render = make_spawner(eww_dir, state_dir, render, config.position)

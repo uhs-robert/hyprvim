@@ -105,15 +105,17 @@ function Theme.read_vars()
   return vars
 end
 
---- Reads theme.conf and writes _vars.scss.
-function Theme.apply()
-  local cfg_dir = Config.config_dir
-  os.execute("mkdir -p " .. Utils.sh_escape(cfg_dir))
-  local vars_file = root .. "eww/whichkey/_vars.scss"
-  local user_scss = cfg_dir .. "/whichkey.scss"
+--- Creates the config dir and a default theme.conf; every frontend reads it.
+function Theme.ensure_conf()
+  os.execute("mkdir -p " .. Utils.sh_escape(Config.config_dir))
+  create_if_missing(Config.config_dir .. "/theme.conf", DEFAULT_THEME)
+end
 
-  create_if_missing(user_scss, DEFAULT_USER_SCSS)
-  create_if_missing(cfg_dir .. "/theme.conf", DEFAULT_THEME)
+--- Reads theme.conf and writes _vars.scss for the eww frontend.
+function Theme.apply()
+  Theme.ensure_conf()
+  local vars_file = root .. "eww/whichkey/_vars.scss"
+  create_if_missing(Config.config_dir .. "/whichkey.scss", DEFAULT_USER_SCSS)
 
   local lines = {}
   table.insert(lines, "// Auto-generated from theme.conf, do not edit directly")
