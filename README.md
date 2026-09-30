@@ -41,7 +41,7 @@ Built on Hyprland’s native submap system, uses standard GUI application keyboa
 - **✂️ Operators** - Delete (`d`), change (`c`), yank (`y`) with motion and text object support
 - **📝 Text Objects** - Inner/around word (`iw/aw`), inner/around paragraph (`ip/ap`)
 - **🔢 Count Support** - Repeat any motion or operator (e.g., `5j`, `3dw`, `2yy`)
-- **📌 Marks** - Save and jump to positions across workspaces/monitors (`m{mark}`, `` `{mark} ``)
+- **📌 Marks** - Save and jump to positions across workspaces/monitors (`m{mark}`, `` `{mark} ``, `''` for last window)
 - **📋 Registers** - Multi-clipboard with named (`"a-z`) and special registers (`"0`, `"_`, `"/`)
 - **🔍 Find/Search** - Interactive search (`/`, `?`, `f`, `t`, `*`, `#`) with next/previous (`n/N`)
 - **🔄 Replace** - Character (`r`) and string replacement (`R`)
@@ -277,7 +277,7 @@ Press `SUPER + V` (or your configured leader key + activation key) to enter **NO
 
 ### Marks
 
-Save and jump to window positions across workspaces and monitors using `m{mark}` to set, `` `{mark} `` to jump.
+Save and jump to window positions across workspaces and monitors using `m{mark}` to set, `` `{mark} `` to jump. From the MARKS submap, use `=` to set and `-` to delete marks, or `'` / backtick again to jump to the last focused window.
 
 > **📖 Learn more:** [Marks guide](./docs/guide/04_Advanced.md#-marks)
 

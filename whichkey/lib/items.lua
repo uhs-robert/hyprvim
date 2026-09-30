@@ -65,9 +65,13 @@ function Items.build_mark_items(sm)
   -- hl.bind descriptions never leak into the HUD as ghost entries).
   -- Exit keys live in the HUD footer; the placeholder keeps the HUD open when no marks exist
   local empty_items = '[{"key":"-","desc":"No marks set","class":""}]'
-  local tail_items = sm == "DELETE-MARK" and '[{"key":"DELETE","desc":"Clear all marks","class":""}]' or "[]"
+  local tail_items = ({
+    ["DELETE-MARK"] = '[{"key":"DELETE","desc":"Clear all marks","class":""}]',
+    MARKS = '[{"key":"\'","desc":"Last window","class":""},'
+      .. '{"key":"=","desc":"Set mark","class":""},{"key":"-","desc":"Delete mark","class":""}]',
+  })[sm] or "[]"
 
-  if not file_exists(marks_file) then return empty_items end
+  if not file_exists(marks_file) then return sm == "MARKS" and tail_items or empty_items end
 
   local expr = "((" .. marks_jq .. ") + " .. tail_items .. ") | if length > 0 then . else " .. empty_items .. " end"
   local result = pread("jq -c " .. sh_escape(expr) .. " " .. sh_escape(marks_file) .. " 2>/dev/null")
