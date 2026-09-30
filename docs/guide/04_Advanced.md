@@ -4,14 +4,21 @@ Marks allow you to save and jump to specific locations across workspaces and mon
 
 ### Mark Management
 
-| Key             | Description                                    |
-| --------------- | ---------------------------------------------- |
-| `m<letter>`     | Save current position (e.g., `ma`, `mb`, `m1`) |
-| `` `<letter> `` | Jump to a mark (e.g., `` `a ``, `` `b ``)      |
-| `''` or ``` `` ```| Jump to the last focused window                 |
-| `gm`            | List all saved marks                           |
-| `dm<letter>`    | Delete mark (e.g., `dma`)                      |
-| `dm+backspace`  | Clear all marks                                |
+| Key                | Description                                    |
+| ------------------ | ---------------------------------------------- |
+| `m<letter>`        | Save current position (e.g., `ma`, `mb`, `m1`) |
+| `` `<letter> ``    | Jump to a mark (e.g., `` `a ``, `` `b ``)      |
+| `''` or ``` `` ``` | Jump to the last focused window                |
+| `gm`               | List all saved marks                           |
+| `dm<letter>`       | Delete mark (e.g., `dma`)                      |
+| `dm+backspace`     | Clear all marks                                |
+
+The jump menu (`'` or `` ` ``) also has:
+
+| Key | Description   |
+| --- | ------------- |
+| `=` | Set a mark    |
+| `-` | Delete a mark |
 
 ### Supported Marks
 

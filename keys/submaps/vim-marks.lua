@@ -16,12 +16,14 @@ local function static_rows(name)
   if name == "DELETE-MARK" then
     table.insert(rows, { "DELETE", function() marks.clear() end, "Clear all marks" })
     table.insert(rows, { "SHIFT + DELETE", function() marks.clear() end })
-  elseif name == "MARKS" then
-    table.insert(rows, { "APOSTROPHE", function() marks.jump_last() end, "Last window" })
-    table.insert(rows, { "GRAVE", function() marks.jump_last() end })
-    table.insert(rows, { "BackSpace", function() marks.dispatch_after() end })
   else
     table.insert(rows, { "BackSpace", function() marks.dispatch_after() end })
+  end
+  if name == "MARKS" then
+    table.insert(rows, { "APOSTROPHE", function() marks.jump_last() end, "Last window" })
+    table.insert(rows, { "GRAVE", function() marks.jump_last() end })
+    table.insert(rows, { "EQUAL", function() marks.enter_set() end, "Set mark" })
+    table.insert(rows, { "MINUS", function() marks.enter_delete() end, "Delete mark" })
   end
   for _, row in ipairs(common.footer()) do
     table.insert(rows, row)

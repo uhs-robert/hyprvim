@@ -277,7 +277,7 @@ Press `SUPER + V` (or your configured leader key + activation key) to enter **NO
 
 ### Marks
 
-Save and jump to window positions across workspaces and monitors using `m{mark}` to set, `` `{mark} `` to jump.
+Save and jump to window positions across workspaces and monitors using `m{mark}` to set, `` `{mark} `` to jump. From the MARKS submap, use `=` to set and `-` to delete marks, or `'` / backtick again to jump to the last focused window.
 
 > **📖 Learn more:** [Marks guide](./docs/guide/04_Advanced.md#-marks)
 
