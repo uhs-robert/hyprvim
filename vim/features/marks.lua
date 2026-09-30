@@ -171,6 +171,13 @@ function Marks.jump(char)
   Marks.dispatch_after()
 end
 
+---Focus the last focused window from Hyprland's focus history.
+function Marks.jump_last()
+  hl.dispatch(hl.dsp.focus({ last = true }))
+  notify("Jumped to last window")
+  Marks.dispatch_after()
+end
+
 ---Remove mark `char` from the state file.
 ---@param char string
 function Marks.delete(char)
