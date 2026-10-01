@@ -1,7 +1,25 @@
 local Submap = require("hyprvim.lib.submap") ---@class HyprVimSubmap
 local sh_escape = require("hyprvim.lib.utils").sh_escape
+local Config = require("hyprvim.config") ---@class HyprVimConfigModule
 
 local DEFAULT_DELAY_MS = 20
+
+--- Hand a close to the configured close_handler; false when none is set.
+--- @param addresses string[]
+--- @param kill boolean
+--- @return boolean
+local function handle_close(addresses, kill)
+  local handler = Config.close_handler
+  if not handler then return false end
+  if #addresses > 0 then handler(addresses, kill) end
+  return true
+end
+
+--- @return string[]
+local function active_address()
+  local win = hl.get_active_window()
+  return win and { win.address } or {}
+end
 
 --- @class HyprVimHyprland
 local Hyprland = {}
@@ -73,18 +91,29 @@ function Hyprland.suspend_vim() Submap.reset({ is_temporary = true }) end
 function Hyprland.focus_window(addr) hl.dispatch(hl.dsp.focus({ window = "address:" .. addr })) end
 
 --- Close the active window gracefully.
-function Hyprland.close_window() hl.dispatch(hl.dsp.window.close()) end
+function Hyprland.close_window()
+  if handle_close(active_address(), false) then return end
+  hl.dispatch(hl.dsp.window.close())
+end
 
 --- Force-kill the active window.
-function Hyprland.kill_window() hl.dispatch(hl.dsp.window.kill()) end
+function Hyprland.kill_window()
+  if handle_close(active_address(), true) then return end
+  hl.dispatch(hl.dsp.window.kill())
+end
 
 --- Close or kill the given windows, each targeted by address.
 --- @param addresses string[]  window addresses (e.g. "0x1234abcd"); blanks are skipped
 --- @param kill      boolean    true -> kill (SIGKILL), false -> graceful close
 function Hyprland.close_windows(addresses, kill)
-  local action = kill and hl.dsp.window.kill or hl.dsp.window.close
+  local targets = {}
   for _, addr in ipairs(addresses) do
-    if addr and addr ~= "" then hl.dispatch(action({ window = "address:" .. addr })) end
+    if addr and addr ~= "" then targets[#targets + 1] = addr end
+  end
+  if handle_close(targets, kill == true) then return end
+  local action = kill and hl.dsp.window.kill or hl.dsp.window.close
+  for _, addr in ipairs(targets) do
+    hl.dispatch(action({ window = "address:" .. addr }))
   end
 end
 

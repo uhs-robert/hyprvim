@@ -81,6 +81,7 @@ local XCC = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.con
 --- @field max_count? integer     Maximum count digit accumulator; counts above this are silently clamped (default 1000)
 --- @field which_key? HyprVimWhichKey
 --- @field prompt? HyprVimPrompt
+--- @field close_handler? fun(addresses: string[], kill: boolean)  Handler that takes over window closes; receives target addresses and kill flag
 --- @field keymaps? table<string, { [1]: string|string[], [2]: any, [3]: HL.BindOptions|nil }[]>  Per-submap bind overrides; entries with a matching key replace the built-in bind, new keys are appended. Submap names: "NORMAL", "VISUAL", "V-LINE", "INSERT", etc.
 --- @field commands? table<string, fun()|HyprVimUserCommand>  User-defined commands merged into the built-in command table; new names are added, existing names are overridden
 --- @field defaults? HyprVimConfig  Internal: holds the default values before user overrides are merged
