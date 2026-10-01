@@ -342,6 +342,7 @@ require("hyprvim").setup({
   },
   enable_debug = false,
   max_count = 1000,
+  -- close_handler = function(addresses, kill) ... end,  -- replace HyprVim's window close behavior
   which_key = {
     enabled = true,             -- This requires eww, or Quickshell with frontend = "quickshell"
     frontend = "eww",           -- "eww" or "quickshell" (sends the HUD to your Quickshell config over IPC)

@@ -116,6 +116,25 @@ Turns on verbose logging to the system journal. Useful when you need to inspect 
 
 Sets the upper bound for count accumulation. Counts above this are clamped.
 
+### `close_handler`
+
+A custom handler that replaces HyprVim's window close behavior for `:q`, `:q!`, `:wq`, `:qa`, `:qa!`, and `:only`. When configured, HyprVim calls the handler instead of performing the close itself; the handler is responsible for closing the windows.
+
+The handler receives two arguments: `addresses` (a list of Hyprland window addresses like `"0x1234abcd"`) and `kill` (a boolean; true for force kill, false for graceful close).
+
+Leave it nil (the default) for normal behavior.
+
+```lua
+require("hyprvim").setup({
+  close_handler = function(addresses, kill)
+    for _, addr in ipairs(addresses) do
+      local action = kill and hl.dsp.window.kill or hl.dsp.window.close
+      hl.dispatch(action({ window = "address:" .. addr }))
+    end
+  end,
+})
+```
+
 ## Related Features
 
 ### WhichKey
