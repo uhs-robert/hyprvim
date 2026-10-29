@@ -254,6 +254,19 @@ local function wrap_oneshot(rows, exit_fn)
   return wrapped
 end
 
+--- Mouse buttons (left, right, middle, side, extra) and wheel directions, in Hyprland's bind names.
+local mouse_inputs = {
+  "mouse:272",
+  "mouse:273",
+  "mouse:274",
+  "mouse:275",
+  "mouse:276",
+  "mouse_up",
+  "mouse_down",
+  "mouse_left",
+  "mouse_right",
+}
+
 --- Register the catchall bind for a submap.
 --- @param catchall "stay"|"reset"|false|fun(ctx: SubmapContext)
 --- @param exit_fn  fun()
@@ -261,6 +274,11 @@ end
 local function bind_catchall(catchall, exit_fn, spec)
   local opts = { release = true, ignore_mods = true }
   if catchall == "stay" then
+    -- Hyprland 0.57 also runs a catchall on mouse button and wheel events, so a "stay" catchall swallowed every click
+    -- and scroll. A bind that matches stops the catchall, and non_consuming hands the event on to the window.
+    for _, input in ipairs(mouse_inputs) do
+      hl.bind(input, hl.dsp.no_op(), { ignore_mods = true, non_consuming = true, transparent = true })
+    end
     hl.bind("catchall", hl.dsp.no_op(), opts)
   elseif catchall == "reset" then
     hl.bind("catchall", exit_fn, opts)
@@ -307,7 +325,7 @@ function Submap.define(spec)
       if spec.escape ~= false then
         Bind.key("ESCAPE", M.exit, "Exit " .. spec.name)
         if spec.back ~= false then
-          local back_opts = catchall == "reset" and { release = true } or nil
+          local back_opts = catchall == "reset" and Bind.leave_submap_opts() or nil
           local back_label = type(spec.back) == "string" and ("Back to " .. spec.back) or ("Exit " .. spec.name)
           Bind.key("BackSpace", M.back, back_label, back_opts)
         end

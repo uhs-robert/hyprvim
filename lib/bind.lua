@@ -7,6 +7,27 @@ local Bind = {
   leader = (config.keys or {}).leader or "SUPER",
 }
 
+--- Whether Hyprland is 0.57 or newer, whose rewritten keybind manager matches a key against the submap it was
+--- pressed in, for the press and its key-up alike.
+local KEYBINDS_V2 = (function()
+  local version = type(hl.version) == "function" and hl.version() or nil
+  if type(version) ~= "string" then return false end
+  local major, minor = version:match("^(%d+)%.(%d+)")
+  major, minor = tonumber(major), tonumber(minor)
+  if not major then return false end
+  return major > 0 or minor >= 57
+end)()
+
+--- Options for a bind that leaves its submap (exit vim, Back).
+--- Before 0.57 it runs on key-up. On key-down the same press fires the bind it lands on (the global LEADER+V
+--- re-enters vim), and the key-up reaches the next submap's release catchall. On 0.57 neither happens, while a
+--- key-up bind lets its key-down reach the app and is shadowed once another key is let go first, so it never fires.
+--- @return HL.BindOptions|nil
+function Bind.leave_submap_opts()
+  if KEYBINDS_V2 then return nil end
+  return { release = true }
+end
+
 --- @param value string|string[]
 --- @return string[]
 local function as_list(value)
