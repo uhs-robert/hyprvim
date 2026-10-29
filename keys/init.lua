@@ -16,8 +16,13 @@ end)
 if Config.which_key and Config.which_key.enabled then
   local wk = require("hyprvim.whichkey") ---@class WhichKey
   hl.bind(leader .. " + SHIFT + SLASH", function() wk.toggle() end)
-  hl.bind("ESCAPE", function() wk.close() end, { non_consuming = true })
-  hl.bind("BackSpace", function() wk.close() end, { non_consuming = true })
+  -- Escape and BackSpace close an open HUD and stop there; with the HUD hidden they reach the focused app as usual.
+  local function close_or_pass()
+    if not wk.is_visible() then return { pass_event = true } end
+    wk.close()
+  end
+  hl.bind("ESCAPE", close_or_pass)
+  hl.bind("BackSpace", close_or_pass)
 end
 
 -- Load all submap definitions.

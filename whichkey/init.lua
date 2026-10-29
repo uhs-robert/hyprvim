@@ -18,6 +18,10 @@ WhichKey.show = Render.show
 --- @type fun()
 WhichKey.close = Render.close_if_visible
 
+--- Whether the HUD is showing.
+--- @type fun(): boolean
+WhichKey.is_visible = Render.is_visible
+
 --- Write a one-shot skip flag consumed by the listener on the next submap entry.
 --- @type fun(target?: string)
 WhichKey.set_skip = Render.set_skip
