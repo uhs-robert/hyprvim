@@ -7,7 +7,7 @@ local wk = require("hyprvim.whichkey") ---@class WhichKey
 local Hypr = require("hyprvim.hypr") ---@class HyprVimHyprland
 local common = require("hyprvim.keys.submaps.common")
 
-local LEADER, _, EXIT = common.keys()
+local LEADER, ACT, EXIT = common.keys()
 
 local send = Hypr.send
 local cc = vim.count.clear_then_fn
@@ -217,6 +217,7 @@ Submap.define({
       { "ESCAPE", escape_normal, "Escape", { non_consuming = true } },
 
       -- Global exit from vim mode
+      { LEADER .. " + " .. ACT, vim.exit, nil, Bind.leave_submap_opts() },
       { LEADER .. " + " .. EXIT, vim.exit, nil, Bind.leave_submap_opts() },
     }
     -- stylua: ignore end

@@ -254,13 +254,17 @@ local function wrap_oneshot(rows, exit_fn)
   return wrapped
 end
 
---- Mouse buttons (left, right, middle, side, extra) and wheel directions, in Hyprland's bind names.
+--- Mouse buttons (left, right, middle, side, extra, forward, back, task) and wheel directions, in Hyprland's bind
+--- names.
 local mouse_inputs = {
   "mouse:272",
   "mouse:273",
   "mouse:274",
   "mouse:275",
   "mouse:276",
+  "mouse:277",
+  "mouse:278",
+  "mouse:279",
   "mouse_up",
   "mouse_down",
   "mouse_left",
