@@ -17,6 +17,8 @@
 
 - **Hyprland 0.57: clean exits and working mouse in vim mode**: on Hyprland 0.57, the `SUPER+V` and `SUPER+Escape` exits let their key-down reach the focused app, and did nothing at all when `SUPER` was let go first. In one-shot submaps `BackSpace` reached the app too. These now run on key-down on 0.57 and keep running on key-up on older Hyprland. Mouse clicks and the scroll wheel also work again in modes that swallow unbound keys, such as NORMAL and VISUAL.
 
+- **Escape and BackSpace reach your apps when WhichKey is closed**: with WhichKey enabled, `Escape` and `BackSpace` outside vim mode closed the HUD and also reached the focused app, even while the HUD was open. They now close an open HUD and stop there, and pass through untouched when it is hidden.
+
 - **HyprVim no longer hijacks your config's modules** ([#23](https://github.com/uhs-robert/hyprvim/issues/23)): internal modules used generic names like `config` and `lib.utils`, and loading HyprVim evicted and replaced the user's own modules of the same name, so a later `require("config")` in a keybind callback got HyprVim's. Internals now live under `hyprvim.*`, resolved from the install directory without touching `package.path` ([#24](https://github.com/uhs-robert/hyprvim/pull/24)).
 
 > [!NOTE] Only code that required HyprVim internals by their bare names, like `require("vim")`, is affected; use `require("hyprvim.vim")` instead. `require("hyprvim").setup(...)` is unchanged.
