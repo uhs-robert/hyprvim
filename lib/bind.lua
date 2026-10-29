@@ -9,8 +9,9 @@ local Bind = {
 
 --- Whether Hyprland is 0.57 or newer, whose rewritten keybind manager matches a key against the submap it was
 --- pressed in, for the press and its key-up alike.
+--- The which-key renderer loads this module in a plain `lua` process, where the `hl` global does not exist.
 local KEYBINDS_V2 = (function()
-  local version = type(hl.version) == "function" and hl.version() or nil
+  local version = type(hl) == "table" and type(hl.version) == "function" and hl.version() or nil
   if type(version) ~= "string" then return false end
   local major, minor = version:match("^(%d+)%.(%d+)")
   major, minor = tonumber(major), tonumber(minor)
