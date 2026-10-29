@@ -217,7 +217,7 @@ Submap.define({
       { "ESCAPE", escape_normal, "Escape", { non_consuming = true } },
 
       -- Global exit from vim mode
-      { LEADER .. " + " .. EXIT, vim.exit, nil, { release = true } },
+      { LEADER .. " + " .. EXIT, vim.exit, nil, Bind.leave_submap_opts() },
     }
     -- stylua: ignore end
   end,

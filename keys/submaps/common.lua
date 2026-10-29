@@ -4,6 +4,7 @@
 local wk = require("hyprvim.whichkey") ---@class WhichKey
 local vim = require("hyprvim.vim") ---@class Vim
 local config = require("hyprvim.config") ---@class HyprVimConfigModule
+local Bind = require("hyprvim.lib.bind") ---@class HyprVimBindLib
 
 local Common = {}
 
@@ -15,8 +16,8 @@ function Common.keys() return config.keys.leader or "SUPER", config.keys.activat
 function Common.exit_rows()
   local LEADER, ACT, EXIT = Common.keys()
   return {
-    { LEADER .. " + " .. ACT, vim.exit, { release = true } },
-    { LEADER .. " + " .. EXIT, vim.exit, { release = true } },
+    { LEADER .. " + " .. ACT, vim.exit, Bind.leave_submap_opts() },
+    { LEADER .. " + " .. EXIT, vim.exit, Bind.leave_submap_opts() },
   }
 end
 
