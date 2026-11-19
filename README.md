@@ -510,3 +510,9 @@ If you make an enhancement that you think would benefit the community then pleas
 Questions, ideas, or want to show off your config? Join the [HyprVim Discord](https://discord.gg/Kr5JrhVR8R).
 
 Bug reports and feature requests still belong in [GitHub issues](https://github.com/uhs-robert/hyprvim/issues) so they don't get lost in chat.
+
+## 💖 Sponsor
+
+HyprVim is free and stays free. I build it in my spare time. If it saves you time, [sponsor me on GitHub](https://github.com/sponsors/uhs-robert).
+
+<a href="https://github.com/sponsors/uhs-robert"><img alt="Sponsor on GitHub Sponsors" src="https://img.shields.io/badge/GitHub%20Sponsors-Sponsor-6DDFA0?style=for-the-badge&labelColor=192330&logo=githubsponsors&logoColor=white" /></a>
